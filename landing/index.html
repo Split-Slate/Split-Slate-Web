@@ -5,9 +5,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#f3f0e8" />
     <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+    <link rel="preload" href="./fonts/montserrat-regular.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="./fonts/saira-bold.woff2" as="font" type="font/woff2" crossorigin />
+    <link
+      rel="preload"
+      href="./fonts/space-grotesk-semibold.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <link rel="stylesheet" href="./styles.css" />
     <script src="./animations.js" defer></script>
-    <title>Split Slate — Go halves. Stay whole.</title>
+    <script src="./components/screenshot-gallery/index.js" defer></script>
+    <script src="./constants/story-data.js" defer></script>
+    <script src="./components/workspace/index.js" defer></script>
+    <script src="./components/story-phone/index.js" defer></script>
+    <script src="./utils/story-timeline.js" defer></script>
+    <script src="./components/scroll-story/index.js" defer></script>
+    <script src="./scroll-story.js" defer></script>
+    <script src="./offline.js" defer></script>
+    <title>Split Slate — Less calculating. More living.</title>
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to content</a>
@@ -56,7 +73,7 @@
             <span class="motion-light" aria-hidden="true"></span>
             <span class="motion-label">Motion on</span>
           </button>
-          <a class="button button-header" href="https://split-slate.netlify.app/">
+          <a class="button button-header" href="https://split-slate.netlify.app/" target="_blank" rel="noopener noreferrer">
             Open app <svg class="icon" aria-hidden="true"><use href="#arrow-up" /></svg>
           </a>
         </div>
@@ -64,128 +81,217 @@
     </header>
 
     <main id="main-content">
-      <section class="hero frame" data-scene aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <p class="section-label" data-reveal>
-            <span class="small-spark" aria-hidden="true">✳</span> Split bills. Keep balances clear.
-          </p>
-          <h1 id="hero-title">
-            <span class="headline-line" data-reveal>Go halves.</span>
-            <span class="headline-line headline-serif" data-reveal data-delay="100">
-              Stay whole<span class="headline-period">.</span>
-            </span>
-          </h1>
-          <p class="hero-description" data-reveal data-delay="180">
-            Split bills with friends, track shared expenses, and see who owes whom. From trips to
-            roommate bills, choose a fair split and keep your group in sync.
-          </p>
-          <div class="hero-actions" data-reveal data-delay="240">
-            <a class="button button-primary" href="https://split-slate.netlify.app/">
-              Start your first group
-              <span class="button-arrow"
-                ><svg class="icon" aria-hidden="true"><use href="#arrow" /></svg
-              ></span>
-            </a>
-            <span class="hero-small-print"
-              >Free core features.<br />No account needed for local use.</span
-            >
+      <section class="expense-story" id="expense-story" aria-label="From mental math to a clear slate">
+        <div class="ss-fallback frame" data-story-fallback>
+          <div class="ss-fallback-copy">
+            <p class="section-label">
+              <span class="small-spark" aria-hidden="true">✳</span> Split bills. Keep balances clear.
+            </p>
+            <h1 id="hero-title">
+              <span class="headline-line">Less calculating.</span>
+              <span class="headline-line headline-serif">
+                More living<span class="headline-period">.</span>
+              </span>
+            </h1>
+            <p class="hero-description">
+              Split expenses effortlessly. Know exactly who owes whom.
+            </p>
+            <div class="hero-actions">
+              <a class="button button-primary" href="https://split-slate.netlify.app/" target="_blank" rel="noopener noreferrer">
+                Start your first group
+                <span class="button-arrow"
+                  ><svg class="icon" aria-hidden="true"><use href="#arrow" /></svg
+                ></span>
+              </a>
+              <span class="hero-small-print"
+                >Free core features.<br />No account needed for local use.</span
+              >
+            </div>
           </div>
-          <a class="scroll-invitation" href="#the-good-part">
-            <span class="scroll-line" aria-hidden="true"></span> Scroll. It adds up.
-          </a>
-        </div>
 
-        <figure class="hero-scene" data-scene aria-labelledby="hero-scene-caption">
-          <div class="scene-parallax">
-            <div class="scene-disc" aria-hidden="true"></div>
-            <div class="scene-orbit" aria-hidden="true"><span>LESS MENTAL MATH</span></div>
-            <svg class="scene-connections" viewBox="0 0 600 600" aria-hidden="true">
-              <path class="connection-path" d="M170 170C30 340 160 520 340 465" />
-              <path
-                class="connection-path connection-path-two"
-                d="M470 180C595 230 580 425 460 450"
-              />
-              <path class="connection-tick" d="m448 435 13 15-17 8" />
-            </svg>
-            <div class="scene-coordinate coordinate-top" aria-hidden="true">
-              03 PEOPLE / 01 GOOD WEEKEND
-            </div>
-            <article
-              class="paper-ticket ticket-stay"
-              aria-label="Example: you paid 5,400 rupees for a stay"
-            >
-              <div class="ticket-meta"><span>THE GETAWAY</span><span>001</span></div>
-              <svg class="ticket-drawing" viewBox="0 0 120 70" aria-hidden="true">
-                <path
-                  d="M22 62V27l38-18 38 18v35M16 62h88M48 62V43h24v19M33 31h12v9H33zm42 0h12v9H75zM54 23h12"
-                />
-                <path d="M11 15h12m-6-6v12m79-7h12m-6-6v12" />
-              </svg>
-              <h2>A place to land.</h2>
-              <p>Two nights. Three friends.</p>
-              <div class="ticket-total"><span>YOU PAID</span><strong>₹5,400</strong></div>
-              <div class="ticket-perforation" aria-hidden="true"></div>
-              <div class="ticket-bottom">
-                <span>Split three ways</span><span class="ticket-barcode" aria-hidden="true"></span>
-              </div>
-            </article>
-            <article
-              class="paper-ticket ticket-dinner"
-              aria-label="Example: Maya paid 2,400 rupees for dinner"
-            >
-              <div class="ticket-meta"><span>THE LONG DINNER</span><span>002</span></div>
-              <svg class="ticket-drawing" viewBox="0 0 120 70" aria-hidden="true">
-                <ellipse cx="60" cy="35" rx="26" ry="24" />
-                <ellipse cx="60" cy="35" rx="17" ry="16" />
-                <path d="M19 10v18m-5-18v12q0 6 10 6V10m-5 18v32m80-50v50m0-50q14 18 0 26" />
-              </svg>
-              <h2>One more course.</h2>
-              <div class="ticket-total"><span>MAYA PAID</span><strong>₹2,400</strong></div>
-              <div class="ticket-perforation" aria-hidden="true"></div>
-              <div class="ticket-bottom"><span>Worth every bite</span><span>✓</span></div>
-            </article>
-            <article
-              class="paper-ticket ticket-ride"
-              aria-label="Example: Dev paid 1,200 rupees for rides"
-            >
-              <div class="ticket-meta"><span>HERE &amp; THERE</span><span>003</span></div>
-              <h2>The scenic route.</h2>
-              <div class="ticket-total"><span>DEV PAID</span><strong>₹1,200</strong></div>
-            </article>
-            <div class="scene-stamp" aria-hidden="true">
-              <svg class="icon"><use href="#sun" /></svg><span>GOOD<br />COMPANY</span>
-            </div>
-            <div class="hero-balance">
-              <span class="balance-avatar" aria-hidden="true">Y</span>
-              <div><span>The math is done.</span><strong>You’re owed ₹2,400</strong></div>
-              <span class="balance-seal" aria-hidden="true"
-                ><svg class="icon"><use href="#check" /></svg
-              ></span>
-            </div>
-            <span class="scene-handwriting" aria-hidden="true"
-              >keep the memories,<br />not the mental tabs.</span
-            >
+          <div class="ss-fallback-ledger">
+            <span class="section-label">One night. Three friends.</span>
+            <h2>All figured out.</h2>
+            <dl>
+              <div><dt>Dinner · Maya paid</dt><dd>$120</dd></div>
+              <div><dt>Taxi · Leo paid</dt><dd>$30</dd></div>
+              <div><dt>Total · split equally</dt><dd>$150</dd></div>
+            </dl>
+            <p>Maya, Leo, and Nina share $50 each.</p>
+            <div class="ss-fallback-transfer"><span>Leo owes Maya</span><strong>$20</strong></div>
+            <div class="ss-fallback-transfer"><span>Nina owes Maya</span><strong>$50</strong></div>
+            <small>Suggested repayments. Pay each other outside Split Slate.</small>
           </div>
-          <figcaption id="hero-scene-caption">
-            An illustrated example, not your actual expenses.
-          </figcaption>
-        </figure>
-        <div class="hero-bottomline">
-          <span>LOCAL-FIRST. SHARE ON YOUR TERMS.</span
-          ><span>Made for life outside a spreadsheet. <span aria-hidden="true">↙</span></span>
+        </div>
+        <p class="sr-only" id="expense-story-summary">
+          An illustrated notebook fills with handwritten expenses and confusing calculations.
+          The entries lift from the paper into Split Slate, which does the math for you.
+          Maya paid $120 for dinner and Leo paid $30 for a taxi. All three friends, including Nina,
+          share both expenses equally: $150 total and $50 each. Leo owes Maya $20 and Nina owes
+          Maya $50. These are suggested repayments, not payments made by the app.
+        </p>
+      </section>
+
+      <section class="product-preview-section" id="inside-the-app" aria-labelledby="product-preview-title">
+        <div class="frame">
+          <div class="section-topline">
+            <span class="section-label">A look inside Split Slate</span>
+          </div>
+          <div class="product-preview-heading">
+            <h2 class="section-title" id="product-preview-title">A little look inside.</h2>
+            <p>
+              Your group, your bills, your balances. Select a preview to take a closer look.
+            </p>
+          </div>
+
+          <div class="product-preview-cards">
+            <article class="product-preview-card">
+              <a class="product-preview-trigger" href="./images/group-desktop.png" target="_blank"
+                rel="noopener" data-gallery-item data-gallery-open="group" data-gallery-group="group"
+                data-gallery-device="desktop" data-gallery-title="Overview · Desktop"
+                data-gallery-alt="Split Slate's desktop Overview for Maldives Trip, with the group position, five members, suggested transfers, recent transactions, and activity.">
+                <div class="product-preview-thumbnail">
+                  <img src="./images/group-desktop.png" width="2000" height="1218"
+                    loading="lazy" decoding="async" alt="Preview of the Maldives Trip group Overview." />
+                  <span class="product-preview-expand" aria-hidden="true">↗</span>
+                </div>
+                <div class="product-preview-card-copy">
+                  <span class="product-preview-card-label">01 / Overview</span>
+                  <h3>Everyone. Everything. Together.</h3>
+                  <span class="product-preview-open-label">Take a closer look <span aria-hidden="true">↗</span></span>
+                </div>
+              </a>
+              <details class="product-preview-originals">
+                <summary>Mobile capture</summary>
+                <a href="./images/group-mobile.png" target="_blank" rel="noopener" data-gallery-item
+                  data-gallery-group="group" data-gallery-device="mobile"
+                  data-gallery-title="Overview · Mobile"
+                  data-gallery-alt="Maldives Trip on mobile, with the purple group-position card, member chips, suggested transfers, and bottom navigation.">Overview · Mobile</a>
+              </details>
+            </article>
+
+            <article class="product-preview-card">
+              <a class="product-preview-trigger" href="./images/expense-desktop.png" target="_blank"
+                rel="noopener" data-gallery-item data-gallery-open="expense" data-gallery-group="expense"
+                data-gallery-device="desktop" data-gallery-title="Add expense · Desktop"
+                data-gallery-alt="Split Slate's desktop expense form for Flights to Malé, with a ₹175,000 amount, category choices, Leo Martin as payer, equal shares, and optional description and tags.">
+                <div class="product-preview-thumbnail">
+                  <img src="./images/expense-desktop.png" width="1933" height="1293"
+                    loading="lazy" decoding="async" alt="Preview of the expense form with payer and split controls." />
+                  <span class="product-preview-expand" aria-hidden="true">↗</span>
+                </div>
+                <div class="product-preview-card-copy">
+                  <span class="product-preview-card-label">02 / Add expense</span>
+                  <h3>A bill. Your kind of fair.</h3>
+                  <span class="product-preview-open-label">Take a closer look <span aria-hidden="true">↗</span></span>
+                </div>
+              </a>
+              <details class="product-preview-originals">
+                <summary>Mobile captures · 2 parts</summary>
+                <a href="./images/expense-mobile-1.png" target="_blank" rel="noopener" data-gallery-item
+                  data-gallery-group="expense" data-gallery-device="mobile"
+                  data-gallery-title="Add expense · Mobile · Part 1 of 2 — Expense details"
+                  data-gallery-alt="Mobile expense form, part 1: Flights to Malé, date and time, ₹175,000 amount, categories, and Leo Martin selected as payer.">Part 1 · Expense details</a>
+                <a href="./images/expense-mobile-2.png" target="_blank" rel="noopener" data-gallery-item
+                  data-gallery-group="expense" data-gallery-device="mobile"
+                  data-gallery-title="Add expense · Mobile · Part 2 of 2 — Split controls"
+                  data-gallery-alt="Mobile expense form, part 2: payer selection, five split methods, five selected participants with ₹35,000 equal shares, and the optional-details section.">Part 2 · Split controls</a>
+              </details>
+            </article>
+
+            <article class="product-preview-card">
+              <a class="product-preview-trigger" href="./images/balances-desktop.png" target="_blank"
+                rel="noopener" data-gallery-item data-gallery-open="balances" data-gallery-group="balances"
+                data-gallery-device="desktop" data-gallery-title="Settle up · Desktop"
+                data-gallery-alt="Split Slate's desktop balances for Maldives Trip, with member net positions, three suggested repayments to Leo Martin, and Sara Ahmed's recorded ₹30,675 payment.">
+                <div class="product-preview-thumbnail">
+                  <img src="./images/balances-desktop.png" width="2000" height="1218"
+                    loading="lazy" decoding="async" alt="Preview of member balances and suggested repayments." />
+                  <span class="product-preview-expand" aria-hidden="true">↗</span>
+                </div>
+                <div class="product-preview-card-copy">
+                  <span class="product-preview-card-label">03 / Settle up</span>
+                  <h3>Know where everyone stands.</h3>
+                  <span class="product-preview-open-label">Take a closer look <span aria-hidden="true">↗</span></span>
+                </div>
+              </a>
+              <details class="product-preview-originals">
+                <summary>Mobile captures · 2 parts</summary>
+                <a href="./images/balances-mobile-1.png" target="_blank" rel="noopener" data-gallery-item
+                  data-gallery-group="balances" data-gallery-device="mobile"
+                  data-gallery-title="Settle up · Mobile · Part 1 of 2 — Member balances"
+                  data-gallery-alt="Mobile balances, part 1: Maldives Trip, Add payment, five member net positions, and the first suggested repayment to Leo Martin.">Part 1 · Member balances</a>
+                <a href="./images/balances-mobile-2.png" target="_blank" rel="noopener" data-gallery-item
+                  data-gallery-group="balances" data-gallery-device="mobile"
+                  data-gallery-title="Settle up · Mobile · Part 2 of 2 — Repayments"
+                  data-gallery-alt="Mobile balances, part 2: repayments from Emma Wilson, Sam Taylor, and Alex Morgan to Leo Martin, plus Sara Ahmed's recorded payment with Edit and Delete controls.">Part 2 · Repayments</a>
+              </details>
+            </article>
+          </div>
+          <div class="product-preview-footer">
+            <a href="https://split-slate.netlify.app/" target="_blank" rel="noopener noreferrer">Try it in the app <span aria-hidden="true">↗</span></a>
+          </div>
         </div>
       </section>
 
+      <dialog class="screenshot-gallery" id="screenshot-gallery" aria-labelledby="gallery-title">
+        <header class="screenshot-gallery-header">
+          <div>
+            <span class="screenshot-gallery-eyebrow">A look inside Split Slate</span>
+            <h2 id="gallery-title">Actual app screens</h2>
+          </div>
+          <button type="button" class="screenshot-gallery-close" data-gallery-close
+            aria-label="Close screenshot gallery" autofocus>✕</button>
+        </header>
+        <div class="screenshot-gallery-controls">
+          <div class="screenshot-gallery-switch" role="group" aria-label="App screen">
+            <button type="button" data-gallery-select-group="group" aria-pressed="false">Overview</button>
+            <button type="button" data-gallery-select-group="expense" aria-pressed="false">Add expense</button>
+            <button type="button" data-gallery-select-group="balances" aria-pressed="false">Settle up</button>
+          </div>
+          <div class="screenshot-gallery-switch" role="group" aria-label="Filter screenshots by device">
+            <button type="button" data-gallery-select-device="all" aria-pressed="true">All</button>
+            <button type="button" data-gallery-select-device="desktop" aria-pressed="false">Desktop</button>
+            <button type="button" data-gallery-select-device="mobile" aria-pressed="false">Mobile</button>
+          </div>
+        </div>
+        <div class="screenshot-gallery-viewer">
+          <img class="screenshot-gallery-image" data-gallery-image alt="" decoding="async" />
+          <p class="screenshot-gallery-error" data-gallery-error role="status" hidden>
+            This screenshot couldn't load. Try another image or reopen the gallery.
+          </p>
+        </div>
+        <div class="screenshot-gallery-navigation">
+          <button type="button" data-gallery-previous aria-label="Previous screenshot">←</button>
+          <p data-gallery-caption role="status" aria-atomic="true"></p>
+          <button type="button" data-gallery-next aria-label="Next screenshot">→</button>
+        </div>
+        <div class="screenshot-gallery-thumbnails" data-gallery-thumbnails role="group"
+          aria-label="All screenshots (8)"></div>
+      </dialog>
+
       <div class="word-ribbon" data-scene>
         <div class="ribbon-track" aria-hidden="true">
-          <span>The trip</span><span class="ribbon-spark">✳</span><span>The table</span
-          ><span class="ribbon-spark">✳</span><span>The everyday</span
-          ><span class="ribbon-spark">✳</span><span>All figured out</span
-          ><span class="ribbon-spark">✳</span> <span>The trip</span
-          ><span class="ribbon-spark">✳</span><span>The table</span
-          ><span class="ribbon-spark">✳</span><span>The everyday</span
-          ><span class="ribbon-spark">✳</span><span>All figured out</span
-          ><span class="ribbon-spark">✳</span>
+          <div class="ribbon-group">
+            <span>The trip</span><span class="ribbon-spark">✳</span>
+            <span>The table</span><span class="ribbon-spark">✳</span>
+            <span>The everyday</span><span class="ribbon-spark">✳</span>
+            <span>All figured out</span><span class="ribbon-spark">✳</span>
+            <span>The trip</span><span class="ribbon-spark">✳</span>
+            <span>The table</span><span class="ribbon-spark">✳</span>
+            <span>The everyday</span><span class="ribbon-spark">✳</span>
+            <span>All figured out</span><span class="ribbon-spark">✳</span>
+          </div>
+          <div class="ribbon-group">
+            <span>The trip</span><span class="ribbon-spark">✳</span>
+            <span>The table</span><span class="ribbon-spark">✳</span>
+            <span>The everyday</span><span class="ribbon-spark">✳</span>
+            <span>All figured out</span><span class="ribbon-spark">✳</span>
+            <span>The trip</span><span class="ribbon-spark">✳</span>
+            <span>The table</span><span class="ribbon-spark">✳</span>
+            <span>The everyday</span><span class="ribbon-spark">✳</span>
+            <span>All figured out</span><span class="ribbon-spark">✳</span>
+          </div>
         </div>
         <span class="sr-only">For trips, meals, and everyday shared expenses.</span>
       </div>
@@ -521,9 +627,6 @@
                 </p>
               </div>
             </div>
-            <p class="privacy-caveat">
-              Local storage isn’t permanent storage. Keep backups of the things that matter.
-            </p>
           </div>
         </div>
       </section>
@@ -705,12 +808,12 @@
           ></span>
           <p class="section-label">The next good thing is waiting.</p>
           <h2 id="closing-title" data-reveal>Keep the company.<br /><em>Lose the math.</em></h2>
-          <a class="button button-primary" href="https://split-slate.netlify.app/"
+          <a class="button button-primary" href="https://split-slate.netlify.app/" target="_blank" rel="noopener noreferrer"
             >Let’s split something<span class="button-arrow"
               ><svg class="icon" aria-hidden="true"><use href="#arrow" /></svg></span
           ></a>
           <div class="closing-bottomline">
-            <span>FREE CORE FEATURES. LESS MENTAL MATH.</span
+            <span>EVERY FEATURE. FREE TO USE. LESS MENTAL MATH.</span
             ><span>Just a clearer picture. <span aria-hidden="true">↗</span></span>
           </div>
         </div>
@@ -726,7 +829,7 @@
       <p>Shared expenses. Better company.</p>
       <nav aria-label="Footer navigation">
         <a href="#privacy">Your data</a><a href="#questions">Questions</a
-        ><a href="https://split-slate.netlify.app/">Open app ↗</a>
+        ><a href="https://split-slate.netlify.app/" target="_blank" rel="noopener noreferrer">Open app ↗</a>
       </nav>
       <span class="copyright">© 2026 Split Slate</span>
     </footer>

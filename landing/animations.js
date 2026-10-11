@@ -151,7 +151,7 @@
       sceneParallax.style.setProperty("--scene-shift", `${shift.toFixed(2)}px`);
       sceneParallax.style.setProperty("--tilt-x", `${(-pointerY * 4).toFixed(2)}deg`);
       sceneParallax.style.setProperty("--tilt-y", `${(pointerX * 5).toFixed(2)}deg`);
-    } else {
+    } else if (sceneParallax) {
       sceneParallax.style.setProperty("--scene-shift", "0px");
       sceneParallax.style.setProperty("--tilt-x", "0deg");
       sceneParallax.style.setProperty("--tilt-y", "0deg");
@@ -170,6 +170,7 @@
   const applyMotion = () => {
     const off = motionOff();
     root.dataset.motion = off ? "off" : "on";
+    window.dispatchEvent(new CustomEvent("split-slate:motion-change", { detail: { off } }));
     motionButton.setAttribute("aria-pressed", String(off));
     motionButton.disabled = reducedMotion.matches;
     motionLabel.textContent = reducedMotion.matches
@@ -230,8 +231,8 @@
     const scenes = [...document.querySelectorAll("[data-scene]")];
     if (!("IntersectionObserver" in window)) {
       scenes.forEach((scene) => scene.classList.add("is-in-view"));
-      heroScene.classList.add("has-entered");
-      heroVisible = true;
+      heroScene?.classList.add("has-entered");
+      heroVisible = Boolean(heroScene);
       return;
     }
 
@@ -315,8 +316,8 @@
     "Illustrative demo only. No expenses are saved here.";
   motionButton.hidden = false;
   motionButton.addEventListener("click", handleMotionToggle);
-  heroScene.addEventListener("pointermove", handlePointerMove);
-  heroScene.addEventListener("pointerleave", handlePointerLeave);
+  heroScene?.addEventListener("pointermove", handlePointerMove);
+  heroScene?.addEventListener("pointerleave", handlePointerLeave);
   window.addEventListener("scroll", scheduleRender, { passive: true });
   window.addEventListener("resize", scheduleRender, { passive: true });
   document.addEventListener("visibilitychange", handleVisibility);

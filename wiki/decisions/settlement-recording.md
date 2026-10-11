@@ -9,7 +9,7 @@ metadata:
 
 Purpose: distinguish recorded external repayments from expenses, payment processing, and cross-group netting.
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## Decision
 
@@ -21,13 +21,52 @@ or split allocation. Records may be edited or deleted; deleting one does not rev
 transfer. There is no money movement, automatic confirmation, sync, currency conversion, or
 cross-group allocation/netting. See [[domain-models]].
 
-**Add payment** accepts any positive amount. **Settle up** preselects a suggested payer, recipient,
+**Add payment** accepts a positive amount. **Settle up** preselects a suggested payer, recipient,
 and amount. A value above the current suggested amount shows a warning but remains saveable; actual
 overpayments can reverse a member's net position. Suggestions themselves are not records.
 The Add, Settle up, and Edit actions open a payment modal. Payer and recipient use searchable
 avatar-and-name group-member dropdowns labeled **Paid by** and **Received by**. The shared expense
-date/time controls give new payments today's local date but require an explicit time; editing
-restores the saved local date and time. See [[main-screen]].
+date/time controls prefill new Add/Settle up payments with today's local date and current local
+time at form opening; editing restores the saved local date and time. **Clear time** replaces
+**Use current time**, empties Hour and Minute without changing the date or AM/PM setting, and does
+not refill automatically. Time remains required before saving. Default/clear/edit browser
+coverage passed in the scoped desktop/mobile three-file batch; future execution requires approval.
+See [[main-screen]] and [[testing-strategy]].
+
+Shared picker errors are field-specific in every payment modal: date errors appear beneath Date,
+time errors beneath Time, and both appear independently when both are invalid. Error styling and
+accessible descriptions apply only to the affected field; Hour and Minute share a time message.
+Local clock-transition gaps are time errors. Correcting one part leaves any other error visible;
+combined date/time save validation and persistence are unchanged. Picker error browser cases passed
+in the scoped desktop/mobile batch; shared helper checks passed in the 543-case unit/store batch.
+See [[main-screen]] and [[testing-strategy]].
+
+Payment dates share the application's four-digit year entry limit, also applied to expense dates
+and From/To date filters. Native date controls use `0001-01-01`–`9999-12-31` bounds, and a shared
+limiter discards extra year digits while keeping month/day unchanged. No year-length error is
+introduced; shared keyboard tracking blocks extra digits instead of native year rollover, and
+clearing/reentry and date-segment navigation remain available. Shared helper and desktop/mobile
+year-limit browser cases passed in the scoped verification batch. See [[main-screen]] and
+[[testing-strategy]].
+
+Payment Add/Settle up/Edit Amount shares expense input formatting and filtering: three-digit
+comma grouping regardless of currency, digits and one decimal point only, and at most eight
+whole-number digits plus two fractional digits on user entry, without rounding. Trailing decimal
+points/zeros and caret-aware comma deletion are preserved; commas never enter form values or
+persisted hundredths. Existing and suggested prefills are displayed without silently truncating
+their amounts. Positive/safe-integer validation and overpayment warnings are unchanged. The shared
+date and hour/minute inputs also have matching font family, 0.9375rem size, and 800 weight. Payment
+amount and typography cases passed on desktop/mobile in the three-file browser batch. See
+[[testing-strategy]], [[main-screen]], and [[money-representation-and-rounding]].
+
+These payment fields use `src/shared/ui/money-input`, also shared by payer contributions,
+Unequal/Adjust splits, and amount-filter bounds. The wrapper owns filtering, limits, caret-aware
+grouping, and numeric placeholder formatting; payment components no longer supply their own
+sanitizer/formatter props. Global display and input utilities accept formatting options for a
+future preference feature while keeping current defaults and fixed-hundredths storage. Shares and
+percentages are not monetary fields. Shared-wrapper browser coverage passed for Add/Settle up/Edit
+and non-INR payments in both projects. This scoped verification is not a new full-browser/build/PWA
+pass; future monetary fields must reuse the contract in [[money-representation-and-rounding]].
 
 Optional payment tags use compact native checkbox options with 12px-reference label text at every
 screen width and a colour dot beside each tag name. The dot uses the saved tag colour and is

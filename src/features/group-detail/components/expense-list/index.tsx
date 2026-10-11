@@ -46,19 +46,34 @@ const ExpenseList = () => {
       )
     : [];
   const showPayments =
-    parsed.success && !hasFilters && ["newest", "oldest"].includes(parsed.data.sort);
+    parsed.success &&
+    !hasFilters &&
+    ["newest", "oldest", "added-newest", "added-oldest"].includes(parsed.data.sort);
+  const sortByAddedDate =
+    parsed.success && ["added-newest", "added-oldest"].includes(parsed.data.sort);
   const entries = [
-    ...sorted.map((expense) => ({ type: "expense" as const, when: expense.when, expense })),
+    ...sorted.map((expense) => ({
+      type: "expense" as const,
+      when: expense.when,
+      createdAt: expense.createdAt,
+      expense,
+    })),
     ...(showPayments
       ? groupSettlements.map((settlement) => ({
           type: "payment" as const,
           when: settlement.when,
+          createdAt: settlement.createdAt,
           settlement,
         }))
       : []),
   ];
   if (showPayments) {
-    entries.sort((a, b) => (parsed.data.sort === "oldest" ? a.when - b.when : b.when - a.when));
+    const oldestFirst = ["oldest", "added-oldest"].includes(parsed.data.sort);
+    entries.sort((a, b) => {
+      const aDate = sortByAddedDate ? a.createdAt : a.when;
+      const bDate = sortByAddedDate ? b.createdAt : b.when;
+      return oldestFirst ? aDate - bDate : bDate - aDate;
+    });
   }
   useLayoutEffect(() => {
     const ledger = ledgerRef.current;

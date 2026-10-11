@@ -17,11 +17,13 @@ The expense form, live previews, split calculator, validation, and save mutation
 methods below. Final amounts and the necessary metadata are stored explicitly; ordinary reads do
 not recalculate historical allocations. Shares and percentages accept positive decimal inputs with
 up to six fractional digits, converted to integer weights before allocation. Values outside the
-safe scaled-ratio range are rejected.
+safe scaled-ratio range are rejected. Shares user entry additionally has a silent seven-digit total
+cap; the decimal point does not count. This input cap does not change calculation/store/import
+limits or rewrite historical share values when they are merely displayed or saved untouched.
 
 Validated shares/percentage inputs are persisted as trimmed decimal strings. Computation still
 uses scaled BigInt weights; storage never converts these ratios to Number. This preserves exact
-digits, including the maximum accepted shares value `9007199254.740991`, through detail, editing,
+digits, including the maximum store-accepted shares value `9007199254.740991`, through detail, editing,
 and reload. Leading/trailing decimal zeros are retained; surrounding whitespace is removed.
 Older numeric ratio metadata remains readable, but precision already lost in those records cannot
 be recovered automatically. See [[expense-edit-delete]].
@@ -41,8 +43,17 @@ blank percentage inputs show suggested values; the other split inputs have no pl
 across its surface except over an editable input. The owed amount appears after the name and before
 the narrow, center-aligned value input, or at the right edge for Equal; unselected rows show a currency-formatted
 zero. Typing or pasting into split-value inputs keeps digits and one decimal point, plus an optional
-leading minus sign for Adjust. This UI filter does not replace decimal-precision, range, and
-balanced-split validation at save time.
+leading minus sign for Adjust. Unequal and Adjust use the shared `MoneyInput`: eight whole
+digits/two decimals on user entry and default three-digit display grouping, with the sign allowed
+only for Adjust. Raw form values contain no display commas. Existing larger monetary prefills are
+not truncated until the user changes them. Shares and percentage fields retain separate ratio
+filtering and up-to-six-decimal precision, with a seven-total-digit user-entry cap specific to Shares.
+This UI filter does not replace decimal-precision, range, and balanced-split validation at save time.
+Shared monetary helpers passed in the scoped 543-case unit/store batch. Unequal/Adjust browser
+cases and seven-digit Shares entry cases passed in the three-file batch; the historical Shares
+change-event test passed in both projects after a test-only fix and focused rerun. Shares helper
+coverage was not separately rerun. See [[testing-strategy]] for exact scope and
+[[money-representation-and-rounding]] for the mandatory reuse contract.
 
 A green, live summary appears immediately beneath the Unequal or Percentage heading only after at
 least one selected participant has a value entered and the expense total and current split are
@@ -114,6 +125,18 @@ suggested_per_blank_member = remaining / number_of_blank_members
 **UX:** Each selected member gets a shares input (e.g., 1, 1, 2). System shows the computed amount
 for each member in real time; while an entry is incomplete, valid entered shares receive a
 provisional proportional preview and incomplete entries show zero.
+
+Typing and pasting keep at most seven numeric digits total, including leading/trailing zeroes;
+the decimal point is not counted. Examples: `123456789` becomes `1234567`, `1.23456789` becomes
+`1.234567`, and `12.345678` becomes `12.34567`. Fractional entry also keeps the existing maximum
+six decimal places. Once seven whole digits are present, further digits and a decimal point are
+ignored so the cap cannot leave an impossible-to-complete decimal draft. Extra digits are removed
+without a length error or warning; clearing, replacing, and deleting remain available in Add/Edit.
+Existing larger prefills remain exact until their share input is changed, including name-only
+saves. Percentage and monetary input limits are unchanged. Seven-digit Shares browser cases passed
+in both projects; the historical-prefill/name-only-edit case also passed after the test cleared the
+field before testing changed input. Shares helper coverage was not separately rerun. No fresh full
+suite is implied; future execution requires approval. See [[testing-strategy]].
 
 **Formula:**
 ```

@@ -249,6 +249,90 @@ test("balances opened directly return to the group's expenses", async ({ page })
   await expect(page).toHaveURL(/\/groups\/trip\/expenses$/u);
 });
 
+test("silently limits both date-filter years to four digits and allows reentry", async ({
+  page,
+}) => {
+  await getFiltersTrigger(page).click();
+  for (const [label, parameter] of [
+    ["From date", "dateFrom"],
+    ["To date", "dateTo"],
+  ]) {
+    const date = page.getByLabel(label, { exact: true });
+    await expect(date).toHaveAttribute("max", "9999-12-31");
+    await date.fill("2026-10-11");
+    for (const value of ["20267-10-11", "20268-10-11", "202678-10-11"]) {
+      await date.fill(value);
+      await expect(date).toHaveValue("2026-10-11");
+      await expect(date.locator("..").getByRole("alert")).toHaveCount(0);
+      await expect(page).toHaveURL(new RegExp(`${parameter}=2026-10-11`, "u"));
+    }
+    await date.fill("");
+    await expect(date).toBeEmpty();
+    await date.fill("2030-10-11");
+    await expect(date).toHaveValue("2030-10-11");
+    await expect(page).toHaveURL(new RegExp(`${parameter}=2030-10-11`, "u"));
+    await date.press("ArrowRight");
+    await date.press("ArrowRight");
+    await date.press("Backspace");
+    await date.pressSequentially("2026789");
+    await expect(date).toHaveValue("2026-10-11");
+    await expect(page).toHaveURL(new RegExp(`${parameter}=2026-10-11`, "u"));
+    await date.fill("");
+  }
+});
+
+test("shares monetary input limits and grouping with amount filters while keeping URLs raw", async ({
+  page,
+}) => {
+  await getFiltersTrigger(page).click();
+  for (const parameter of ["minAmount", "maxAmount"]) {
+    const amount = page.locator(`input[name="${parameter}"]`);
+    await amount.pressSequentially("abc+-eE! 999999999.999");
+    await expect(amount).toHaveValue("99,999,999.99");
+    await expect(page).toHaveURL(new RegExp(`${parameter}=99999999\\.99`, "u"));
+    await amount.fill("");
+    await page.keyboard.insertText("INR -123,456,789.1234e+");
+    await expect(amount).toHaveValue("12,345,678.12");
+    await expect(page).toHaveURL(new RegExp(`${parameter}=12345678\\.12`, "u"));
+    await amount.fill("1234.");
+    await expect(amount).toHaveValue("1,234.");
+    await amount.pressSequentially("00");
+    await expect(amount).toHaveValue("1,234.00");
+    await expect(page).toHaveURL(new RegExp(`${parameter}=1234\\.00`, "u"));
+    await amount.evaluate((input: HTMLInputElement) => input.setSelectionRange(2, 2));
+    await amount.press("Backspace");
+    await expect(amount).toHaveValue("234.00");
+  }
+  await page.locator('input[name="minAmount"]').fill("1000.25");
+  await page.locator('input[name="maxAmount"]').fill("2000.50");
+  await closeFilters(page);
+  await page.reload();
+  await getFiltersTrigger(page).click();
+  await expect(page.locator('input[name="minAmount"]')).toHaveValue("1,000.25");
+  await expect(page.locator('input[name="maxAmount"]')).toHaveValue("2,000.50");
+  const parameters = new URL(page.url()).searchParams;
+  expect(parameters.get("minAmount")).toBe("1000.25");
+  expect(parameters.get("maxAmount")).toBe("2000.50");
+});
+
+test("preserves historical amount bounds from URLs without clamping them on display", async ({
+  page,
+}) => {
+  await page.goto("/groups/trip/expenses?minAmount=90071992547409.90&maxAmount=90071992547409.91");
+  await getFiltersTrigger(page).click();
+  await expect(page.getByLabel("Minimum amount (INR)", { exact: true })).toHaveValue(
+    "90,071,992,547,409.90",
+  );
+  await expect(page.getByLabel("Maximum amount (INR)", { exact: true })).toHaveValue(
+    "90,071,992,547,409.91",
+  );
+  expect(new URL(page.url()).searchParams.get("minAmount")).toBe("90071992547409.90");
+  await page.getByLabel("Minimum amount (INR)", { exact: true }).fill("123456789.999");
+  await expect(page.getByLabel("Minimum amount (INR)", { exact: true })).toHaveValue(
+    "12,345,678.99",
+  );
+});
+
 test("filters expenses through every field, validates ranges, and clears all controls", async ({
   page,
   isMobile,

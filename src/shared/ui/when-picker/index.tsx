@@ -1,8 +1,20 @@
 import { useId, useRef, useState } from "react";
 import { useController, useFormContext } from "react-hook-form";
 
-import type { DateTimeParts } from "@/shared/utils/date-time-input";
-import { composeLocalDateTime, parseLocalDateTime } from "@/shared/utils/date-time-input";
+import type {
+  DateTimeInputErrors,
+  DateTimeParts,
+  DateYearTypingState,
+} from "@/shared/utils/date-time-input";
+import {
+  blockExtraDateYearDigit,
+  composeLocalDateTime,
+  getDateTimeInputErrors,
+  limitDateYear,
+  parseLocalDateTime,
+  resetDateYearTyping,
+  trackDateYearTyping,
+} from "@/shared/utils/date-time-input";
 
 interface PropsType {
   defaultDate: string;
@@ -13,10 +25,20 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
   const { field, fieldState } = useController({ name: "when", control });
   const hourRef = useRef<HTMLInputElement>(null);
   const minuteRef = useRef<HTMLInputElement>(null);
+  const dateInputId = useId();
   const timeLabelId = useId();
+  const dateErrorId = `${dateInputId}-error`;
+  const timeErrorId = `${timeLabelId}-error`;
   const [parts, setParts] = useState(() => {
     const initial = parseLocalDateTime(field.value);
     return { ...initial, date: field.value ? initial.date : defaultDate };
+  });
+  const errors: DateTimeInputErrors = fieldState.error ? getDateTimeInputErrors(parts) : {};
+  const dateTypingRef = useRef<DateYearTypingState>({
+    value: parts.date,
+    yearDigits: "",
+    digits: "",
+    lastKey: "",
   });
 
   const updateParts = (patch: Partial<DateTimeParts>) => {
@@ -43,7 +65,19 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
     hour.setSelectionRange(end, end);
   };
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    updateParts({ date: event.target.value });
+    const input = event.currentTarget;
+    const date = limitDateYear(input.value);
+    trackDateYearTyping(dateTypingRef.current, date);
+    // Also restore the native year segment when the limited value has not changed in React.
+    if (input.value !== date) input.value = date;
+    updateParts({ date });
+  };
+  const handleDateInteraction = (event: React.SyntheticEvent<HTMLInputElement>) => {
+    resetDateYearTyping(dateTypingRef.current, event.currentTarget.value);
+  };
+  const handleDateKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.ctrlKey || event.metaKey || event.altKey) return;
+    if (blockExtraDateYearDigit(dateTypingRef.current, event.key)) event.preventDefault();
   };
   const handleHourBlur = (event: React.FocusEvent<HTMLInputElement>) => {
     const hour = event.currentTarget.value.replace(/\D/gu, "").slice(0, 2);
@@ -58,31 +92,38 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
   };
   const handleAM = () => updateParts({ period: "AM" });
   const handlePM = () => updateParts({ period: "PM" });
-  const handleUseCurrentTime = () => {
-    const now = new Date();
-    updateParts({
-      hour: String(now.getHours() % 12 || 12).padStart(2, "0"),
-      minute: String(now.getMinutes()).padStart(2, "0"),
-      period: now.getHours() < 12 ? "AM" : "PM",
-    });
-  };
+  const handleClearTime = () => updateParts({ hour: "", minute: "" });
 
   return (
     <fieldset className="min-w-0">
       <legend className="field-label">Date and time</legend>
       <div className="when-picker">
-        <label className="when-picker-field">
-          <span className="when-picker-caption">Date</span>
+        <div className="when-picker-field">
+          <label htmlFor={dateInputId} className="when-picker-caption">
+            Date
+          </label>
           <input
+            id={dateInputId}
             type="date"
+            min="0001-01-01"
+            max="9999-12-31"
             value={parts.date}
             onChange={handleDateChange}
+            onFocus={handleDateInteraction}
+            onPointerDown={handleDateInteraction}
+            onKeyDown={handleDateKeyDown}
             onBlur={field.onBlur}
-            aria-invalid={fieldState.error ? true : undefined}
+            aria-invalid={errors.date ? true : undefined}
+            aria-describedby={errors.date ? dateErrorId : undefined}
             data-empty={!parts.date ? true : undefined}
             className="form-input when-picker-date"
           />
-        </label>
+          {errors.date && (
+            <p id={dateErrorId} role="alert" className="text-xs money-negative">
+              {errors.date}
+            </p>
+          )}
+        </div>
         <div className="when-picker-field">
           <div className="flex items-center justify-between gap-2">
             <span className="when-picker-caption" id={timeLabelId}>
@@ -90,13 +131,18 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
             </span>
             <button
               type="button"
-              onClick={handleUseCurrentTime}
+              onClick={handleClearTime}
               className="text-xs font-bold text-[var(--brand-ink)] hover:underline"
             >
-              Use current time
+              Clear time
             </button>
           </div>
-          <div className="when-picker-time" role="group" aria-labelledby={timeLabelId}>
+          <div
+            className="when-picker-time"
+            role="group"
+            aria-labelledby={timeLabelId}
+            aria-describedby={errors.time ? timeErrorId : undefined}
+          >
             <input
               ref={hourRef}
               type="text"
@@ -105,7 +151,8 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
               onChange={handleHourChange}
               onBlur={handleHourBlur}
               aria-label="Hour"
-              aria-invalid={fieldState.error ? true : undefined}
+              aria-invalid={errors.time ? true : undefined}
+              aria-describedby={errors.time ? timeErrorId : undefined}
               placeholder="hh"
               className="when-picker-number"
             />
@@ -121,7 +168,8 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
               onKeyDown={handleMinuteKeyDown}
               onBlur={handleMinuteBlur}
               aria-label="Minute"
-              aria-invalid={fieldState.error ? true : undefined}
+              aria-invalid={errors.time ? true : undefined}
+              aria-describedby={errors.time ? timeErrorId : undefined}
               placeholder="mm"
               className="when-picker-number"
             />
@@ -144,13 +192,13 @@ const WhenPicker = ({ defaultDate }: PropsType) => {
               </button>
             </span>
           </div>
+          {errors.time && (
+            <p id={timeErrorId} role="alert" className="text-xs money-negative">
+              {errors.time}
+            </p>
+          )}
         </div>
       </div>
-      {fieldState.error && (
-        <p role="alert" className="mt-1 text-xs money-negative">
-          {fieldState.error.message}
-        </p>
-      )}
     </fieldset>
   );
 };

@@ -9,6 +9,7 @@ const required = (message: string) => z.string().trim().min(1, message);
 
 export const expenseFieldsSchema = z.object({
   expenseName: required("Expense name is required"),
+  description: z.string().trim().optional(),
   amount: required("Amount is required"),
   when: required("Date and time are required"),
   categoryId: required("Choose a category"),

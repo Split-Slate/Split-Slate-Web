@@ -26,6 +26,7 @@ export const expenseFormValues = (
   currency: string,
 ): ExpenseFormValues => ({
   expenseName: expense.expenseName,
+  description: expense.description ?? "",
   amount: moneyToDecimal(
     expense.transactions.paid.reduce((sum, row) => sum + row.amount, 0),
     currency,

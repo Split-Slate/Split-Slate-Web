@@ -60,6 +60,28 @@ afterEach(async () => {
 });
 
 describe("addExpense", () => {
+  it("stores trimmed multiline descriptions without changing the IndexedDB version", async () => {
+    const version = db.verno;
+    const data = input();
+    data.values.description = " \t Lunch  and drinks\n\nInvoice: 123 🥘\u00a0 ";
+    const expense = await useStore.getState().addExpense(data);
+    expect(expense.description).toBe("Lunch  and drinks\n\nInvoice: 123 🥘");
+    expect(await db.expenses.get(expense.expenseId)).toEqual(expense);
+    useStore.setState({ expenses: [] });
+    await useStore.getState().init();
+    expect(useStore.getState().expenses).toEqual([expense]);
+    expect(db.verno).toBe(version);
+  });
+  it.each([undefined, "", " \t\n\u00a0"])(
+    "omits missing or whitespace-only descriptions %j from persisted records",
+    async (description) => {
+      const data = input();
+      data.values.description = description;
+      const expense = await useStore.getState().addExpense(data);
+      expect(expense).not.toHaveProperty("description");
+      expect(await db.expenses.get(expense.expenseId)).not.toHaveProperty("description");
+    },
+  );
   it("persists a balanced expense, updates state, and survives hydration", async () => {
     const expense = await useStore.getState().addExpense(input());
     expect(expense.expenseName).toBe("Lunch");
@@ -216,6 +238,41 @@ describe("addExpense", () => {
 });
 
 describe("updateExpense", () => {
+  it("adds, preserves, updates, and clears descriptions on a legacy expense", async () => {
+    const original = await useStore.getState().addExpense(input());
+    expect(original).not.toHaveProperty("description");
+    const data = input();
+    data.values.description = " Lunch  details\nInvoice: 123 ";
+    const described = await useStore.getState().updateExpense(original.expenseId, data);
+    expect(described).toEqual({ ...original, description: "Lunch  details\nInvoice: 123" });
+    const values = expenseFormValues(
+      described,
+      [
+        { id: "a", name: "Amy" },
+        { id: "b", name: "Bea" },
+      ],
+      "INR",
+    );
+    values.expenseName = "Renamed lunch";
+    const renamed = await useStore
+      .getState()
+      .updateExpense(original.expenseId, { ...data, values });
+    expect(renamed).toEqual({ ...described, expenseName: "Renamed lunch" });
+    values.description = " Updated  details\nAnother line ";
+    const updated = await useStore
+      .getState()
+      .updateExpense(original.expenseId, { ...data, values });
+    expect(updated).toEqual({ ...renamed, description: "Updated  details\nAnother line" });
+    values.description = "\u00a0 \t\n";
+    const cleared = await useStore
+      .getState()
+      .updateExpense(original.expenseId, { ...data, values });
+    expect(cleared).toEqual({ ...original, expenseName: "Renamed lunch" });
+    expect(cleared).not.toHaveProperty("description");
+    expect(await db.expenses.get(original.expenseId)).toEqual(cleared);
+    await useStore.getState().init();
+    expect(useStore.getState().expenses).toEqual([cleared]);
+  });
   it.each([
     ["shares", ["9007199254.740991", "0.000001"]],
     ["shares", ["8589934592.000001", "8589934592.000002"]],
@@ -435,7 +492,9 @@ const addReceipts = async (expenseId: string) => {
 
 describe("updateExpenseDetails", () => {
   it("quick-saves category and tags without changing transactions, timestamps, or ratios", async () => {
-    const original = await useStore.getState().addExpense(input());
+    const data = input();
+    data.values.description = "Keep these details\nAcross quick edits";
+    const original = await useStore.getState().addExpense(data);
     await db.categories.add({
       id: "travel",
       groupId: "g",

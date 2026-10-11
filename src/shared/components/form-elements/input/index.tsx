@@ -1,6 +1,14 @@
-import type { ChangeEvent, KeyboardEvent } from "react";
+import type { ChangeEvent, FocusEvent, KeyboardEvent, PointerEvent } from "react";
 import { useLayoutEffect, useRef } from "react";
 import { useController, useFormContext } from "react-hook-form";
+
+import type { DateYearTypingState } from "@/shared/utils/date-time-input";
+import {
+  blockExtraDateYearDigit,
+  limitDateYear,
+  resetDateYearTyping,
+  trackDateYearTyping,
+} from "@/shared/utils/date-time-input";
 
 interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
   name: string;
@@ -31,6 +39,12 @@ const Input = ({
   const { field, fieldState } = useController({ name, control });
   const inputRef = useRef<HTMLInputElement | null>(null);
   const pendingSelection = useRef<InputSelection | null>(null);
+  const dateTypingRef = useRef<DateYearTypingState>({
+    value: String(field.value ?? ""),
+    yearDigits: "",
+    digits: "",
+    lastKey: "",
+  });
 
   useLayoutEffect(() => {
     const input = inputRef.current;
@@ -47,7 +61,10 @@ const Input = ({
   const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.currentTarget;
     const raw = input.value;
-    const value = sanitize ? sanitize(raw) : raw;
+    const cleaned = sanitize ? sanitize(raw) : raw;
+    const value = props.type === "date" ? limitDateYear(cleaned) : cleaned;
+    if (props.type === "date") trackDateYearTyping(dateTypingRef.current, value);
+    if (props.type === "date" && input.value !== value) input.value = value;
     if (formatValue) {
       const formatted = formatValue(value);
       const getPosition = (offset: number) => {
@@ -71,11 +88,20 @@ const Input = ({
       const selection = pendingSelection.current;
       if (selection) input.setSelectionRange(selection.start, selection.end, selection.direction);
     }
-    field.onChange(sanitize || formatValue ? value : event);
+    field.onChange(sanitize || formatValue || props.type === "date" ? value : event);
     onValueChange?.(value);
   };
   const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     props.onKeyDown?.(event);
+    if (
+      props.type === "date" &&
+      !event.defaultPrevented &&
+      !event.ctrlKey &&
+      !event.metaKey &&
+      !event.altKey &&
+      blockExtraDateYearDigit(dateTypingRef.current, event.key)
+    )
+      event.preventDefault();
     if (
       event.defaultPrevented ||
       !formatValue ||
@@ -96,16 +122,28 @@ const Input = ({
     const position = event.key === "Backspace" ? start - 1 : start + 1;
     input.setSelectionRange(position, position);
   };
+  const handleDateFocus = (event: FocusEvent<HTMLInputElement>) => {
+    resetDateYearTyping(dateTypingRef.current, event.currentTarget.value);
+    props.onFocus?.(event);
+  };
+  const handleDatePointerDown = (event: PointerEvent<HTMLInputElement>) => {
+    resetDateYearTyping(dateTypingRef.current, event.currentTarget.value);
+    props.onPointerDown?.(event);
+  };
 
   const input = (
     <input
       {...props}
       {...field}
+      min={props.min ?? (props.type === "date" ? "0001-01-01" : undefined)}
+      max={props.max ?? (props.type === "date" ? "9999-12-31" : undefined)}
       ref={handleRef}
       value={formatValue ? formatValue(String(field.value ?? "")) : field.value}
       disabled={props.disabled ?? field.disabled}
       onChange={handleChange}
       onKeyDown={handleKeyDown}
+      onFocus={props.type === "date" ? handleDateFocus : props.onFocus}
+      onPointerDown={props.type === "date" ? handleDatePointerDown : props.onPointerDown}
       aria-invalid={fieldState.error ? true : undefined}
       data-empty={props.type === "date" && !field.value ? true : undefined}
       className={`form-input ${suffix ? "!pr-6" : ""} ${className}`}

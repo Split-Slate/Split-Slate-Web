@@ -49,6 +49,7 @@ export const prepareExpense = async (input: CreateExpenseInput, existing?: Expen
     expenseId: existing?.expenseId ?? uuid(),
     groupId: group.id,
     expenseName: values.expenseName,
+    ...(values.description ? { description: values.description } : {}),
     createdBy: creatorId,
     createdAt: existing?.createdAt ?? Date.now(),
     // A name-only edit must not truncate an existing timestamp's seconds/milliseconds.

@@ -56,9 +56,11 @@ afterEach(async () => {
 describe("readGroupExportSource", () => {
   it("reads one consistent persisted source with blobs outside portable data", async () => {
     const fixture = createExportSource({ withAttachments: true });
+    fixture.expenses[0].description = "Description from persisted data\nWith another line";
     await seedSource(fixture);
     const source = await readGroupExportSource(fixture.group.id);
     expect(source.group).toEqual(fixture.group);
+    expect(source.expenses[0].description).toBe(fixture.expenses[0].description);
     expect(source.people).toEqual(fixture.people);
     expect(source.attachmentFiles[0].blob).toBeInstanceOf(Blob);
   });
@@ -87,6 +89,25 @@ describe("readGroupExportSource", () => {
 });
 
 describe("importGroupTransfer", () => {
+  it("imports descriptions with fresh expense IDs while retaining description-free expenses", async () => {
+    const fixture = createExportSource({ expenseCount: 2 });
+    fixture.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';
+    const source = await buildGroupTransfer(fixture, {
+      ...GROUP_ONLY_SELECTION,
+      expenses: true,
+    });
+    const result = await importGroupTransfer({
+      source,
+      identity: { type: "member", memberId: source.bundle.members[0].id },
+    });
+    const imported = await db.expenses.where("groupId").equals(result.group.id).toArray();
+    const described = imported.find((expense) => expense.expenseName === "Expense 1")!;
+    expect(described.expenseId).not.toBe(fixture.expenses[0].expenseId);
+    expect(described.description).toBe(fixture.expenses[0].description);
+    expect(imported.find((expense) => expense.expenseName === "Expense 2")).not.toHaveProperty(
+      "description",
+    );
+  });
   it("imports payments with fresh IDs, remapped members, and optional tags", async () => {
     const source = createExportSource({ withSettlements: true });
     const bundle = (

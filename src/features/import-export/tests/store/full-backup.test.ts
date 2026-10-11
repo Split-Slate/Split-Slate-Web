@@ -53,6 +53,27 @@ const capturedBackup = async (): Promise<FullBackupSnapshot> =>
   parseFullBackupZip(await createFullBackupZip(await readFullBackupSource(), "dark"));
 
 describe("whole-app backup persistence", () => {
+  it("restores descriptions to IndexedDB and hydration while preserving original expense IDs", async () => {
+    const expense = (await db.expenses.toCollection().first())!;
+    const description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';
+    await db.expenses.update(expense.expenseId, { description });
+    const snapshot = await capturedBackup();
+    await db.expenses.update(expense.expenseId, { description: "Newer description" });
+    await restoreFullBackup(snapshot);
+    expect(await db.expenses.get(expense.expenseId)).toEqual({ ...expense, description });
+    await useStore.getState().init();
+    expect(useStore.getState().expenses).toEqual([{ ...expense, description }]);
+  });
+
+  it("replaces newer descriptions with historical description-free records", async () => {
+    const expense = (await db.expenses.toCollection().first())!;
+    const snapshot = await capturedBackup();
+    await db.expenses.update(expense.expenseId, { description: "Not in the old backup" });
+    await restoreFullBackup(snapshot);
+    expect(await db.expenses.get(expense.expenseId)).toEqual(expense);
+    expect(await db.expenses.get(expense.expenseId)).not.toHaveProperty("description");
+  });
+
   it("replaces all old data with the snapshot while preserving IDs and receipt bytes", async () => {
     await useStore.getState().init();
     const sourceGroup = createExportSource({ withSettlements: true });

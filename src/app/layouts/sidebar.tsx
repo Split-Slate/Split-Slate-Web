@@ -5,6 +5,7 @@ import GroupListItem from "@/features/groups-list/components/group-list-item";
 
 import { useStore } from "@/shared/configs/store";
 import { useViewport } from "@/shared/hooks/use-viewport";
+import { sortGroupsByRecentExpense } from "@/shared/utils/group-order";
 
 import { SIDEBAR_NAV } from "@/app/layouts/nav-config";
 import AppLogo from "@/shared/ui/app-logo";
@@ -82,12 +83,9 @@ const AppSidebar = () => {
             </Link>
           </div>
           <div className="mt-3 flex-1 overflow-y-auto space-y-1">
-            {groups
-              .slice()
-              .sort((a, b) => b.createdAt - a.createdAt)
-              .map((item) => (
-                <GroupListItem key={item.id} groupId={item.id} />
-              ))}
+            {sortGroupsByRecentExpense(groups, expenses).map((item) => (
+              <GroupListItem key={item.id} groupId={item.id} />
+            ))}
             {groups.length === 0 && <p className="soft-caption px-3 py-3">No groups yet</p>}
           </div>
         </>

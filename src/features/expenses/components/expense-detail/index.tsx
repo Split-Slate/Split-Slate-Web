@@ -321,6 +321,19 @@ const ExpenseDetail = () => {
         {" · "}
         {formatDisplayDate(expense.createdAt)}
       </p>
+      {expense.description && (
+        <section
+          aria-labelledby="expense-description-heading"
+          className="surface surface-pad flex min-w-0 flex-col gap-3"
+        >
+          <h3 id="expense-description-heading" className="section-title">
+            Description
+          </h3>
+          <p className="whitespace-pre-wrap [overflow-wrap:anywhere] text-sm leading-relaxed">
+            {expense.description}
+          </p>
+        </section>
+      )}
       <div className="grid grid-cols-1 items-start gap-3 md:grid-cols-2">
         <section className="surface surface-pad flex min-w-0 flex-col gap-2" aria-label="Paid by">
           <h3 className="section-title">Paid by</h3>

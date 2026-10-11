@@ -46,6 +46,41 @@ const backupSource = (): FullBackupSource => {
 };
 
 describe("whole-app backup ZIP", () => {
+  it("preserves descriptions alongside older expenses without descriptions", async () => {
+    const source = backupSource();
+    source.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';
+    const restored = await parseFullBackupZip(await createFullBackupZip(source, "light"));
+    expect(restored.data.expenses).toEqual(source.expenses);
+    expect(restored.data.expenses[0].description).toBe(source.expenses[0].description);
+    expect(restored.data.expenses[1]).not.toHaveProperty("description");
+  });
+
+  it("restores description-free backups without inventing the field", async () => {
+    const restored = await parseFullBackupZip(await createFullBackupZip(backupSource(), "light"));
+    for (const expense of restored.data.expenses) {
+      expect(expense).not.toHaveProperty("description");
+    }
+  });
+
+  it.each([null, 123, {}, []])(
+    "rejects a validly hashed non-string description %j",
+    async (description) => {
+      const files = unzipSync(await createFullBackupZip(backupSource(), "light"));
+      const data = JSON.parse(strFromU8(files["backup.json"]));
+      data.expenses[0].description = description;
+      const dataBytes = strToU8(JSON.stringify(data));
+      files["backup.json"] = dataBytes;
+      files["manifest.json"] = strToU8(
+        JSON.stringify({
+          format: "split-slate-full-backup",
+          version: 1,
+          dataSha256: await digestBytes(dataBytes),
+        }),
+      );
+      await expect(parseFullBackupZip(zipSync(files))).rejects.toThrow();
+    },
+  );
+
   it("round-trips every table, receipts, identity, and theme in one archive", async () => {
     const source = backupSource();
     const zip = await createFullBackupZip(source, "dark");

@@ -51,6 +51,16 @@ than adding a history entry per keystroke.
 - Date values must be real calendar dates and the end cannot precede the start.
 - Amount values use fixed two-decimal precision and a safe-integer hundredths limit; the maximum
   cannot be less than the minimum.
+- Both amount bounds use the shared `MoneyInput`: eight whole digits/two decimals on typed/pasted
+  entry, digits and one decimal point only, and default three-digit comma grouping. Form values and
+  URL parameters remain raw decimal text, never grouped strings. Historical larger bounds from a
+  URL are formatted without clamping on load; invalid URL drafts remain visible for correction.
+  User entry limiting does not weaken schema validation or change the stored expense range.
+  Caps/grouping/caret/raw-URL/reload browser coverage passed on desktop/mobile after test-only
+  selector fixes: validation text inside the wrapping label changes its exact accessible name,
+  so these in-progress-invalid tests use stable input names. Historical URL bounds passed in the
+  original batch. See [[testing-strategy]] for the scoped batch and focused rerun, and
+  [[money-representation-and-rounding]] for mandatory monetary component/formatter reuse.
 - Invalid bounds show field errors and suppress results until corrected.
 - Clearing all filters returns to the full unfiltered expense list.
 - Empty source and no-match states have distinct copy. The matching-versus-total result count is
@@ -109,20 +119,26 @@ spacing around the filter toolbar are painted with the solid page background so 
 not show through. At every width the ledger uses natural height with no inner vertical scrolling
 or ten-entry cap; the main pane reaches the final expense/payment row. Short filtered lists do not
 get a fixed-height empty area. On mobile, search fills its own row, with equal-width Sort and
-Filters buttons below. Below 768px, Filters opens the shared native modal dialog with a title/close
-control, independently scrolling fields, and a fixed Done/Clear all footer. Selections update the
-URL and results immediately; Done, Close, and Escape dismiss without reverting them. Height-only
-viewport changes keep the modal open; crossing the mobile/tablet boundary closes it. Tablet/desktop
-Filters retains its anchored popover. Sort remains a portaled popover at every width, tracks its
-anchor while scrolling, and uses the entire toolbar as its mobile anchor.
-Both popovers also update after filter-value renders and observed form/group-page size changes.
+Filters buttons below. Below 768px, Filters and Sort use the shared native modal dialog with
+title/close controls, independently scrolling fields, and a fixed footer. Filters retains
+Done/Clear all; Sort has Done and closes immediately after selecting an option. Selections update
+the URL and results immediately; Done, Close, and Escape dismiss without reverting them. Both
+controls restore their trigger focus on dismissal. Height-only viewport changes keep the modal
+open; crossing the mobile/tablet boundary closes both controls. Their shared
+`expense-controls-dialog` class caps height at 75% of the visible dialog viewport while preserving
+the stricter top/bottom clearance. Tablet/desktop retains anchored popovers, with Sort widened to
+560px maximum. These latest Sort/dialog refinements have no fresh verification.
+Both desktop popovers update after filter-value renders and observed form/group-page size changes.
 Filtering or validation can remove insights or resize the sticky toolbar without a window event;
 re-anchoring prevents a stale fixed panel from overlapping and blocking its own trigger.
 
 ## Sorting
 
-The single-choice sort popover has Date (newest first by default, oldest first), Price (high to low,
-low to high), Name (A–Z, Z–A), and Group by (same category, same tags) sections. Price is the sum of
+The single-choice sort controls have Expense date (`when`: newest first by default, oldest first),
+Added date (`createdAt`: newest first, oldest first), Price (high to low, low to high), Name
+(A–Z, Z–A), and Group by (same category, same tags) sections. The grid places ordinary sections
+in two columns and Group by across both. Added-date URL values are `added-newest` and `added-oldest`;
+expense-only added-date ties use newest `when`, then expense ID. Price is the sum of
 all payer amounts in fixed hundredths, not a single payer's contribution. Name sorting is
 case-insensitive. Category grouping orders category names alphabetically; tag grouping compares
 the entire set of tag IDs, independent of the order they were assigned, then orders those sets by
@@ -134,10 +150,12 @@ nondefault selection uses the `sort` query parameter; unknown values fall back t
 survives reloads and expense-detail navigation. Clear all filters retains the selected sort;
 returning to newest removes `sort` from the URL.
 
-External payments join the timeline only for unfiltered newest/oldest date sorts. The merged
-timeline is date-sorted only in that mode; otherwise expense entries retain the selected expense
-sort instead of being re-sorted by date. The 2026-10-08 pre-scaling full browser suite verified all
-eight sort modes on desktop/mobile after correcting that timeline merge. Unfiltered desktop status
+External payments join the timeline only for unfiltered expense-date or added-date sorts. The
+merged timeline uses `when` or `createdAt`, respectively, in the selected direction; otherwise
+expense entries retain the selected expense sort instead of being re-sorted by date.
+The 2026-10-08 pre-scaling full browser suite verified the previous eight sort modes on
+desktop/mobile after correcting that timeline merge, not the two new added-date modes or the
+current mobile Sort dialog. Unfiltered desktop status
 includes the payment count, including zero; filtered results remain expense-only. See
 [[settlement-recording]] and [[testing-strategy]].
 
@@ -146,7 +164,7 @@ includes the payment count, including zero; filtered results remain expense-only
 `src/features/expenses/tests/utils/expense-filters.test.ts` directly covers all matching modes,
 AND/OR behavior, local inclusive dates, fixed precision, safe amount bounds, active-field
 counting, empty inputs, invalid ranges, and removal of unavailable option IDs.
-It also covers all sort modes, exact multi-tag grouping, URL round-tripping, unknown sort values,
+It covers the previous eight sort modes, exact multi-tag grouping, URL round-tripping, unknown sort values,
 and source immutability.
 
 `src/features/group-detail/tests/utils/expense-insights.test.ts` checks multi-payer paid/owed/net
@@ -155,8 +173,11 @@ allocations, empty and single-expense results, category ranking, and missing mem
 mobile, verifies validation and clearing, confirms state survives child-route navigation, and
 deletes a selected tag while the list is unmounted. When the list remounts, selected category, tag,
 payer, and involved-member IDs that are no longer available are removed automatically.
-It also checks the sectioned single-choice sort popover, all eight sort orders, retention
-through clearing, reload, and detail navigation, plus filter-aware insights.
+It includes checks for the previous sectioned single-choice sort popover, eight sort orders,
+retention through clearing, reload, and detail navigation, plus filter-aware insights. The current
+test still expects a section named Date instead of Expense date and needs follow-up for mobile
+Sort and added-date modes. These test changes and fresh execution require separate approval;
+no tests were changed or run during conflict reconciliation. See [[testing-strategy]].
 New chip cases cover every selected option, independent removal, range clearing, invalid/open-ended
 values, inactive Analytics selections, stale-option pruning, reloads, long labels, single-row
 horizontal scrolling, scrollbar clearance, compact typography/padding, 24px minimum controls, and

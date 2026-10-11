@@ -131,6 +131,17 @@ test("records, displays, edits, and deletes a tagged group payment without incre
   const editDialog = page.getByRole("dialog", { name: "Edit payment" });
   await expect(editDialog.getByLabel("Date", { exact: true })).toHaveValue("2026-10-01");
   await expect(editDialog.getByRole("textbox", { name: "Hour" })).toHaveValue("08");
+  await expect(editDialog.getByRole("textbox", { name: "Minute" })).toHaveValue("05");
+  await editDialog.getByRole("button", { name: "Clear time", exact: true }).click();
+  await expect(editDialog.getByRole("textbox", { name: "Hour" })).toBeEmpty();
+  await expect(editDialog.getByRole("textbox", { name: "Minute" })).toBeEmpty();
+  await expect(editDialog.getByLabel("Date", { exact: true })).toHaveValue("2026-10-01");
+  await editDialog.getByRole("button", { name: "Save payment", exact: true }).click();
+  await expect(editDialog.getByRole("alert")).toContainText("Time is required");
+  await expect(editDialog.getByRole("textbox", { name: "Hour" })).toBeEmpty();
+  await expect(editDialog.getByRole("textbox", { name: "Minute" })).toBeEmpty();
+  await editDialog.getByRole("textbox", { name: "Hour" }).fill("08");
+  await editDialog.getByRole("textbox", { name: "Minute" }).fill("05");
   await editDialog.getByLabel("Amount (INR)").fill("60.00");
   await expect(editDialog.getByText(/may reverse who owes whom/u)).toBeVisible();
   await editDialog.getByRole("button", { name: "Save payment" }).click();
@@ -142,6 +153,219 @@ test("records, displays, edits, and deletes a tagged group payment without incre
   await page.getByRole("button", { name: "Delete payment" }).click();
   await expect(page.getByText("No payments recorded in this group yet.")).toBeVisible();
   await expect(page.getByRole("region", { name: "Suggested payments" })).toContainText("₹50.00");
+});
+
+for (const action of ["Add payment", "Settle up", "Edit"] as const) {
+  test(`formats and limits payment amounts in ${action}`, async ({ page }) => {
+    if (action === "Edit") {
+      await page.evaluate(async () => {
+        const path = "/src/shared/configs/db.ts";
+        const { db } = (await import(/* @vite-ignore */ path)) as typeof DbModule;
+        await db.settlements.put({
+          id: "payment",
+          groupId: "trip",
+          kind: "payment",
+          fromMemberId: "b",
+          toMemberId: "a",
+          recordedBy: "a",
+          amount: 123_450,
+          when: new Date("2026-10-01T20:05").getTime(),
+          createdAt: 1,
+          tagIds: [],
+        });
+      });
+      await page.reload();
+      await page
+        .getByRole("list", { name: "Recorded payments" })
+        .getByRole("button", { name: "Edit", exact: true })
+        .click();
+    } else {
+      await page.getByRole("button", { name: action, exact: true }).click();
+    }
+    const dialog = page.getByRole("dialog", {
+      name: action === "Edit" ? "Edit payment" : "Record payment",
+      exact: true,
+    });
+    const amount = dialog.getByLabel("Amount (INR)", { exact: true });
+    await expect(amount).toHaveAttribute("type", "text");
+    await expect(amount).toHaveAttribute("inputmode", "decimal");
+    if (action === "Edit") await expect(amount).toHaveValue("1,234.50");
+    if (action === "Add payment") {
+      await dialog.getByRole("button", { name: "Paid by: Choose member" }).click();
+      await dialog
+        .getByRole("list", { name: "Paid by options" })
+        .getByRole("button", { name: "Bea", exact: true })
+        .click();
+      await dialog.getByRole("button", { name: "Received by: Choose member" }).click();
+      await dialog
+        .getByRole("list", { name: "Received by options" })
+        .getByRole("button", { name: "Amy", exact: true })
+        .click();
+    }
+    await amount.fill("");
+    await amount.pressSequentially("abc+-eE! 12.50");
+    await expect(amount).toHaveValue("12.50");
+    await amount.fill("letters only!");
+    await expect(amount).toBeEmpty();
+    await amount.pressSequentially("99999999999.999");
+    await expect(amount).toHaveValue("99,999,999.99");
+    await expect(amount.locator("..").getByRole("alert")).toHaveCount(0);
+    await amount.fill("");
+    await page.keyboard.insertText("INR -123,456,789.1234e+");
+    await expect(amount).toHaveValue("12,345,678.12");
+    await amount.press("End");
+    await amount.press("Backspace");
+    await expect(amount).toHaveValue("12,345,678.1");
+    await amount.pressSequentially("5");
+    await expect(amount).toHaveValue("12,345,678.15");
+    await amount.fill("1234.");
+    await expect(amount).toHaveValue("1,234.");
+    await amount.pressSequentially("00");
+    await expect(amount).toHaveValue("1,234.00");
+    await amount.fill("1234");
+    await amount.evaluate((input: HTMLInputElement) => input.setSelectionRange(2, 2));
+    await amount.press("Backspace");
+    await expect(amount).toHaveValue("234");
+    await amount.fill("1234");
+    await amount.evaluate((input: HTMLInputElement) => input.setSelectionRange(1, 1));
+    await amount.press("Delete");
+    await expect(amount).toHaveValue("134");
+    await amount.fill("1234567.899");
+    await expect(amount).toHaveValue("1,234,567.89");
+    await dialog
+      .getByRole("button", {
+        name: action === "Edit" ? "Save payment" : "Record payment",
+        exact: true,
+      })
+      .click();
+    await expect(dialog).toHaveCount(0);
+    const stored = await page.evaluate(async () => {
+      const path = "/src/shared/configs/db.ts";
+      const { db } = (await import(/* @vite-ignore */ path)) as typeof DbModule;
+      return (await db.settlements.toArray())[0].amount;
+    });
+    expect(stored).toBe(123_456_789);
+    await page
+      .getByRole("list", { name: "Recorded payments" })
+      .getByRole("button", { name: "Edit", exact: true })
+      .click();
+    await expect(page.getByRole("dialog").getByLabel("Amount (INR)")).toHaveValue("1,234,567.89");
+  });
+}
+
+test("uses the same formatting and amount limits for non-INR payments", async ({ page }) => {
+  await page.evaluate(async () => {
+    const path = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ path)) as typeof DbModule;
+    await db.groups.update("trip", { currency: "USD" });
+  });
+  await page.reload();
+  await page.getByRole("button", { name: "Settle up", exact: true }).click();
+  const amount = page.getByRole("dialog").getByLabel("Amount (USD)", { exact: true });
+  await amount.fill("1234567.89");
+  await expect(amount).toHaveValue("1,234,567.89");
+  await amount.fill("123456789.999");
+  await expect(amount).toHaveValue("12,345,678.99");
+  await amount.pressSequentially("9");
+  await expect(amount).toHaveValue("12,345,678.99");
+});
+
+test("silently limits the payment date year to four digits and allows reentry", async ({
+  page,
+}) => {
+  await page.getByRole("button", { name: "Add payment", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Record payment", exact: true });
+  const date = dialog.getByLabel("Date", { exact: true });
+  await expect(date).toHaveAttribute("max", "9999-12-31");
+  await date.fill("2026-10-11");
+  for (const value of ["20267-10-11", "20268-10-11", "202678-10-11"]) {
+    await date.fill(value);
+    await expect(date).toHaveValue("2026-10-11");
+    await expect(dialog.getByRole("alert")).toHaveCount(0);
+  }
+  await date.fill("");
+  await expect(date).toBeEmpty();
+  await date.fill("2030-10-11");
+  await expect(date).toHaveValue("2030-10-11");
+  await date.press("ArrowRight");
+  await date.press("ArrowRight");
+  await date.press("Backspace");
+  await date.pressSequentially("2026789");
+  await expect(date).toHaveValue("2026-10-11");
+  await date.press("Backspace");
+  await date.pressSequentially("2030");
+  await expect(date).toHaveValue("2030-10-11");
+});
+
+test("places date and time errors under only their respective payment fields", async ({ page }) => {
+  await page.getByRole("button", { name: "Settle up", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Record payment", exact: true });
+  const picker = dialog.getByRole("group", { name: "Date and time" });
+  const dateField = picker.locator(".when-picker-field").first();
+  const timeField = picker.locator(".when-picker-field").last();
+  const date = dialog.getByLabel("Date", { exact: true });
+  const hour = dialog.getByRole("textbox", { name: "Hour", exact: true });
+  const minute = dialog.getByRole("textbox", { name: "Minute", exact: true });
+  const save = dialog.getByRole("button", { name: "Record payment", exact: true });
+  await date.fill("");
+  await save.click();
+  await expect(dateField.getByRole("alert")).toHaveText("Date is required");
+  await expect(timeField.getByRole("alert")).toHaveCount(0);
+  await expect(date).toHaveAttribute("aria-invalid", "true");
+  await expect(date).toHaveAccessibleDescription("Date is required");
+  await expect(hour).not.toHaveAttribute("aria-invalid", "true");
+  await expect(minute).not.toHaveAttribute("aria-invalid", "true");
+
+  await date.fill("2026-10-11");
+  await minute.fill("99");
+  await save.click();
+  await expect(dateField.getByRole("alert")).toHaveCount(0);
+  await expect(timeField.getByRole("alert")).toHaveText("Enter a valid time");
+  await expect(date).not.toHaveAttribute("aria-invalid", "true");
+  await expect(hour).toHaveAccessibleDescription("Enter a valid time");
+  await expect(minute).toHaveAttribute("aria-invalid", "true");
+  await expect(minute).toHaveAccessibleDescription("Enter a valid time");
+
+  await date.fill("");
+  await picker.getByRole("button", { name: "Clear time", exact: true }).click();
+  await save.click();
+  await expect(dateField.getByRole("alert")).toHaveText("Date is required");
+  await expect(timeField.getByRole("alert")).toHaveText("Time is required");
+  await expect(picker.getByRole("alert")).toHaveCount(2);
+  for (const width of [320, 820, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    for (const field of [dateField, timeField]) {
+      const error = (await field.getByRole("alert").boundingBox())!;
+      const input = (await field.locator(".when-picker-date, .when-picker-time").boundingBox())!;
+      expect(error.y).toBeGreaterThanOrEqual(input.y + input.height);
+    }
+  }
+  await date.fill("2026-10-11");
+  await expect(dateField.getByRole("alert")).toHaveCount(0);
+  await expect(timeField.getByRole("alert")).toHaveText("Time is required");
+  await hour.fill("09");
+  await minute.fill("15");
+  await expect(picker.getByRole("alert")).toHaveCount(0);
+  await save.click();
+  await expect(dialog).toHaveCount(0);
+});
+
+test("matches bold date and time typography in the payment picker", async ({ page }) => {
+  await page.getByRole("button", { name: "Add payment", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Record payment", exact: true });
+  const date = dialog.getByLabel("Date", { exact: true });
+  const numbers = dialog.locator(".when-picker-number");
+  for (const width of [320, 820, 1440]) {
+    await page.setViewportSize({ width, height: 800 });
+    await expect(date).toHaveCSS("font-weight", "800");
+    for (const property of ["font-family", "font-size", "font-weight"]) {
+      const expected = await date.evaluate(
+        (element, name) => getComputedStyle(element).getPropertyValue(name),
+        property,
+      );
+      for (const number of await numbers.all()) await expect(number).toHaveCSS(property, expected);
+    }
+  }
 });
 
 for (const width of [320, 820, 1440]) {
@@ -187,17 +411,67 @@ for (const width of [320, 820, 1440]) {
 }
 
 test("prefills settle up from a suggested transfer", async ({ page }) => {
+  const timestamp = new Date("2026-10-11T13:07:00.000Z");
+  await page.clock.setFixedTime(timestamp);
   await page.getByRole("button", { name: "Settle up" }).click();
   const dialog = page.getByRole("dialog", { name: "Record payment" });
   await expect(dialog.getByRole("button", { name: "Paid by: Bea" })).toBeVisible();
   await expect(dialog.getByRole("button", { name: "Received by: Amy" })).toBeVisible();
   await expect(dialog.getByLabel("Amount (INR)")).toHaveValue("50.00");
-  await expect(dialog.getByRole("textbox", { name: "Hour" })).toHaveValue("");
-  await dialog.getByRole("button", { name: "Use current time" }).click();
+  await expect(dialog.getByLabel("Date", { exact: true })).toHaveValue("2026-10-11");
+  await expect(dialog.getByRole("textbox", { name: "Hour" })).toHaveValue("06");
+  await expect(dialog.getByRole("textbox", { name: "Minute" })).toHaveValue("37");
+  await expect(dialog.getByRole("button", { name: "PM", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(dialog.getByRole("button", { name: "Clear time", exact: true })).toBeVisible();
   await dialog.getByRole("button", { name: "Record payment" }).click();
+  await expect(dialog).toHaveCount(0);
   await expect(page.getByRole("region", { name: "Suggested payments" })).toContainText(
     "No payments needed",
   );
+  const savedTime = await page.evaluate(async () => {
+    const path = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ path)) as typeof DbModule;
+    return (await db.settlements.toArray())[0].when;
+  });
+  expect(savedTime).toBe(timestamp.getTime());
+});
+
+test("prefills new payment time and clears it without changing the selected date", async ({
+  page,
+}) => {
+  await page.clock.setFixedTime(new Date("2026-10-11T13:07:00.000Z"));
+  await page.getByRole("button", { name: "Add payment", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Record payment", exact: true });
+  const date = dialog.getByLabel("Date", { exact: true });
+  const hour = dialog.getByRole("textbox", { name: "Hour" });
+  const minute = dialog.getByRole("textbox", { name: "Minute" });
+  await expect(date).toHaveValue("2026-10-11");
+  await expect(hour).toHaveValue("06");
+  await expect(minute).toHaveValue("37");
+  await expect(dialog.getByRole("button", { name: "PM", exact: true })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await expect(dialog.getByRole("button", { name: "Use current time" })).toHaveCount(0);
+  await date.fill("2026-10-10");
+  await dialog.getByRole("button", { name: "Clear time", exact: true }).click();
+  await expect(hour).toBeEmpty();
+  await expect(minute).toBeEmpty();
+  await expect(date).toHaveValue("2026-10-10");
+  await dialog.getByRole("button", { name: "Clear time", exact: true }).click();
+  await dialog.getByRole("button", { name: "Record payment", exact: true }).click();
+  await expect(dialog.getByText("Time is required", { exact: true })).toBeVisible();
+  await expect(hour).toBeEmpty();
+  await expect(minute).toBeEmpty();
+  await hour.fill("09");
+  await minute.fill("15");
+  await dialog.getByRole("button", { name: "AM", exact: true }).click();
+  await expect(hour).toHaveValue("09");
+  await expect(minute).toHaveValue("15");
+  await expect(date).toHaveValue("2026-10-10");
 });
 
 test("shows readable transfer cards with a prominent amount and right-aligned Settle up action", async ({
@@ -314,6 +588,7 @@ test("filters numeric time input in payment creation and editing", async ({ page
   const dialog = page.getByRole("dialog", { name: "Record payment", exact: true });
   const hour = dialog.getByRole("textbox", { name: "Hour", exact: true });
   const minute = dialog.getByRole("textbox", { name: "Minute", exact: true });
+  await dialog.getByRole("button", { name: "Clear time", exact: true }).click();
   await hour.pressSequentially("abc+-e.");
   await expect(hour).toBeEmpty();
   await expect(hour).toBeFocused();
@@ -349,6 +624,7 @@ test("transfers time focus in the payment modal in both directions", async ({ pa
   const hour = dialog.getByRole("textbox", { name: "Hour" });
   const minute = dialog.getByRole("textbox", { name: "Minute" });
 
+  await dialog.getByRole("button", { name: "Clear time", exact: true }).click();
   await hour.pressSequentially("1");
   await expect(hour).toBeFocused();
   await hour.pressSequentially("2");

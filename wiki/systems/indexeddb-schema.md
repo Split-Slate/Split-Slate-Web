@@ -9,7 +9,7 @@ metadata:
 
 Purpose: describe the persisted records, indexes, and implemented write boundaries.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-11
 
 ## Current Implementation Scope
 
@@ -109,17 +109,31 @@ person-deletion guard resolves memberships from hydrated state rather than query
 | expenseId     | UUID    | primary key                                                        |
 | groupId       | UUID    | index → foreign key to groups                                      |
 | expenseName   | string  |                                                                    |
+| description   | string? | optional multiline plain text; absent when blank                    |
 | createdBy     | UUID    | memberId                                                           |
 | categoryId    | UUID    | foreign key to categories — **mandatory**                          |
 | tagIds        | UUID[]  | optional references to group tags; empty array if no tags apply    |
 | createdAt     | number  | unix ms — automatic recording time, visible in expense detail but not editable |
-| when          | number  | unix ms — occurred date + required time; the new form defaults only the date to today |
+| when          | number  | unix ms — occurred date + required time; the new form defaults to today's date and current local time |
 | splitType     | string  | `'equal' \| 'amount' \| 'shares' \| 'percentage' \| 'adjustment'` |
 | splitMeta     | object[] | `{ memberId: UUID, value: string \| number }[]` — exact decimal strings for shares/percentages, integer hundredths for adjustments; numeric legacy ratios remain readable |
 | transactions  | object  | `{ paid: [], owes: [] }` — monetary amounts use integer hundredths regardless of currency |
 | attachmentIds | UUID[]  | references to the attachments table; empty array if none           |
 
 Index: `groupId` — used to fetch all expenses for a group.
+
+Dexie's `expenses: "expenseId, groupId"` declaration lists keys/indexes, not all permitted object
+properties. Adding optional, non-indexed `description` changes neither store structure nor indexes,
+so the database remains at version 3: no version upgrade, reset, or historical-row rewrite is
+needed. Older expense objects simply lack the property, and the editor uses an empty display
+value without changing storage until Save. A new table/index/key or required historical data
+transformation would instead require an explicit upgrade. Transfer/backup validation evolves
+separately; see [[domain-models]], [[import-export]], and [[full-backup]]. Added hydration and
+description persistence coverage passed in the focused 299-case expense/import-export unit/store
+batch before the shared MoneyInput refactor and the subsequent 543-case scoped batch. That
+presentation-only refactor leaves Dexie version 3 and stored integer hundredths unchanged. See
+[[testing-strategy]] for scoped browser results and a passing eight-case test-only follow-up; no
+fresh full-suite/build/PWA pass is implied.
 
 Arrays and objects (`tagIds`, `splitMeta`, `transactions`, `attachmentIds`) are stored directly as
 nested structured data. Expense creation, editing, deletion, detail, bootstrap hydration, and the

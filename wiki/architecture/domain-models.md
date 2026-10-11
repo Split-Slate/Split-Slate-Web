@@ -9,7 +9,7 @@ metadata:
 
 Purpose: describe persisted domain shapes and their implemented invariants.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-11
 
 ## LocalUser (Device Owner)
 
@@ -150,6 +150,7 @@ See [[tag-management]] for the full lifecycle.
   expenseId: UUID,
   groupId: UUID,
   expenseName: string,
+  description?: string,                      // optional plain text; absent when blank
   createdBy: memberId,
   categoryId: UUID,
   tagIds: UUID[],                            // optional references to group tags; empty when no tags apply
@@ -186,8 +187,18 @@ the supported numeric range. An update replaces the old total instead of countin
 
 - Updates preserve expense/group IDs, creator identity, creation time, and attachment IDs.
 - `createdAt` is set automatically and cannot be edited; expense detail shows its recording date
-- `when` is the occurred date and time: a new form pre-fills today's local date but leaves time
-  blank until the user enters it or chooses **Use current time**
+- `description` is optional multiline plain text. Creation and editing trim outer whitespace,
+  preserve internal spacing/line breaks, and omit the property when blank. Old records remain
+  unchanged and edit with an empty field. Detail renders text, not HTML, and hides an absent
+  description. Link/CSV/ZIP transfer and whole-app backup/restore preserve the field; older inputs
+  without it remain supported. No new table/index or backfill is needed. See [[import-export]],
+  [[full-backup]], and [[string-input-normalization]]. Description regressions passed in the focused
+  299-unit/store and six-browser batch before the shared MoneyInput refactor, and again in the
+  scoped 543-unit/store and three-file browser batch. See [[testing-strategy]] for its initial
+  failures, passing eight-case test-only follow-up, and limits; no new full-suite pass is implied.
+- `when` is the occurred date and time: a new form pre-fills today's local date and current local
+  time once at opening. **Clear time** empties the time without changing the date; valid time is
+  still required before saving. Editing restores the saved value. See [[main-screen]].
 - `tagIds` is always present but may be empty; every referenced tag must belong to the same group as the expense
 - `splitMeta` is needed for shares, percentage, and adjustment types — the raw input values cannot be derived back from `owes[]` alone. See [[split-types]] for per-type details.
 - `attachmentIds` is always present and creation currently writes an empty array. The separate

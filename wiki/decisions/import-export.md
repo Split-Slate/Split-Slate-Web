@@ -10,7 +10,7 @@ metadata:
 Purpose: define the implemented offline group-transfer contract and distinguish it from future
 settlement sharing.
 
-Last updated: 2026-10-06
+Last updated: 2026-10-11
 
 ## Decision
 
@@ -71,7 +71,7 @@ Schema version `2` carries:
 - source and included counts for categories, tags, members, expenses, payments, and attachments
 - selected categories and tags
 - selected Member records and snapshots of their referenced global Person records
-- selected expenses with paid/owed rows and exact split metadata
+- selected expenses with paid/owed rows, exact split metadata, and optional plain-text descriptions
 - all recorded group payments when expenses are selected; optional tag IDs follow the tag selection
 - selected attachment metadata; ZIP additionally carries the receipt blobs
 - a SHA-256 digest of the canonical logical dataset
@@ -82,6 +82,18 @@ paid/owed equality, split metadata, and aggregate safe-integer spending. Any dig
 or reference mismatch rejects the complete package before writes. Monetary values remain integer
 hundredths under [[money-representation-and-rounding]]. Previously signed version 1 transfers
 remain importable: after verification they become version 2 groups with no recorded payments.
+
+Expense `description` is an additive optional nonblank string. It has no schema default, so older
+datasets remain description-free and their integrity inputs are not changed. Link compaction,
+snapshot selection, and import ID remapping retain the text. Descriptions increase link payload
+size; existing URL/decoded-size limits and file fallbacks remain unchanged. This is compatibility
+of older files with the updated app, not a promise that older app builds can read new descriptions
+or the extended CSV header. Description compatibility/round-trip and actual-import coverage passed
+in the focused 299-case expense/import-export unit/store batch. The ZIP-only rerun also passed all
+five cases, followed by a passing scoped ZIP-test formatting check. Import/export unit/store cases
+also passed within the subsequent 543-case monetary-refactor batch; portable numbers remain
+unchanged. See [[testing-strategy]] for the three-file browser batch and passing eight-case test-only
+follow-up, and [[money-representation-and-rounding]] for display-only formatting boundaries.
 
 CSV and ZIP retain source IDs. Links replace the group ID and group-owned Member, Category, Tag,
 Expense, Payment, and Attachment IDs (including every internal reference) with short, sequential strings
@@ -127,6 +139,13 @@ typed rows for the manifest, group, people, members, categories, tags, expenses,
 attachment metadata. Nested values use JSON cells. Every cell is quoted, embedded quotes/newlines
 follow CSV escaping, UTF-8 output starts with a BOM, and formula-leading text is tab-prefixed and
 restored by the parser.
+
+The current version 2 header includes a `description` column for expense rows. An empty cell means
+the logical property is absent, not an empty string injected into the dataset. Description cells
+use the same quoting, newline/quote escaping, Unicode, and spreadsheet-formula protection as
+other text. The parser also accepts the previous description-free version 2 header (including
+payment columns) and the version 1 header (without payment or description columns), preserving
+their original integrity inputs before the existing version 1 migration.
 
 The export UI disables CSV while receipts are selected. A standalone CSV import also rejects a
 manifest that claims to carry receipts because receipt bytes require ZIP. The older fixed version 1

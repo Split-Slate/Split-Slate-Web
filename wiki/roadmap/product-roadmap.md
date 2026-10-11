@@ -9,7 +9,7 @@ metadata:
 
 Purpose: provide a current planning compass without turning exploratory ideas into commitments.
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 ## How to Read This Page
 
@@ -90,34 +90,114 @@ external payment recording is implemented. Current detail lives in [[index]], [[
 
 ## Next Tasks
 
-### Standalone Landing Page — launch-copy pass implemented, recheck pending 2026-10-10
+### Standalone Landing Page — native scroll story, checks pending 2026-10-11
 
 The approved marketing entry point lives in `landing/` in this repository, but is deployed as a
 **separate manually uploaded Netlify site**. Its HTML, CSS, SVG, and local JavaScript need no build or framework.
 App-entry links currently open `https://split-slate.netlify.app/`; the app's existing Git-triggered
 deployment remains separate. Future landing updates require another manual upload.
 
-The landing page must never become part of the installed PWA: it has no manifest, service worker,
-application imports, or app navigation entry. Keep it outside `public/` and the app build output;
+The landing page must never become part of the expense app's installed PWA: it has no manifest,
+application imports, or app navigation entry. The user has now approved a separate landing-only
+service worker for offline access, superseding the previous no-service-worker restriction. Keep
+the landing outside `public/` and the app build output;
 the current app routes, launch behavior, and offline cache remain unchanged. Preserve the existing
 app origin because browser-local expense data does not automatically follow a domain change.
 Sharing a repository does not require sharing a browser origin or deployment.
 
-The approved redesign replaces the original card-template presentation with warm-paper editorial
-typography, choreographed fictional receipts, drawn repayment connections, a scroll-driven story,
-hand-drawn use-case artwork, and an interactive five-method split demonstration. The demonstration
-conserves its ₹1,200 total throughout numerical transitions and never saves app data.
+**Earlier direction:** the user preferred the earlier design after seeing the reference-informed
+rebrand. They liked its animations in isolation but considered the combined UI/motion overkill for
+this product. With explicit approval, the five landing files were restored exactly from local
+checkpoint `5cdbf6a`, and the rebrand's two WOFF2 fonts and two license files were removed. Research
+was retained rather than reset. See [[competitive-landscape]] for the product-fit lesson.
 
-Local JavaScript progressively enhances static content without an external animation dependency.
-Device reduced-motion settings take precedence over the page's motion toggle; decorative loops
-pause offscreen/when hidden, fine-pointer tilt is not required on touch, and narrow/short screens
-use normal flow instead of the tall sticky story. Links and native FAQs remain usable without
-JavaScript. The existing app/PWA remains unchanged.
+That restored baseline used warm-paper/violet/lime receipt artwork, “Go halves. Stay whole.”,
+scroll-driven gather/split/repay scenes, and an interactive five-method split demonstration. The
+restored JavaScript conserves its ₹1,200 total during numeric transitions, never saves app data,
+and retains device reduced-motion handling, the page motion toggle, hidden/offscreen animation
+suspension, and touch/narrow/short-viewport fallbacks. Links and native FAQs work without JavaScript.
 
-The approved competitor-informed content pass pairs the creative headline with a literal
-expense-splitting explanation, strengthens the create/share/split/repay story, names travel,
-roommate, and meal expenses, and adds practical split/payer/currency/export FAQs. Classes,
-animation hooks, CSS, JavaScript, and app/PWA source are unchanged. See [[competitive-landscape]].
+After restoration, the user approved a typography-only refinement: **no italics and at most three
+font variants**, without requiring the suggested Montserrat/Clarity City/Roboto Slab families.
+The implemented choice is two self-hosted families and exactly three configured upright faces:
+Manrope Regular 400 for body copy; Manrope Semibold 600 for controls, labels, identities, and money;
+Zilla Slab Semibold 600 for main/display headings. The two Manrope declarations share one variable
+WOFF2, while Zilla Slab has one static WOFF2. Both upstream SIL OFL notices accompany the Latin
+assets in `landing/fonts/`. Only generic fallback families remain for load failure/missing glyphs.
+No monospace family, italic styling, intermediate weight, or synthetic font face is requested.
+
+The historical font pass changed `landing/styles.css`, added local preloads to `landing/index.html`, and
+documents the assets. Text size/spacing/line-height are refined; layout, palette, copy, animation
+script, and favicon remain the restored baseline. Competitor-informed travel/roommate/meal examples
+and practical payer/split/currency/export FAQs remain. Promise anchors are preserved; the workflow
+is again under `landing/index.html#the-good-part`. App/PWA source, icons, origins, and build/cache
+boundaries are unchanged. Checkpoint `5cdbf6a` remains local and was not pushed.
+
+**Current source typography:** before the 2026-10-11 animation task, the landing changed to three
+configured upright faces: Montserrat Regular 400 (`--font-description`), Saira Bold 700
+(`--font-heading`), and Space Grotesk Semibold 600 (`--font-subheading`). Local preloads match these
+files. The earlier Manrope/Zilla Slab notes are historical, not a description of current CSS.
+This task preserves current role variables, files, and palette; unused font assets remain.
+No fourth handwriting font is added: handwritten glyphs are original monoline SVG paths.
+
+**Approved animation direction (2026-10-11):** the user supplied a notebook-to-phone story and then
+explicitly rejected React, build tools, installation, and a build process. The implementation is
+plain local HTML/CSS/JavaScript with no GSAP, ScrollTrigger, vendor download, or runtime CDN.
+The user approved the listed landing-file changes and related wiki updates. Drag-and-drop Netlify
+deployment and all app/PWA origin/build/cache boundaries remain unchanged.
+
+The opening `landing/index.html#expense-story` now has one continuous sticky sequence:
+handwritten expenses and overlapping corrections → question/slash and a scroll-space pause →
+entries lifting into the phone → equal splits and suggested repayments → “Less calculating.
+More living.” with an app-entry CTA. The same four label/amount elements travel from notebook
+anchors to phone slots; their SVG strokes transition into upright digital text while moving.
+The hand's nib follows sampled points on the actual drawn paths rather than unrelated pen motion.
+
+After user approval, the illustrated phone now follows the supplied actual mobile Overview design,
+rather than the initial simplified arrangement. It reproduces Back to dashboard, group identity
+and member/expense/total/currency summary, the purple position hero, At a glance/Add expense,
+Members with chips/Manage Members, Suggested transfers with View all balances, and Recent
+transactions with category/equal metadata and amounts below their titles. White rounded cards,
+lavender surfaces, and the five-item Overview/Expenses/Add/Members/More footer follow the reference.
+The top Add expense pill follows the supplied screenshot, not a guarantee about every current
+app breakpoint. No app components, stores, routes, or database are imported. It remains an
+illustration, but the user requested removal of its visible walkthrough note; the screenshot
+gallery is separate. Dinner
+is $120 paid by Maya and Taxi is $30 paid by Leo. Maya, Leo, and Nina share both equally.
+Independent integer-cent allocations derive $150 total, $50 each, Leo → Maya $20, and Nina → Maya
+$50. The total changes only at completed expense entry; suggestions do not execute payments.
+
+The viewer is Maya. Her derived position is $0.00 before entry, +$80.00 after Dinner, and +$70.00
+after Taxi, with matching group totals and counts. Digital money has two decimal places, matching
+app presentation without changing the example's numbers. Emoji avatars use fictional people.
+
+**Approved phone-only typography exception:** Plus Jakarta Sans was copied from the app's existing
+WOFF2 to `landing/fonts/plus-jakarta-sans.woff2`; its upstream SIL OFL notice is deployed beside it.
+The local face (`Split Slate App`, normal 400–800) applies only to the phone and travelling digital
+entry text. Landing role variables remain Montserrat/Saira/Space Grotesk; no handwriting font,
+runtime font request, build dependency, or app-origin asset dependency is added.
+
+The phone preserves card order Members → Suggested transfers → Recent transactions. Its fixed
+header/footer surround a clipped document that pans to entries, then back to suggested transfers,
+using the same reversible page-scroll timeline. The actual four travelling label/amount nodes dock
+inside that document after flight so clipping/panning works naturally; reverse scroll returns the
+same nodes to paper. Their geometry is cached on layout/font changes, including the dynamically
+used app font. This UI pass leaves the hand artwork and all other landing sections unchanged.
+
+`landing/scroll-story.js` drives a cached-geometry native scroll scrub with a short 65 ms smoothing
+constant. `components/scroll-story/index.js`, `components/workspace/index.js`, and
+`components/story-phone/index.js` compose the scene; `utils/story-timeline.js` owns reversible
+choreography and `constants/story-data.js` owns fictional accounting. Deferred classic scripts
+share one small namespace and require no module server or compilation. Geometry and glyph
+samples are recaptured on resize/font readiness, not on each scroll frame.
+
+Desktop travel is 3.65 viewport heights plus the sticky frame (approximately 4–5 total); compact
+layouts at widths ≤56rem use 2.45 heights and simplified artwork. Normal scrolling is preserved.
+A skip-story link reaches the following gallery. Reduced motion, the page motion toggle, short
+usable heights (<510px compact / <440px desktop), and initialization failures select the static
+HTML ledger. Hidden controls are inert; assistive technology has a persistent plain-text story.
+Frame work stops when settled/offscreen/tab-hidden. The remaining workflow, split demo, FAQs,
+promise anchors, and app links are preserved.
 
 The user approved **launch-state copy**: planned group synchronization is advertised in present
 tense, without development-status disclaimers. The app still has no implemented live sync; the
@@ -126,18 +206,131 @@ delivery. Copy does not promise payment processing, free sync, a particular sync
 or unapproved competitor capabilities. Local no-account and free-core wording is scoped to local
 use rather than implying that all online functionality has the same access/pricing rules.
 
-SEO remains deferred until the page is reviewed; neither app indexing controls nor production
-landing-domain metadata have changed. **The current content revision has not been formatted or
-browser-checked.** The initial version was unverified. Before the latest copy edits, the separately
-approved redesign check passed JavaScript syntax and eleven Chromium scenarios: 280–1920px representative widths, touch
-landscape, short desktop, reduced motion, and JavaScript disabled. Viewport scenarios cover exact
-animated split totals, keyboard controls, story/motion/pointer behavior, app-entry boundaries, and
-zero horizontal overflow or browser errors. This is not a claim of all-browser or real-device coverage.
+SEO remains deferred; neither app indexing controls nor production landing-domain metadata changed.
+The basic document title now matches the final reveal, without introducing production-domain SEO.
 
-Prettier formatted the HTML, CSS, and JavaScript; the four-file command exited with code 2 because
-it cannot infer a parser for the SVG favicon. No formatter retry was run. Screenshots and results
-are in `/tmp/opencode/landing-redesign/`; the temporary server was stopped. No app builds or tests
-were run. Deployment instructions and the next-phase checklist are in `landing/README.md`.
+**Approved supplied-screenshot gallery pass (2026-10-11):** eight unedited user-provided PNGs from
+`/home/rinturj84/Pictures/Screenshots/Screenshots` now populate the separate actual-app gallery.
+They replace its three desktop assets and add the absent mobile captures, using kebab-case names
+inside `landing/images/`. The gallery descriptions now reflect Maldives Trip and its captured
+expense/payment records rather than the earlier Weekend in Goa/breakfast placeholders. Overview
+and balances show different states around a recorded repayment, not one synchronized live session.
+The source images are preserved; deployed assets have no dependency on the external source folder.
+
+Expense and settlement each have two mobile images labelled Part 1 of 2 and Part 2 of 2, representing
+different scroll positions. Overlapping content and fixed headers/footers remain separate, not a
+synthetic stitched full page. The initial gallery showed large inline desktop/mobile captures; the
+user rejected its excessive page footprint while retaining the need for screenshots.
+
+**Approved compact gallery/lightbox replacement:** three small Overview/Add expense/Settle up cards
+now expose the screenshots without dominating the page. Thumbnail windows are 150px on desktop,
+115px on tablets, and 90px beside copy on narrow screens. Selecting a card opens a native `<dialog>`
+with a contained, uncropped image. At widths up to 56rem a card starts with its first mobile capture;
+otherwise it starts with desktop. The approved device filter is **All / Desktop / Mobile**, resetting
+to All on every open. All includes eight images, Desktop three, and Mobile five. Thumbnails,
+previous/next buttons, Left/Right keys, and announced positions/totals use only matching images;
+browsing wraps within that set without changing the filter. Filter changes keep the selected image
+if it matches, otherwise select a matching capture of the same screen or the first result. Screen
+buttons jump to Overview/Add expense/Settle up within the device filter, not a separate narrowed set.
+The rail and counter/caption retain labelled mobile parts. The user subsequently requested removal
+of the lightbox's Open original link and explanatory footer. The rail hides on short viewports with
+primary navigation retained. No autoplay is introduced. The filter update ran no commands or
+verification; browser behavior remains unverified.
+
+Native modal semantics make the background inert. Tab is constrained to dialog controls; close via
+button, Escape, or a pointer click starting and ending on the backdrop restores opener focus and
+page position. A fixed-body scroll lock also preserves prior inline body styles. Image errors suggest
+another image or reopening the gallery. Without JavaScript/native dialog support, cards are direct PNG
+links and expandable Mobile capture lists expose the remaining originals; successful enhancement
+hides those lists. Modified link clicks remain native. `components/screenshot-gallery/index.js` is
+an independent local classic script; obsolete preview-tab logic was removed from `animations.js`.
+
+The eight-file asset-copy batch ran in the earlier gallery pass. No commands, browser/layout checks,
+formatting, installs, image processing, or deployment ran for this compact redesign. Modal closure,
+navigation/device/part handling, focus, touch scroll restoration, load-error handling, links, and
+responsive/reduced-motion/no-JavaScript behavior remain unverified. The animation/hand, app/PWA,
+manual Netlify boundaries, and assets are unchanged. Asset mapping is in `landing/README.md`.
+
+**Approved copy cleanup and offline landing (2026-10-11):** the user requested removal of the opening
+scroll hint and icon, illustrated walkthrough note, screenshot data/context notes, lightbox
+instructions/Open original link, and local-storage caveat. All seven UI items are removed, their
+unused styles are removed, and the story timeline no longer accesses the deleted hint. The dialog
+retains its accessible title without a dangling `aria-describedby`; filtering/parts and the hand
+are preserved. These removals do not turn illustrations into live functionality or change browser
+storage durability. Existing backup capability and launch-promise tracking remain unchanged.
+
+**Approved small-mobile follow-up:** the user reported that the animated phone overlaps the final
+“Free core features. No account needed for local use.” sentence. The sentence and its unused
+desktop/mobile styles are removed rather than adding spacing to the fixed composition. The final
+CTA and hand/phone animation remain unchanged. This removes that overlapping text; it is not a
+verified fix for every possible narrow-screen overlap. That change bumped `CACHE_VERSION` to
+`2026-10-11-v2`; the later automatic-update policy below supersedes its waiting-worker activation.
+No commands, browser checks, or deployment ran; other mobile-layout checks remain pending.
+
+`landing/offline.js` now registers/checks `service-worker.js` during page startup on secure HTTP(S) only. Scope
+is the script directory, and an existing different worker at that exact scope is not overwritten.
+The worker precaches 24 explicit files: HTML, CSS, nine runtime scripts, favicon, four active fonts,
+and all eight screenshots, including unopened mobile parts. Installation fetches the complete set
+before writing, rejects failed/redirected/HTML-fallback asset responses, and rejects/removes a new
+cache if writes fail. HTML is fetched at the directory entry to avoid static-host `index.html`
+redirects; both navigation aliases share it offline. A completed snapshot serves root/index
+navigation (including query strings)
+and listed same-origin GET assets cache-first; other navigation, origins, API/data, and app assets
+are not intercepted. Missing entries can be repaired online; failure does not cache error pages.
+
+Cache names include the exact scope and version. Every landing HTML/CSS/script/font/screenshot
+release must bump `CACHE_VERSION` and upload the entire folder. Registration bypasses the worker
+script HTTP cache, and existing matching registrations explicitly check with `update()` at startup.
+The user approved automatic same-visit refresh instead of waiting for controlled tabs to close.
+After all snapshot files and metadata are stored, `skipWaiting` activates the update immediately;
+activation removes only outdated caches for this scope, claims clients, and requests one navigation
+of each controlled root/index landing page. Other routes and app pages are not refreshed. The
+actual query/fragment URL is retained; transient gallery/demo state may reset. The worker owns
+navigation, supporting older landing code without an update listener. Navigation promises are not
+awaited by activation because their fetches need activation to finish.
+
+The current version is `2026-10-11-v3`. A private Cache Storage metadata entry records whether an
+active worker existed during installation, survives worker suspension, and is consumed before
+refresh. First installation and unchanged/restarted workers do not trigger repeated reloads.
+Offline/failed installs keep the old worker without refreshing. The old snapshot may show briefly
+while downloading; the visitor must remain on the page through installation. Rejected navigation
+is logged without retries. There is no periodic background poll or update guarantee for a departed
+visitor. Automatic-update behavior and loop guards remain unverified; no commands/checks ran.
+The earlier no-service-worker rule is superseded for this separately deployed website only, not the
+expense app/PWA origin, build, cache, routes, or storage. There is still no manifest/install prompt,
+framework, dependency, or build step.
+
+Offline requires a prior successful online installation, secure serving, and retained browser cache;
+`file://`, a cold offline visit, storage clearing/eviction, unsupported/private restrictions, and
+failed installs are not covered. The external app links still require that app's own availability.
+No commands, verification, server, install, or deployment ran for this pass. Removal regressions,
+complete precache/offline reloads, image/font availability, automatic-update transitions, scope isolation,
+and fetch/storage failure behavior remain pending. Details are in `landing/README.md`.
+
+**No formatting, syntax checks, tests, browser runs, server starts, installations, or deployment
+were performed for the native story or mobile-UI pass.** Only the approved font-copy/license-fetch
+asset batch ran. Actual-node docking/undocking, phone panning, scroll reversal/alignment,
+font-load/responsive fit, phone settlement visibility, keyboard/skip/CTA behavior, motion toggling,
+static fallback, and real-device performance remain unverified. Earlier restoration/font checks
+also remain unrun. Unrelated app verification does not verify this landing implementation.
+The stopped rebrand verification is not authorization for a new batch; approval is still required.
+
+Historical coverage: before the copy pass, the receipt design passed syntax and eleven scoped
+Chromium scenarios at widths 280–1920px, touch landscape, short desktop, reduced motion, and
+JavaScript disabled. Those artifacts remain under `/tmp/opencode/landing-redesign/`; they predate
+the later copy and fonts. The discarded rebrand's three-source-file Prettier and JavaScript syntax
+commands passed; browser scenarios at 280/320/390px completed before the user stopped the batch.
+The interruption produced a browser-context cleanup error, not a complete eleven-scenario result.
+Its partial artifacts under `/tmp/opencode/landing-rebrand/` do not apply to the current page.
+
+The separate external-reference review completed eight desktop/mobile captures under
+`/tmp/opencode/brand-reference-review/`, with Vibor video/Raven loader limitations recorded in
+[[competitive-landscape]]. The old SVG formatter parser failure was not retried. No app builds,
+app tests, deployment, or push ran for this work. The landing implementation and local assets
+were committed separately in `8e39f27` (`feat(landing): add scroll story, screenshot lightbox, and
+offline updates`), containing only `landing/`. Accumulated landing wiki history is included with
+the later approved app/wiki conflict reconciliation; no landing files change in that follow-up.
+Deployment instructions and pending checks are in `landing/README.md`.
 See [[layout-architecture]], [[mobile-pwa-install]], and [[testing-strategy]].
 
 ### Website Launch Promise Ledger
@@ -159,7 +352,7 @@ Status terms:
 
 | ID | Exact advertised claim and location | Current status | Remaining work and required release evidence |
 |----|-------------------------------------|----------------|---------------------------------------------|
-| SYNC-01 | “Share a group and keep its expenses and balances up to date across connected devices.” — `landing/index.html#group-sync`. Also “keep your group in sync” in the hero, sharing in chapter 1, updated synced-group balances in chapter 3, and “In a synced group, expenses and balances update across connected devices.” in `#live-group-updates`. | **Not implemented.** Current groups and records are device-local; exports reconstruct separate editable groups and are not live synchronization. | Approve access/identity/invitation, server-visibility/security, pricing, membership, and conflict rules. Implement authorized shared-group expense/payment updates, balances, edit/delete propagation, and reconnect handling without making local use depend on a server. Verify two participating devices see consistent records and balances; verify concurrent changes, revoked/unauthorized access, offline work/reconnection, failure handling, and no data loss. No implementation or sync verification occurred in this content pass. |
+| SYNC-01 | “Share a group and keep its expenses and balances up to date across connected devices.” — `landing/index.html#group-sync`. Also sharing in chapter 1, updated synced-group balances in chapter 3, and “In a synced group, expenses and balances update across connected devices.” in `#live-group-updates`. The 2026-10-11 story replaces the old hero's “keep your group in sync” wording without removing these other claims. | **Not implemented.** Current groups and records are device-local; exports reconstruct separate editable groups and are not live synchronization. | Approve access/identity/invitation, server-visibility/security, pricing, membership, and conflict rules. Implement authorized shared-group expense/payment updates, balances, edit/delete propagation, and reconnect handling without making local use depend on a server. Verify two participating devices see consistent records and balances; verify concurrent changes, revoked/unauthorized access, offline work/reconnection, failure handling, and no data loss. No implementation or sync verification occurred in this content pass. |
 | SYNC-02 | “Open a synced group on another device to pick up its shared expenses and balances.” — `landing/index.html#new-device`. | **Not implemented.** Depends on SYNC-01 and approved cross-device access. Existing ZIP restore is a separate implemented local recovery path. | Design how a user gains authorized access on a new device; implement reopening an existing shared group without duplicating it or losing its history. Verify fresh-device access, correct expenses/payments/balances, and rejected unauthorized access. Do not infer whole-app settings, all local groups, automatic backups, or loss-recovery promises from this narrower claim. |
 
 #### Supported Claims and Remaining Release Gates
@@ -192,8 +385,9 @@ Recheck them when the sync implementation or public wording changes.
 4. Before public release, clear SYNC-01/SYNC-02 and every applicable release requirement above,
    review the entire page for unsupported promises, and approve the publication decision.
 5. Formatting/browser/deployment verification and any retries need explicit approval under
-   [[testing-strategy]]. This content pass ran no commands; the earlier eleven landing browser
-   passes do not verify the new copy's layout or the advertised app synchronization features.
+   [[testing-strategy]]. The user stopped rebrand verification and approved restoration/typography
+   without new checks. Its interrupted results do not apply to the restored launch-copy/font
+   revision or advertised synchronization. Historical receipt-design results predate those changes.
 
 ### Narrow-Mobile Root Scaling — automated coverage complete 2026-10-10
 

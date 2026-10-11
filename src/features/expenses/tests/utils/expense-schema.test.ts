@@ -24,6 +24,28 @@ const values = (): ExpenseFormValues => ({
 });
 
 describe("expense schema", () => {
+  it("accepts missing descriptions for existing callers", () => {
+    const parsed = createExpenseSchema("INR").parse(values());
+    expect(parsed.description).toBeUndefined();
+  });
+  it.each(["", " ", "\t\r\n", "\u00a0\u2003"])(
+    "accepts a blank optional description %j",
+    (description) => {
+      const parsed = createExpenseSchema("INR").parse({ ...values(), description });
+      expect(parsed.description).toBe("");
+    },
+  );
+  it("trims only outer description whitespace and retains plain text and line breaks", () => {
+    const description = 'Dinner  for everyone\n\nInvoice: "123"\n<b>Not rich text</b> 🥘';
+    const parsed = createExpenseSchema("INR").parse({
+      ...values(),
+      description: `\u00a0\t ${description}\n `,
+    });
+    expect(parsed.description).toBe(description);
+  });
+  it.each([null, 42, {}, []])("rejects a non-string description %j", (description) => {
+    expect(createExpenseSchema("INR").safeParse({ ...values(), description }).success).toBe(false);
+  });
   it("trims the name and balances a valid expense", () => {
     const parsed = createExpenseSchema("INR").parse(values());
     expect(parsed.expenseName).toBe("Dinner");

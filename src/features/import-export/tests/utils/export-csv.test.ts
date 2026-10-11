@@ -5,6 +5,12 @@ import {
   createPortableGroupCsv,
   parsePortableGroupCsv,
 } from "@/features/import-export/utils/export-csv";
+import {
+  canonicalTransferJson,
+  digestBytes,
+} from "@/features/import-export/utils/transfer-integrity";
+
+import type { PortableGroup } from "@/features/import-export/types/import-export.types";
 
 import { createExportSource } from "@/features/import-export/tests/fixtures/transfer-fixture";
 
@@ -16,7 +22,82 @@ const selection = {
   attachments: false,
 };
 
+// Legacy fixtures use single-line cells; retain quoted JSON cells when dropping newer columns.
+const withoutCsvColumns = (csv: string, omitted: string[]): string => {
+  const lines = csv.replace(/^\uFEFF/u, "").split("\r\n");
+  const header = lines[0].match(/"(?:[^"]|"")*"/gu)!;
+  const keep = header.map((cell) => !omitted.includes(cell.slice(1, -1)));
+  return `\uFEFF${lines
+    .map((line) =>
+      (line.match(/"(?:[^"]|"")*"/gu) ?? []).filter((_, index) => keep[index]).join(","),
+    )
+    .join("\r\n")}`;
+};
+
 describe("portable group CSV", () => {
+  it.each(["=SUM(1,2)", "+reference", "-reference", "@reference"])(
+    "preserves multiline descriptions beginning with %s and detects description tampering",
+    async (prefix) => {
+      const source = createExportSource({ expenseCount: 2 });
+      source.expenses[0].description = `${prefix}\nDinner  for everyone, "quoted" 🥘\n\nLast line`;
+      const { bundle } = await buildGroupTransfer(source, selection);
+      const csv = await createPortableGroupCsv(bundle);
+      expect(csv).toContain(`\t${prefix}`);
+      const parsed = await parsePortableGroupCsv(csv);
+      expect(parsed).toEqual(bundle);
+      expect(parsed.expenses[0].description).toBe(source.expenses[0].description);
+      expect(parsed.expenses[1]).not.toHaveProperty("description");
+      await expect(
+        parsePortableGroupCsv(csv.replace("Dinner  for everyone", "Changed description")),
+      ).rejects.toThrow("integrity");
+    },
+  );
+
+  it("accepts the previous version-2 header without adding descriptions or changing its digest", async () => {
+    const { bundle } = await buildGroupTransfer(
+      createExportSource({ withSettlements: true }),
+      selection,
+    );
+    const oldCsv = withoutCsvColumns(await createPortableGroupCsv(bundle), ["description"]);
+    expect(oldCsv).not.toContain('"description"');
+    const parsed = await parsePortableGroupCsv(oldCsv);
+    expect(parsed).toEqual(bundle);
+    expect(parsed.expenses[0]).not.toHaveProperty("description");
+  });
+
+  it("accepts the version-1 header and original digest without descriptions or payments", async () => {
+    const { bundle } = await buildGroupTransfer(createExportSource(), selection);
+    const { settlements, ...legacyData } = bundle;
+    const { settlements: sourcePayments, ...sourceCounts } = bundle.manifest.sourceCounts;
+    const { settlements: includedPayments, ...includedCounts } = bundle.manifest.includedCounts;
+    void settlements;
+    void sourcePayments;
+    void includedPayments;
+    const unsigned = {
+      ...legacyData,
+      schemaVersion: 1,
+      manifest: { selection: bundle.manifest.selection, sourceCounts, includedCounts },
+    };
+    const digest = await digestBytes(
+      new TextEncoder().encode(canonicalTransferJson(unsigned as unknown as PortableGroup)),
+    );
+    const cell = (value: unknown) => `"${JSON.stringify(value).replace(/"/gu, '""')}"`;
+    const csv = (await createPortableGroupCsv(bundle))
+      .replaceAll('"2","', '"1","')
+      .replace(cell(bundle.manifest.sourceCounts), cell(sourceCounts))
+      .replace(cell(bundle.manifest.includedCounts), cell(includedCounts))
+      .replace(bundle.manifest.integrity.digest, digest);
+    const oldCsv = withoutCsvColumns(csv, [
+      "description",
+      "fromMemberId",
+      "toMemberId",
+      "recordedBy",
+      "amount",
+      "kind",
+    ]);
+    await expect(parsePortableGroupCsv(oldCsv)).resolves.toEqual(bundle);
+  });
+
   it("round-trips manifests, Unicode, quoted content, and spreadsheet-safe text", async () => {
     const source = createExportSource();
     source.group.name = '=यात्रा, "special"\nline';

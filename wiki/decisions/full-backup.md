@@ -9,7 +9,7 @@ metadata:
 
 Purpose: distinguish device recovery from selective, fresh-copy group transfers.
 
-Last updated: 2026-10-09
+Last updated: 2026-10-11
 
 ## Scope
 
@@ -63,6 +63,18 @@ Previously produced version 1 backups without activity snapshots remain restorab
 device with one of those backups leaves the activity table empty. Older backups without payment
 rows also restore with an empty payment table. New backups include payment activity and history
 even for deleted groups, whose name is retained in each event snapshot. See [[settlement-recording]].
+
+Expense descriptions are optional nonblank strings in the version 1 backup schema. New backups
+preserve multiline plain text; restore retains it along with the original expense IDs. Older
+description-free backups remain valid without defaults or a backfill. Restoring one replaces any
+newer description with the historical description-free expense, consistent with replace-only
+recovery. Dataset bytes are still integrity-checked before validation, and non-string descriptions
+are rejected. Compatibility targets the updated app reading older backups; older builds need not
+accept backups containing the new field. Description archive/actual-restore regressions passed in
+the focused 299-case expense/import-export unit/store batch and again within the subsequent
+543-case monetary-refactor batch. Presentation changes do not change stored/backup numbers. See
+[[testing-strategy]] for scoped browser results and the test-only follow-up, plus [[domain-models]],
+[[indexeddb-schema]], and [[money-representation-and-rounding]].
 
 ## Limits
 

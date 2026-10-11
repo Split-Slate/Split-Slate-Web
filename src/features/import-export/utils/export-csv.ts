@@ -11,7 +11,8 @@ import type {
 
 type CsvColumn = (typeof EXPORT_CSV_COLUMNS)[number];
 type CsvRow = Record<CsvColumn, string>;
-const LEGACY_COLUMNS = EXPORT_CSV_COLUMNS.filter(
+const PRE_DESCRIPTION_COLUMNS = EXPORT_CSV_COLUMNS.filter((column) => column !== "description");
+const LEGACY_COLUMNS = PRE_DESCRIPTION_COLUMNS.filter(
   (column) => !["fromMemberId", "toMemberId", "recordedBy", "amount", "kind"].includes(column),
 );
 
@@ -85,6 +86,7 @@ const bundleRows = (bundle: PortableGroup): CsvRow[] => [
         id: expense.expenseId,
         groupId: expense.groupId,
         expenseName: expense.expenseName,
+        description: expense.description ?? "",
         createdBy: expense.createdBy,
         categoryId: expense.categoryId,
         createdAt: String(expense.createdAt),
@@ -200,11 +202,13 @@ const parseInteger = (value: string, field: string, signed = false): number => {
 export const parsePortableGroupCsv = async (csv: string): Promise<PortableGroup> => {
   const rows = parseCsvRows(csv.replace(/^\uFEFF/u, ""));
   const header = rows.shift();
-  const legacy = header?.join("\u0000") === LEGACY_COLUMNS.join("\u0000");
-  const columns = legacy ? LEGACY_COLUMNS : EXPORT_CSV_COLUMNS;
-  if (!header || header.join("\u0000") !== columns.join("\u0000")) {
+  const columns = [EXPORT_CSV_COLUMNS, PRE_DESCRIPTION_COLUMNS, LEGACY_COLUMNS].find(
+    (candidate) => header?.join("\u0000") === candidate.join("\u0000"),
+  );
+  if (!columns) {
     throw new Error("CSV header is not a supported Split Slate transfer");
   }
+  const legacy = columns === LEGACY_COLUMNS;
   const records = rows
     .filter((row) => row.some(Boolean))
     .map((values, rowIndex) => {
@@ -285,6 +289,7 @@ export const parsePortableGroupCsv = async (csv: string): Promise<PortableGroup>
       expenseId: row.id,
       groupId: row.groupId,
       expenseName: row.expenseName,
+      ...(row.description ? { description: row.description } : {}),
       createdBy: row.createdBy,
       categoryId: row.categoryId,
       createdAt: parseInteger(row.createdAt, "expense createdAt"),

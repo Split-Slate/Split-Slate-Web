@@ -46,6 +46,7 @@ const expense = z.strictObject({
   expenseId: id,
   groupId: id,
   expenseName: text,
+  description: text.optional(),
   createdBy: id,
   categoryId: id,
   createdAt: timestamp,

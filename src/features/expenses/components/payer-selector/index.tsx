@@ -1,16 +1,14 @@
 import { useRef, useState } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 
-import Input from "@/shared/components/form-elements/input";
-
 import { previewPayerContributions } from "@/features/expenses/utils/payer-contributions";
-import { sanitizeDecimalInput } from "@/features/expenses/utils/split-input";
 import { formatCurrency } from "@/shared/utils/currency";
 import { moneyToDecimal } from "@/shared/utils/money";
 
 import type { ExpenseFormValues, PayerMember } from "@/features/expenses/types/expenses.types";
 
 import Avatar from "@/shared/ui/avatar";
+import MoneyInput from "@/shared/ui/money-input";
 
 interface PropsType {
   members: PayerMember[];
@@ -215,13 +213,11 @@ const PayerSelector = ({ members, quickIds, currency, validationMessage }: Props
                 <span className="expense-payer-preview money ml-auto text-sm font-semibold">
                   {formatCurrency(paid, currency)}
                 </span>
-                <Input
+                <MoneyInput
                   name={`payers.${index}.amount`}
                   aria-label={`${member.name} paid (${currency})`}
-                  inputMode="decimal"
                   wrapperClass="expense-payer-input w-20 shrink-0"
                   className="money"
-                  sanitize={sanitizeDecimalInput}
                   onValueChange={(value) => handlePayerAmountChange(id, value)}
                   placeholder={moneyToDecimal(paid, currency)}
                   disabled={selectedIds.length === 1}

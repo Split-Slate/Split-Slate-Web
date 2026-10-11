@@ -1,5 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
-import { ArrowLeft, Plus } from "lucide-react";
+import { ArrowLeft, ChevronDown, Plus } from "lucide-react";
 import type { FormEvent } from "react";
 import { useRef, useState } from "react";
 import { FormProvider, useForm } from "react-hook-form";
@@ -11,10 +11,6 @@ import SplitEditor from "@/features/expenses/components/split-editor";
 import TagCreator from "@/features/expenses/components/tag-creator";
 import Input from "@/shared/components/form-elements/input";
 
-import {
-  formatExpenseAmountInput,
-  sanitizeExpenseAmountInput,
-} from "@/features/expenses/utils/amount-input";
 import {
   expenseFormMembers,
   expenseFormValues,
@@ -29,6 +25,8 @@ import type { GroupDetailContext } from "@/features/group-detail/types/group-det
 
 import EmojiImage from "@/shared/ui/emoji-image";
 import Icon from "@/shared/ui/icon";
+import MoneyInput from "@/shared/ui/money-input";
+import Textarea from "@/shared/ui/textarea";
 import WhenPicker from "@/shared/ui/when-picker";
 
 const ExpenseForm = () => {
@@ -57,8 +55,9 @@ const ExpenseForm = () => {
     ? expenseFormValues(expense, members, group.currency)
     : {
         expenseName: "",
+        description: "",
         amount: "",
-        when: "",
+        when: localDateTime(openedAt),
         categoryId: categories[0]?.id ?? "",
         tagIds: [],
         payerMode: "single",
@@ -148,87 +147,116 @@ const ExpenseForm = () => {
           disabled={methods.formState.isSubmitting}
           className="mx-auto grid w-full max-w-6xl flex-1 min-w-0 gap-6 px-5 py-8 md:grid-cols-2 md:items-start disabled:opacity-60"
         >
-          <div className="surface form-card flex flex-col gap-5">
-            <label className="block">
-              <span className="field-label">Expense name</span>
-              <Input name="expenseName" placeholder="Expense name…" autoFocus />
-            </label>
-            <label className="block">
-              <span className="field-label">Amount ({group.currency})</span>
-              <Input
-                name="amount"
-                inputMode="decimal"
-                sanitize={sanitizeExpenseAmountInput}
-                formatValue={formatExpenseAmountInput}
-                placeholder="0"
-                className="!bg-[var(--brand-soft)] !border-0 !py-4 !text-3xl !font-extrabold money"
-              />
-            </label>
-            <fieldset>
-              <legend className="field-label">Category</legend>
-              <div className="flex flex-wrap gap-2">
-                {categories.map((category) => (
-                  <label key={category.id} className="cursor-pointer">
-                    <input
-                      type="radio"
-                      value={category.id}
-                      {...methods.register("categoryId")}
-                      className="peer sr-only"
-                    />
-                    <span className="chip choice-chip">
-                      <EmojiImage icon={category.icon} /> {category.name}
-                      {category.isActive ? "" : " (inactive)"}
-                    </span>
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingCategory(true)}
-                  className="chip add-choice-chip"
-                >
-                  <Icon icon={Plus} size={16} /> Add new category
-                </button>
-              </div>
-              {!categories.length && (
-                <p className="soft-caption mt-2">No active categories yet. Add one to continue.</p>
-              )}
-              {errors.categoryId && (
-                <span role="alert" className="money-negative text-xs">
-                  {errors.categoryId.message}
+          <div className="surface form-card contents md:flex md:flex-col md:gap-5">
+            <div className="surface form-card flex flex-col gap-5 md:contents">
+              <h3 className="text-base font-extrabold">Expense details</h3>
+              <WhenPicker defaultDate={localDateTime(openedAt).slice(0, 10)} />
+              <label className="block">
+                <span className="field-label">Expense name</span>
+                <Input name="expenseName" placeholder="Expense name…" />
+              </label>
+              <label className="block">
+                <span className="field-label">Amount ({group.currency})</span>
+                <MoneyInput
+                  name="amount"
+                  placeholder="0"
+                  autoFocus
+                  className="!bg-[var(--brand-soft)] !border-0 !py-4 !text-3xl !font-extrabold money"
+                />
+              </label>
+              <fieldset>
+                <legend className="field-label">Category</legend>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map((category) => (
+                    <label key={category.id} className="cursor-pointer">
+                      <input
+                        type="radio"
+                        value={category.id}
+                        {...methods.register("categoryId")}
+                        className="peer sr-only"
+                      />
+                      <span className="chip choice-chip">
+                        <EmojiImage icon={category.icon} /> {category.name}
+                        {category.isActive ? "" : " (inactive)"}
+                      </span>
+                    </label>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingCategory(true)}
+                    className="chip add-choice-chip"
+                  >
+                    <Icon icon={Plus} size={16} /> Add new category
+                  </button>
+                </div>
+                {!categories.length && (
+                  <p className="soft-caption mt-2">No active categories yet. Add one to continue.</p>
+                )}
+                {errors.categoryId && (
+                  <span role="alert" className="money-negative text-xs">
+                    {errors.categoryId.message}
+                  </span>
+                )}
+              </fieldset>
+            </div>
+            <details className="group order-2 rounded-2xl border border-[var(--line)] bg-[var(--surface-soft)] md:order-none">
+              <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-4 py-3 transition-colors hover:bg-[var(--brand-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--brand)] group-open:rounded-b-none group-open:border-b group-open:border-[var(--line)] [&::-webkit-details-marker]:hidden">
+                <span className="flex min-w-0 flex-col gap-1">
+                  <span className="text-sm font-extrabold">Optional details</span>
+                  <span className="text-xs text-[var(--muted)]">Description and tags</span>
                 </span>
-              )}
-            </fieldset>
-            <fieldset className="flex flex-col gap-2">
-              <legend className="field-label">Tags (optional)</legend>
-              <div className="flex flex-wrap gap-2">
-                {groupTags.map((tag) => (
-                  <label key={tag.id} className="chip choice-pill">
-                    <input
-                      type="checkbox"
-                      value={tag.id}
-                      {...methods.register("tagIds")}
-                      className="choice-control"
+                <span className="flex shrink-0 items-center gap-2 text-[var(--brand-ink)]">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--surface)]">
+                    <Icon
+                      icon={ChevronDown}
+                      size={20}
+                      className="transition-transform group-open:rotate-180"
                     />
-                    <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
-                    {tag.name}
-                  </label>
-                ))}
-                <button
-                  type="button"
-                  onClick={() => setIsCreatingTag(true)}
-                  className="chip choice-pill add-choice-chip"
-                >
-                  <Icon icon={Plus} size={16} /> Add new tag
-                </button>
+                  </span>
+                </span>
+              </summary>
+              <div className="mt-4 flex min-w-0 flex-col gap-5 px-4 pb-4">
+                <label className="block min-w-0">
+                  <span className="field-label">Description (optional)</span>
+                  <Textarea
+                    name="description"
+                    rows={3}
+                    placeholder="Add details about this expense…"
+                  />
+                </label>
+                <fieldset className="flex min-w-0 flex-col gap-2">
+                  <legend className="field-label">Tags (optional)</legend>
+                  <div className="flex flex-wrap gap-2">
+                    {groupTags.map((tag) => (
+                      <label key={tag.id} className="chip choice-pill">
+                        <input
+                          type="checkbox"
+                          value={tag.id}
+                          {...methods.register("tagIds")}
+                          className="choice-control"
+                        />
+                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                        {tag.name}
+                      </label>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setIsCreatingTag(true)}
+                      className="chip choice-pill add-choice-chip"
+                    >
+                      <Icon icon={Plus} size={16} /> Add new tag
+                    </button>
+                  </div>
+                  {!groupTags.length && <p className="soft-caption">No tags in this group yet.</p>}
+                </fieldset>
+                <p className="soft-caption">
+                  New attachments are not available yet. Existing receipts are preserved.
+                </p>
               </div>
-              {!groupTags.length && <p className="soft-caption">No tags in this group yet.</p>}
-            </fieldset>
-            <WhenPicker defaultDate={localDateTime(openedAt).slice(0, 10)} />
-            <p className="soft-caption">
-              Notes and new attachments are not available yet. Existing expense data is preserved.
-            </p>
+            </details>
           </div>
-          <div className="surface form-card flex flex-col gap-5">
+          <div className="surface form-card order-1 flex flex-col gap-5 md:order-none">
+            <h3 className="text-base font-extrabold">Payment and split</h3>
             <PayerSelector
               members={payerMembers}
               quickIds={quickIds}

@@ -5,6 +5,7 @@ import {
   suggestTransfers,
 } from "@/shared/utils/balances";
 import { categorySpending } from "@/shared/utils/category-spending";
+import { sortGroupsByRecentExpense } from "@/shared/utils/group-order";
 
 import type { AppStore } from "@/shared/configs/store/types";
 import type { Group } from "@/shared/types/domain.types";
@@ -19,7 +20,10 @@ export const groupPosition = (state: AppStore, group: Group) => {
 };
 
 export const dashboardPositions = (state: AppStore) => {
-  const entries = state.groups.map((group) => ({ group, amount: groupPosition(state, group) }));
+  const entries = sortGroupsByRecentExpense(state.groups, state.expenses).map((group) => ({
+    group,
+    amount: groupPosition(state, group),
+  }));
   const currencies = [...new Set(state.groups.map((group) => group.currency))];
   return {
     entries,

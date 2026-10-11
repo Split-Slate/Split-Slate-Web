@@ -9,9 +9,9 @@ import {
 
 describe("sanitizeSplitInput", () => {
   it("keeps decimal digits without exponent syntax or repeated separators", () => {
-    expect(sanitizeSplitInput("12a.3.4e5", "amount")).toBe("12.345");
+    expect(sanitizeSplitInput("12a.3.4e5", "amount")).toBe("12.34");
     expect(sanitizeSplitInput("-1,200.50", "amount")).toBe("1200.50");
-    expect(sanitizeSplitInput("9007199254.740991", "shares")).toBe("9007199254.740991");
+    expect(sanitizeSplitInput("9007199254.740991", "shares")).toBe("9007199");
   });
 
   it("allows a leading minus sign only for adjustments", () => {
@@ -21,9 +21,37 @@ describe("sanitizeSplitInput", () => {
     expect(sanitizeSplitInput("-20", "percentage")).toBe("20");
   });
 
-  it("filters payer amounts without allowing negative contributions", () => {
+  it("keeps the uncapped decimal helper for non-monetary ratio drafts", () => {
     expect(sanitizeDecimalInput("12abc.50")).toBe("12.50");
     expect(sanitizeDecimalInput("-1,200.00")).toBe("1200.00");
+    expect(sanitizeDecimalInput("9007199254.740991")).toBe("9007199254.740991");
+  });
+
+  it("shares the eight-whole-digit and two-decimal monetary limits", () => {
+    expect(sanitizeSplitInput("123456789.999", "amount")).toBe("12345678.99");
+    expect(sanitizeSplitInput("-123456789.999", "adjustment")).toBe("-12345678.99");
+    expect(sanitizeSplitInput("99.999999", "percentage")).toBe("99.999999");
+    expect(sanitizeSplitInput("9007199254.740991", "shares")).toBe("9007199");
+  });
+
+  it.each([
+    ["", ""],
+    ["1", "1"],
+    ["1234567", "1234567"],
+    ["123456789", "1234567"],
+    ["1234567.", "1234567"],
+    ["1234567.89", "1234567"],
+    ["1.234567", "1.234567"],
+    ["1.23456789", "1.234567"],
+    ["12.345678", "12.34567"],
+    ["12345.6789", "12345.67"],
+    ["0.000001", "0.000001"],
+    ["00001234.56", "0000123"],
+    ["12.", "12."],
+    ["12.3400", "12.3400"],
+    ["Shares -12,345.6.789e+", "12345.67"],
+  ])("silently caps share input %j at seven numeric digits as %j", (value, expected) => {
+    expect(sanitizeSplitInput(value, "shares")).toBe(expected);
   });
 
   it("caps a typed percentage to the remainder after other entered fields", () => {

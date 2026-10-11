@@ -21,6 +21,7 @@ import type { ExpenseFormValues, PayerMember } from "@/features/expenses/types/e
 import type { Transaction } from "@/shared/types/domain.types";
 
 import Avatar from "@/shared/ui/avatar";
+import MoneyInput from "@/shared/ui/money-input";
 
 interface PropsType {
   members: PayerMember[];
@@ -229,31 +230,41 @@ const SplitEditor = ({ members, currency, validationMessage }: PropsType) => {
               >
                 {formatCurrency(owed, currency)}
               </span>
-              {participants[index]?.selected && splitType !== "equal" && (
-                <Input
-                  name={`participants.${index}.value`}
-                  aria-label={`${inputLabel} for ${member.name}`}
-                  inputMode="decimal"
-                  wrapperClass="expense-split-input w-20 shrink-0"
-                  className="money"
-                  suffix={splitType === "percentage" ? "%" : undefined}
-                  sanitize={(value) =>
-                    splitType === "percentage"
-                      ? capPercentageInput(
-                          value,
-                          getValues("participants").filter(
-                            (row, otherIndex) => otherIndex !== index && row.selected,
-                          ),
-                        )
-                      : sanitizeSplitInput(value, splitType)
-                  }
-                  placeholder={
-                    splitType === "percentage" && suggestedPercentage !== undefined
-                      ? formatPercentageDisplay(suggestedPercentage)
-                      : undefined
-                  }
-                />
-              )}
+              {participants[index]?.selected &&
+                splitType !== "equal" &&
+                (splitType === "amount" || splitType === "adjustment" ? (
+                  <MoneyInput
+                    name={`participants.${index}.value`}
+                    aria-label={`${inputLabel} for ${member.name}`}
+                    wrapperClass="expense-split-input w-20 shrink-0"
+                    className="money"
+                    allowNegative={splitType === "adjustment"}
+                  />
+                ) : (
+                  <Input
+                    name={`participants.${index}.value`}
+                    aria-label={`${inputLabel} for ${member.name}`}
+                    inputMode="decimal"
+                    wrapperClass="expense-split-input w-20 shrink-0"
+                    className="money"
+                    suffix={splitType === "percentage" ? "%" : undefined}
+                    sanitize={(value) =>
+                      splitType === "percentage"
+                        ? capPercentageInput(
+                            value,
+                            getValues("participants").filter(
+                              (row, otherIndex) => otherIndex !== index && row.selected,
+                            ),
+                          )
+                        : sanitizeSplitInput(value, splitType)
+                    }
+                    placeholder={
+                      splitType === "percentage" && suggestedPercentage !== undefined
+                        ? formatPercentageDisplay(suggestedPercentage)
+                        : undefined
+                    }
+                  />
+                ))}
             </div>
           </div>
         );

@@ -19,7 +19,7 @@ Last updated: 2026-10-11
 
 ---
 
-> **Verification status (2026-10-11):** Lint, formatting, TypeScript, production build, and
+> **Earlier automated baseline (2026-10-11):** Lint, formatting, TypeScript, production build, and
 > Devtools-enabled build pass. All 503 unit cases across 41 files, 520 full-browser cases, and
 > 18 production-build PWA cases pass. The stable full-browser run has zero failures and 44 expected
 > viewport-specific skips, each covered in its appropriate project. This includes expanding mobile
@@ -28,20 +28,63 @@ Last updated: 2026-10-11
 > Build warnings remain non-failing; real-device/storage-pressure/deployment update rehearsals remain
 > release checks. Earlier production visual smoke checks were not repeated for these latest changes.
 > Artifacts: `/tmp/opencode/full-verification-2026-10-11` (`browser-stable-final.log`).
-> Future runs require approval. See [[testing-strategy]] and [[layout-architecture]].
+> The later scoped batch below exercises current-time defaults, **Clear time**, picker typography,
+> field-specific errors, four-digit years, and expanded shared monetary input. It does not repeat
+> the full-browser/build/PWA baseline. Future execution requires approval. See [[testing-strategy]],
+> [[layout-architecture]], and [[main-screen]].
+
+> Shares Add/Edit now silently limits user entry to seven numeric digits total, excluding the decimal
+> point and retaining up-to-six-decimal precision. Untouched historical ratios and store/import
+> limits are preserved. Seven-digit Shares browser cases passed in both projects; historical Shares
+> also passed in the focused rerun after a test-only change-event fix. Shares helper coverage was not
+> separately rerun. See [[split-types]] and [[testing-strategy]].
+
+> Optional plain-text expense descriptions are implemented in Add/Edit and detail, with Link/CSV/ZIP
+> and whole-app backup/restore support. Older description-free records/files remain supported without
+> an IndexedDB migration. The approved focused batch passed 299 expense/import-export unit/store
+> cases across 21 files and six desktop/mobile description browser cases. Lint and a later TypeScript
+> check passed; all five ZIP rerun cases and the scoped ZIP-test formatting check passed.
+> Repository-wide formatting stopped on that test and pre-existing `landing/index.html` edits;
+> the ZIP test alone was fixed. Description/import/restore cases also passed in the subsequent
+> scoped monetary-refactor batch below. See [[domain-models]], [[import-export]], and [[full-backup]].
+
+> Mandatory monetary reuse: `formatCurrency` for saved/derived integer hundredths; `MoneyInput`
+> plus shared amount-input helpers for every monetary form/filter field, including payers and
+> Unequal/Adjust. Entry caps are eight whole digits/two decimals, with a leading minus only for
+> Adjust. Formatting options prepare future preferences without a preference UI or storage changes.
+> Current defaults remain unchanged. See [[money-representation-and-rounding]].
+
+> **Latest scoped verification:** 543 unit/store cases across 32 files pass; repository lint,
+> TypeScript, and formatting of the 17 monetary-refactor source/test files pass. The three-file
+> desktop/mobile browser batch had 187 passes, 7 failures, and 4 expected viewport skips. After
+> fixes only to two expense browser test files, all four affected scenarios passed in an eight-case
+> single-worker desktop/mobile rerun; scoped formatting/lint and TypeScript also pass afterward.
+> All payment and description browser cases passed in the original batch. This is not a new full
+> browser/build/PWA/repository-formatting pass. Artifacts: `/tmp/opencode/currency-verification-2026-10-11`
+> and `/tmp/opencode/currency-focused-rerun-2026-10-11`. Future execution requires approval; see
+> [[testing-strategy]]. That batch left unrelated landing edits and the wiki-log conflict untouched.
+
+> **Current source reconciliation (2026-10-11):** the approved conflict resolution retains both
+> app-workflow and landing-design log histories. Landing code is already in separate commit `8e39f27`.
+> Add/Edit now uses collapsed Optional details, date/time-first fields, and Amount autofocus;
+> mobile Sort uses a dialog, Added date sorts use recording timestamps, and dashboard/sidebar
+> groups share latest-expense recording order. Existing description/tag/date-layout and Sort-section
+> browser assumptions are stale. No fresh checks or test/source changes ran in this reconciliation;
+> historical passes do not verify the current UI refinements. See [[main-screen]], [[filtering]],
+> and [[testing-strategy]].
 
 ---
 
 ## Navigation
 
 ### Roadmap
-- [Product Direction and Roadmap](roadmap/product-roadmap.md) — launch-copy promise ledger with unimplemented sync/device continuity, independent animated landing with revised copy awaiting checks, SEO deferred, and PWA release gates
+- [Product Direction and Roadmap](roadmap/product-roadmap.md) — landing-only commit 8e39f27, native scroll story, compact default-All lightbox, scoped offline snapshot v3/automatic refresh, unrun landing checks, pending sync/device promises, and preserved expense-app/PWA boundaries
 
 ### Architecture
-- [Domain Models](architecture/domain-models.md) — expense and payment shapes, PNG icon keys, fixed-hundredths money, and optional group tags
+- [Domain Models](architecture/domain-models.md) — expense/payment shapes, descriptions rechecked in scoped monetary verification, fixed hundredths, group tags, and current-time defaults
 - [Balance Calculation](architecture/balance-calculation.md) — safe payment-aware balances, expense-only spending, and deterministic suggested transfers
 - [State Management](architecture/state-management.md) — Zustand hydration and transactional expense, payment, and group mutations
-- [Split Types](architecture/split-types.md) — 5 exact split methods, verified fixed percentage-input suffixes, and at-most-three-decimal percentage display
+- [Split Types](architecture/split-types.md) — 5 exact methods, verified scoped Unequal/Adjust and seven-digit Shares browser entry, historical ratios preserved; Shares helper rerun remains separate
 - [Layout Architecture](architecture/layout-architecture.md) — verified expanding mobile navbars, creation clearance, responsive shell, and layout-effect editor teardown
 
 ### Decisions
@@ -49,20 +92,20 @@ Last updated: 2026-10-11
 - [Expense Model Design](decisions/expense-model-design.md) — fixed-hundredths paid/owed allocations and exact decimal ratio metadata, with numeric legacy read compatibility
 - [Solo Group Support](decisions/solo-group-support.md) — single-member groups work; onboarding story names the solo path, while the shared member-step helper remains generic
 - [Onboarding Persistence](decisions/onboarding-persistence.md) — resumable per-step standard setup plus atomic import-specific completion for fresh devices
-- [Import / Export Design](decisions/import-export.md) — version 2 Link/CSV/ZIP includes payments; auto-scrolled questionnaire and one-click link copy, with version 1 imports supported
-- [Whole-App Backup and Restore](decisions/full-backup.md) — matching neutral Settings action cards, distinct public entry panels, full ZIP snapshots, and replace-only recovery
-- [Expense Edit and Delete](decisions/expense-edit-delete.md) — full editor, modal-confirmed deletion, and immediate reference-only category/tag changes without rebuilding splits
+- [Import / Export Design](decisions/import-export.md) — version 2 Link/CSV/ZIP includes payments/descriptions; compatibility/import cases pass in scoped monetary verification
+- [Whole-App Backup and Restore](decisions/full-backup.md) — full ZIP snapshots and replace-only recovery with description/older-backup cases passing in scoped monetary verification
+- [Expense Edit and Delete](decisions/expense-edit-delete.md) — scoped description/monetary/historical-prefill verification, modal deletion, reference-only quick changes, and passing test-only follow-up
 - [Group Deletion](decisions/group-deletion.md) — atomic owned-data and activity cascade retains only group-created/deleted entries and shared contacts
-- [Money Representation and Rounding](decisions/money-representation-and-rounding.md) — implemented fixed hundredths for every currency, exact allocation, and confirmed no-conversion relabeling
+- [Money Representation and Rounding](decisions/money-representation-and-rounding.md) — mandatory shared formatter/MoneyInput reuse, configurable presentation, eight-digit/two-decimal entry, unchanged hundredths and allocation
 - [Iconography](decisions/iconography.md) — shared featured-or-gallery PNG picker, offline caching and repair, Lucide controls, error illustrations, and onboarding artwork
 - [Confirmation Dialogs](decisions/confirmation-dialogs.md) — shared in-app destructive confirmation for groups, expenses, contacts, members, categories, and tags
 - [Selection Controls](decisions/selection-controls.md) — native checkboxes/radios with selected and visibly locked states across forms, filters, and transfer
-- [Offline Payment Recording](decisions/settlement-recording.md) — group-only repayment records, modal entry with compact colour-labelled tags, correction, and portability
-- [String Input Normalization](decisions/string-input-normalization.md) — required strings reject trimmed blanks; optional expense inputs have explicit blank-value semantics
-- [Testing Strategy](decisions/testing-strategy.md) — approval-gated execution, 503 unit/520 browser/18 PWA passes, successful static checks/builds, route/save synchronization, and 44 explained skips
+- [Offline Payment Recording](decisions/settlement-recording.md) — scoped verified MoneyInput payments, picker typography/year limits/errors, current-time defaults, and Clear time; no fresh full-suite/build/PWA pass
+- [String Input Normalization](decisions/string-input-normalization.md) — scoped verified monetary/description boundaries, blank-payer remainder allocation, raw values, and test-only follow-up
+- [Testing Strategy](decisions/testing-strategy.md) — approval-gated execution; historical full/scoped results and eight-case follow-up, reconciled log conflict, stale current-UI browser assumptions, and pending fresh checks
 
 ### Systems
-- [IndexedDB Schema](systems/indexeddb-schema.md) — version 3 payments, safe expense/balance writes, and bootstrap recovery
+- [IndexedDB Schema](systems/indexeddb-schema.md) — version 3 payments, scoped description persistence checks pass without migration/backfill, monetary refactor leaves stored hundredths unchanged
 
 ### Debugging
 - [Browser App Installation](debugging/mobile-pwa-install.md) — Netlify manifest response type, five-day install reminders, and Settings retry
@@ -71,13 +114,13 @@ Last updated: 2026-10-11
 - [Development Tools](workflows/development-tools.md) — typed realistic presets, randomized onboarding contacts, individual creation buttons, and persistence boundaries
 - [Onboarding](workflows/onboarding.md) — stable intro rows, themed restore chooser, modal category/person drafts, and a fixed mobile currency heading above scrolling choices
 - [Group Creation](workflows/group-creation.md) — standalone 4-step flow, cross-group category suggestions, and sequential save after final submission
-- [Main Screen](workflows/main-screen.md) — verified centered mobile-navbar Add, expanded group destinations, capped/grouped Expense Amount, all-width tag creation, and expense workflows
-- [Paid-By](workflows/paid-by.md) — emoji payer pills, contribution suggestions, validation, and distinct input identities for warning-free mode switching
+- [Main Screen](workflows/main-screen.md) — shared recent-expense group ordering, date/time-first Add/Edit with collapsed optional details, transfer avatars, historical scoped passes, and unverified current layout
+- [Paid-By](workflows/paid-by.md) — shared capped/grouped contributions and suggestions, preserved remainder behavior; scoped payer browser follow-up passes after visible-label test fixes
 - [People Directory](workflows/people-directory.md) — verified mobile More entry, single mobile New contact action, all-width editors with restored opener focus, and guarded deletion
 - [Member Management](workflows/member-management.md) — verified all-width editors with fixed controls/restored opener focus, directory linking, and guarded removal
 - [Category Management](workflows/category-management.md) — all-width management and setup modals, draft-only category entry, and guarded deletion; deactivation pending
 - [Tag Management](workflows/tag-management.md) — verified group-scoped tags, all-width management/expense-creation modals, suggestions, and transactional cleanup
-- [Filtering](workflows/filtering.md) — verified distinct filter-type colours, horizontal pills, outer-only Expenses scrolling, responsive filter surfaces, and Analytics drill-down
+- [Filtering](workflows/filtering.md) — capped/grouped raw-URL amount bounds, ten sorts including Added date/payment merging, mobile Sort dialog, historical scoped passes, and pending current-control/test follow-up
 - [Dashboard](workflows/dashboard.md) — verified mobile More navigation, restored previews, compact spending rows, live greetings, avatar previews, and scoped totals
 
 ### Ideas (captured, not committed)
@@ -86,7 +129,7 @@ Last updated: 2026-10-11
 - [Category Settings UI](ideas/category-settings-ui.md) — data layer built (DB-backed master/default category lists); settings screen still TODO
 
 ### Research
-- [Competitive Landscape](research/competitive-landscape.md) — historical 9-app research plus eight-site lessons applied to launch copy, rendered evidence, retained name, and canonical promise-tracker linkage
+- [Competitive Landscape](research/competitive-landscape.md) — competitor/reference lessons, historical brand fonts, approved native visual continuity, and actual-mobile-UI alignment with a phone-only Plus Jakarta Sans exception
 - [Market Opportunity](research/market-opportunity.md) — dated research thesis and recommendations, not the committed product roadmap
 - [User Pain Points](research/user-pain-points.md) — dated complaint synthesis with current-behavior qualifications
 - [Monetization Model](research/monetization-model.md) — unimplemented pricing and packaging proposal derived from the research snapshot
@@ -111,6 +154,8 @@ Last updated: 2026-10-11
 | Tag management                     | IN PROGRESS |
 | Add expense                       | DONE        |
 | Edit / delete expense             | DONE        |
+| Optional expense descriptions     | SCOPED VERIFIED |
+| Shared monetary input/formatting  | SCOPED VERIFIED — TEST-ONLY FOLLOW-UP PASSES |
 | Split types (5 types)              | DONE        |
 | Paid-by (frequent payers UI)       | DONE        |
 | Expense list + filtering           | DONE        |

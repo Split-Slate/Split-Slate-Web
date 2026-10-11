@@ -25,6 +25,7 @@ import type { GroupDetailContext } from "@/features/group-detail/types/group-det
 import DialogLayout from "@/shared/ui/dialog-layout";
 import Icon from "@/shared/ui/icon";
 import MobileEditorDialog from "@/shared/ui/mobile-editor-dialog";
+import MoneyInput from "@/shared/ui/money-input";
 
 const getPopoverPosition = (details: HTMLDetailsElement, maxWidth: number): CSSProperties => {
   const rect = details.getBoundingClientRect();
@@ -47,8 +48,11 @@ const getPopoverPosition = (details: HTMLDetailsElement, maxWidth: number): CSSP
 const ExpenseFilters = () => {
   const { isMobile } = useViewport();
   const mobileViewportRef = useRef(isMobile);
+  const formRef = useRef<HTMLFormElement>(null);
   const mobileFiltersTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileSortTriggerRef = useRef<HTMLButtonElement>(null);
   const previousMobileFiltersOpenRef = useRef(false);
+  const previousMobileSortOpenRef = useRef(false);
   const filtersRef = useRef<HTMLDetailsElement>(null);
   const sortRef = useRef<HTMLDetailsElement>(null);
   const filtersPanelRef = useRef<HTMLDivElement>(null);
@@ -56,6 +60,7 @@ const ExpenseFilters = () => {
   const [sortOpen, setSortOpen] = useState(false);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
   const [sortPosition, setSortPosition] = useState<CSSProperties>();
   const [filtersPosition, setFiltersPosition] = useState<CSSProperties>();
   const [, setSearchParams] = useSearchParams();
@@ -84,6 +89,13 @@ const ExpenseFilters = () => {
     }
     previousMobileFiltersOpenRef.current = mobileFiltersOpen;
   }, [mobileFiltersOpen]);
+
+  useEffect(() => {
+    if (previousMobileSortOpenRef.current && !mobileSortOpen) {
+      mobileSortTriggerRef.current?.focus({ preventScroll: true });
+    }
+    previousMobileSortOpenRef.current = mobileSortOpen;
+  }, [mobileSortOpen]);
 
   useEffect(() => {
     const current = getValues();
@@ -129,7 +141,7 @@ const ExpenseFilters = () => {
 
   useEffect(() => {
     const updatePositions = () => {
-      if (sortRef.current?.open) setSortPosition(getPopoverPosition(sortRef.current, 300));
+      if (sortRef.current?.open) setSortPosition(getPopoverPosition(sortRef.current, 560));
       if (filtersRef.current?.open) setFiltersPosition(getPopoverPosition(filtersRef.current, 560));
     };
     const handleResize = () => {
@@ -137,8 +149,11 @@ const ExpenseFilters = () => {
       if (nextMobile !== mobileViewportRef.current) {
         mobileViewportRef.current = nextMobile;
         setMobileFiltersOpen(false);
+        setMobileSortOpen(false);
         setFiltersOpen(false);
+        setSortOpen(false);
         if (filtersRef.current) filtersRef.current.open = false;
+        if (sortRef.current) sortRef.current.open = false;
       }
       updatePositions();
     };
@@ -146,7 +161,7 @@ const ExpenseFilters = () => {
     const main = document.getElementById("main-content");
     main?.addEventListener("scroll", updatePositions, { passive: true });
     const observer = new ResizeObserver(updatePositions);
-    const form = sortRef.current?.closest("form");
+    const form = formRef.current;
     if (form) observer.observe(form);
     const groupPage = form?.closest(".group-page");
     if (groupPage) observer.observe(groupPage);
@@ -158,7 +173,7 @@ const ExpenseFilters = () => {
   }, []);
 
   useLayoutEffect(() => {
-    if (sortOpen && sortRef.current) setSortPosition(getPopoverPosition(sortRef.current, 300));
+    if (sortOpen && sortRef.current) setSortPosition(getPopoverPosition(sortRef.current, 560));
     if (filtersOpen && filtersRef.current)
       setFiltersPosition(getPopoverPosition(filtersRef.current, 560));
   }, [filtersOpen, sortOpen, values]);
@@ -171,11 +186,12 @@ const ExpenseFilters = () => {
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => event.preventDefault();
   const handleSortChange = () => {
     if (sortRef.current) sortRef.current.open = false;
+    setMobileSortOpen(false);
   };
   const handleSortToggle = () => {
     const open = Boolean(sortRef.current?.open);
     setSortOpen(open);
-    if (open && sortRef.current) setSortPosition(getPopoverPosition(sortRef.current, 300));
+    if (open && sortRef.current) setSortPosition(getPopoverPosition(sortRef.current, 560));
   };
   const handleFiltersToggle = () => {
     const open = Boolean(filtersRef.current?.open);
@@ -184,9 +200,15 @@ const ExpenseFilters = () => {
   };
   const handleOpenMobileFilters = () => {
     if (sortRef.current) sortRef.current.open = false;
+    setMobileSortOpen(false);
     setMobileFiltersOpen(true);
   };
   const handleCloseMobileFilters = () => setMobileFiltersOpen(false);
+  const handleOpenMobileSort = () => {
+    setMobileFiltersOpen(false);
+    setMobileSortOpen(true);
+  };
+  const handleCloseMobileSort = () => setMobileSortOpen(false);
   const handleChange = () => {
     setSearchParams(writeExpenseFilterParams(getValues()), {
       replace: true,
@@ -206,6 +228,37 @@ const ExpenseFilters = () => {
     void trigger();
   };
 
+  const sortFields = (
+    <fieldset onChange={handleSortChange}>
+      <legend className={isMobile ? "sr-only" : "mb-3 text-sm font-bold"}>Sort expenses</legend>
+      <div className="grid min-w-0 grid-cols-2 items-start gap-4">
+        {EXPENSE_SORT_SECTIONS.map((section) => (
+          <div
+            key={section.label}
+            role="group"
+            aria-label={section.label}
+            className={`min-w-0 ${section.label === "Group by" ? "col-span-2 border-t border-[var(--line)] pt-3" : ""}`}
+          >
+            <p className="mb-2 text-xs font-bold text-[var(--muted)]">{section.label}</p>
+            <div className="flex flex-col gap-2">
+              {section.options.map((option) => (
+                <label key={option.value} className="choice-option choice-option-compact">
+                  <input
+                    type="radio"
+                    value={option.value}
+                    {...register("sort")}
+                    className="choice-control"
+                  />
+                  {option.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </fieldset>
+  );
+
   const filterFields = (
     <>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -218,10 +271,10 @@ const ExpenseFilters = () => {
           <Input name="dateTo" type="date" className="min-w-0" />
         </label>
         <label className="min-w-0 text-sm font-bold">
-          Minimum amount ({group.currency})<Input name="minAmount" inputMode="decimal" />
+          Minimum amount ({group.currency})<MoneyInput name="minAmount" />
         </label>
         <label className="min-w-0 text-sm font-bold">
-          Maximum amount ({group.currency})<Input name="maxAmount" inputMode="decimal" />
+          Maximum amount ({group.currency})<MoneyInput name="maxAmount" />
         </label>
       </div>
       <ExpenseFilterOptions name="categoryIds" label="Categories" options={categoryOptions} />
@@ -234,6 +287,7 @@ const ExpenseFilters = () => {
 
   return (
     <form
+      ref={formRef}
       aria-label="Expense filters"
       noValidate
       onSubmit={handleSubmit}
@@ -250,49 +304,35 @@ const ExpenseFilters = () => {
           />
           <Input name="name" type="search" placeholder="Search expenses…" className="!pl-10" />
         </label>
-        <details ref={sortRef} onToggle={handleSortToggle} className="group relative">
-          <summary className="btn btn-secondary relative z-50 list-none cursor-pointer">
+        {isMobile ? (
+          <button
+            ref={mobileSortTriggerRef}
+            type="button"
+            aria-haspopup="dialog"
+            aria-expanded={mobileSortOpen}
+            onClick={handleOpenMobileSort}
+            className="btn btn-secondary min-w-0"
+          >
             <Icon icon={ArrowDownUp} size={18} /> Sort
-          </summary>
-          {createPortal(
-            <div
-              ref={sortPanelRef}
-              hidden={!sortOpen}
-              style={sortPosition}
-              className="expense-filter-popover surface surface-pad fixed z-40 w-[min(85vw,300px)] overflow-auto"
-            >
-              <fieldset onChange={handleSortChange}>
-                <legend className="mb-3 text-sm font-bold">Sort expenses</legend>
-                <div className="flex flex-col">
-                  {EXPENSE_SORT_SECTIONS.map((section) => (
-                    <div
-                      key={section.label}
-                      role="group"
-                      aria-label={section.label}
-                      className="border-t border-[var(--line)] py-3 first:border-t-0 first:pt-0 last:pb-0"
-                    >
-                      <p className="mb-2 text-xs font-bold text-[var(--muted)]">{section.label}</p>
-                      <div className="flex flex-col gap-2">
-                        {section.options.map((option) => (
-                          <label key={option.value} className="choice-option choice-option-compact">
-                            <input
-                              type="radio"
-                              value={option.value}
-                              {...register("sort")}
-                              className="choice-control"
-                            />
-                            {option.label}
-                          </label>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </fieldset>
-            </div>,
-            document.body,
-          )}
-        </details>
+          </button>
+        ) : (
+          <details ref={sortRef} onToggle={handleSortToggle} className="group relative">
+            <summary className="btn btn-secondary relative z-50 list-none cursor-pointer">
+              <Icon icon={ArrowDownUp} size={18} /> Sort
+            </summary>
+            {createPortal(
+              <div
+                ref={sortPanelRef}
+                hidden={!sortOpen}
+                style={sortPosition}
+                className="expense-filter-popover surface surface-pad fixed z-40 w-[min(85vw,560px)] overflow-auto"
+              >
+                {sortFields}
+              </div>,
+              document.body,
+            )}
+          </details>
+        )}
         {isMobile ? (
           <button
             ref={mobileFiltersTriggerRef}
@@ -355,9 +395,41 @@ const ExpenseFilters = () => {
         )}
       </div>
       {isMobile &&
+        mobileSortOpen &&
+        createPortal(
+          <MobileEditorDialog
+            title="Sort expenses"
+            onCancel={handleCloseMobileSort}
+            className="expense-controls-dialog"
+          >
+            <DialogLayout
+              title="Sort expenses"
+              onClose={handleCloseMobileSort}
+              closeLabel="Close sort"
+              bodyLabel="Sort controls"
+              footer={
+                <button
+                  type="button"
+                  onClick={handleCloseMobileSort}
+                  className="btn btn-primary"
+                >
+                  Done
+                </button>
+              }
+            >
+              {sortFields}
+            </DialogLayout>
+          </MobileEditorDialog>,
+          document.body,
+        )}
+      {isMobile &&
         mobileFiltersOpen &&
         createPortal(
-          <MobileEditorDialog title="Filters" onCancel={handleCloseMobileFilters}>
+          <MobileEditorDialog
+            title="Filters"
+            onCancel={handleCloseMobileFilters}
+            className="expense-controls-dialog"
+          >
             <DialogLayout
               title="Filters"
               onClose={handleCloseMobileFilters}

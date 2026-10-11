@@ -15,10 +15,17 @@ export const SPLIT_FILTER_OPTIONS = [
 
 export const EXPENSE_SORT_SECTIONS = [
   {
-    label: "Date",
+    label: "Expense date",
     options: [
       { value: "newest", label: "Newest first" },
       { value: "oldest", label: "Oldest first" },
+    ],
+  },
+  {
+    label: "Added date",
+    options: [
+      { value: "added-newest", label: "Newest first" },
+      { value: "added-oldest", label: "Oldest first" },
     ],
   },
   {
@@ -47,6 +54,8 @@ export const EXPENSE_SORT_SECTIONS = [
 const expenseSortSchema = z.enum([
   "newest",
   "oldest",
+  "added-newest",
+  "added-oldest",
   "highest",
   "lowest",
   "name-asc",
@@ -287,6 +296,11 @@ export const sortExpenses = (
   };
 
   return [...expenses].sort((a, b) => {
+    if (sort === "added-newest" || sort === "added-oldest") {
+      const difference =
+        sort === "added-oldest" ? a.createdAt - b.createdAt : b.createdAt - a.createdAt;
+      return difference || b.when - a.when || a.expenseId.localeCompare(b.expenseId);
+    }
     const difference =
       sort === "oldest"
         ? a.when - b.when

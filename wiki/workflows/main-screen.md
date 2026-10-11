@@ -16,9 +16,12 @@ Last updated: 2026-10-11
 ### Home (Dashboard)
 
 After onboarding, the app lands on `/dashboard`. The dashboard lists every group from the Zustand
-store and links each row to `/groups/:groupId`. It does not auto-open a group. The dashboard currently
-uses store order; it has no `lastActiveAt` field or recent-activity sort. The desktop/tablet sidebar
-also lists groups and currently sorts them by `createdAt` descending.
+store and links each row to `/groups/:groupId`. It does not auto-open a group. Dashboard balance
+cards and desktop/tablet sidebar groups share `sortGroupsByRecentExpense`: descending latest
+expense `createdAt` per group, then descending group `createdAt` for ties. Groups without expenses
+follow groups with expenses. This is recording recency, not expense occurrence time (`when`),
+payment activity, or a persisted `lastActiveAt` field. The helper sorts a copy without mutating
+store order. This ordering change has no fresh verification; see [[testing-strategy]].
 
 ### Group Detail Routes
 
@@ -70,7 +73,9 @@ The Members and Suggested transfers cards end in full-width, center-labeled acti
 arrows. The Members title has no count; "Manage Members (N)" carries the full group count and is
 available even when every member fits in the preview. The transfer card lists the first three
 suggested payer-to-recipient amounts (or "All square!") and its "View all balances (N)" action
-shows the total number of suggestions. No payment disclaimer is repeated inside that card.
+shows the total number of suggestions. Each endpoint now pairs the linked person's avatar with
+their name. No payment disclaimer is repeated inside that card. The avatar refinement has no
+fresh browser verification; historical layout results do not verify this change.
 The two preview cards stack on mobile and tablet, and sit side by side on desktop.
 The "Recent transactions" heading and bordered "View all (N)" action sit inside the same card as
 the five most recent expense and payment entries (or the empty-state content), linking to the full
@@ -139,13 +144,21 @@ views hide payments with explanatory copy. Balances shows each member's net afte
 current suggested transfers, and a recorded-payment history. Neither view uses a new tab bar.
 Net per member and Who owes whom stack on mobile and tablet; desktop retains side-by-side cards.
 
-- Add payment accepts any positive amount between two different group members with an editable
+- Add payment accepts a positive amount between two different group members with an editable
   date/time and optional tags, but no category. One payment is scoped to one group; the user
   allocates any cross-group outside payment manually.
 - Add payment, Settle up, and Edit open the same modal rather than an inline form. **Paid by** and
   **Received by** use searchable group-member dropdowns with each person's avatar and name.
   Payment date/time uses the expense form's styled date and 12-hour hour/minute/AM–PM controls;
-  new payments start with today's date and no time, while edits restore their saved date/time.
+  new payments start with today's date and the current local time, while edits restore their saved
+  date/time. **Clear time** empties Hour and Minute without changing the selected date; time remains
+  required before saving.
+- Payment Add/Settle up/Edit Amount uses the same shared input helpers as Expense Add/Edit:
+  three-digit comma grouping, digits and one decimal point only, and an eight-whole-digit/two-decimal
+  entry cap without rounding. Formatting preserves entered decimal text and keeps commas out of
+  form values and stored hundredths. Existing/suggested prefills are displayed without silently
+  truncating saved values; the cap applies when the user changes the input. Save-time positive/safe
+  amount validation and overpayment warnings are unchanged. Revised payment coverage is unrun.
 - Settle up preselects the suggested payer, recipient and amount. An amount beyond the suggestion
   warns without blocking the save. Suggested transfers appear as separate, softly tinted cards
   with From/To avatar-and-name columns, a centered direction arrow, and names that wrap rather than
@@ -165,7 +178,10 @@ Net per member and Who owes whom stack on mobile and tablet; desktop retains sid
 - Paid by (member name)
 - Local date and 12-hour time (`when` — the actual expense time, not `createdAt`)
 
-Expenses and visible payments are sorted by `when` descending. Expense rows show the local date as `12-Jan-2026` and local
+Expenses and visible payments default to `when` descending. Added-date sorts instead order the
+unfiltered merged timeline by each record's `createdAt`; filtered/non-date sorts remain expense-only.
+See [[filtering]] for the ten current modes and their verification limits.
+Expense rows show the local date as `12-Jan-2026` and local
 12-hour time as `03:45 PM` beneath the
 amount, plus payer names and the category icon beside the name. Names link to detail, which offers
 editing, quick category/tag changes, and confirmed deletion.
@@ -178,6 +194,14 @@ Detail distinguishes the occurred date/time (separate Date and Time lines in the
 recording date (`createdAt`) shown
 as a quiet "Recorded by [name] · [date]" line between the banner and the Paid by/Split cards. Its
 tags span a full-width banner row.
+If present, the optional plain-text description appears in a full-width themed card after the
+recording line and before Paid by/Split. Line breaks and internal spaces are preserved, long
+unbroken text wraps, and HTML-like content is displayed as text rather than interpreted. Missing
+descriptions produce no empty card. Description regressions passed in the approved focused batch:
+299 expense/import-export unit/store cases and six desktop/mobile description browser cases.
+Description cases also passed after the MoneyInput refactor in the scoped 543-unit/store and
+three-file browser batch. Its initial seven failures were resolved in a passing eight-case focused
+rerun after test-only fixes; this is not a fresh full-suite pass. See [[testing-strategy]].
 The full ledger and recent Overview entries show up to three colored tags and reveal further tags
 with a separate Show more control. The list now has real-time name, date, category, tag,
 payer, involved-member, split-type, and amount filters with an active count and clear action.
@@ -207,47 +231,100 @@ See [[layout-architecture]] and [[testing-strategy]].
 ### Expense Recording
 
 - **Add Expense** button — always visible and prominent
-- The form defaults to today's local date with blank hour/minute placeholders, the first active
-  category, one payer, and an equal split among all group members. Time must be entered before
-  saving. Participants can be deselected; solo groups are supported.
+- Add/Edit now starts with **Expense details**: Date and time, Expense name, Amount, and Category.
+  Amount receives autofocus. **Payment and split** contains payer and participant controls.
+  On mobile these are separate stacked cards followed by the closed-by-default **Optional details**
+  disclosure; desktop keeps Optional details beneath Expense details beside Payment and split.
+  The disclosure contains Description, Tags, and the existing-attachments notice. Opening it
+  does not save data, and its closed state does not clear prefilled fields. This layout has not
+  been freshly verified; existing browser tests still assume visible optional fields and the
+  previous date/time placement. See [[testing-strategy]].
+- **Description (optional)** is a multiline field inside Optional details in Add/Edit. Saving trims outer
+  whitespace while preserving internal spacing and line breaks; a blank field means no saved
+  description and clears a previous one on edit. Historical expenses open with an empty field;
+  editing a name while retaining the prefilled description preserves it. No rich-text editor,
+  editor dependency, or database migration is introduced. Link/CSV/ZIP transfer and whole-app
+  backup/restore retain descriptions and accept older records/files without them. Added form,
+  persistence, transfer, restore, and responsive description coverage passed in the focused
+  299-unit/store and six-browser batch before the shared MoneyInput refactor, and again in the
+  subsequent scoped 543-unit/store and three-file browser batch. See [[testing-strategy]] for the
+  separate passing eight-case follow-up, exact failures, and verification limits.
+  See [[string-input-normalization]], [[import-export]], [[full-backup]], and [[indexeddb-schema]].
+- The form defaults to today's local date and current local time at opening, the first active
+  category, one payer, and an equal split among all group members. Participants can be deselected;
+  solo groups are supported. Editing restores the saved date/time rather than replacing it with now.
 - Date and time entry uses a styled date field and 12-hour hour/minute controls with explicit AM/PM.
+  The shared picker date and hour/minute numbers inherit the same font family and use the same
+  0.9375rem size and 800 weight in expenses and payments; other date inputs are unchanged.
+  Responsive picker typography cases passed in the scoped desktop/mobile browser batch.
   The form still submits a local `YYYY-MM-DDTHH:mm` value in 24-hour notation for validation and
   storage; 12 AM maps to 00:xx, and 12 PM maps to 12:xx. Editing reconstructs the 12-hour display
   from the saved local time without changing an untouched timestamp.
+- Every native date field uses a four-digit year entry limit: expense/payment dates and both expense
+  date-filter bounds. Native controls are bounded to `0001-01-01`–`9999-12-31`; a shared input limiter
+  discards year digits after the fourth without changing month/day or adding a year-length error.
+  Shared keyboard tracking blocks further digits after four year keystrokes so native segmented
+  inputs do not roll those digits over; clearing or moving to another date segment resets typing.
+  The limited value is restored directly to the native input even when React's value is unchanged.
+  Clearing and reentering the date remains supported; existing date/time validation is unchanged.
+  Shared helper and desktop/mobile year-limit coverage passed in the scoped batch; future
+  execution requires approval. See [[testing-strategy]].
+- Shared picker validation messages appear beneath their respective field: missing/invalid date
+  under Date, missing/out-of-range time under Time, and both messages when both parts are invalid.
+  Only the affected field receives error styling and an accessible description; Hour and Minute
+  share the time message. Invalid local clock-transition times are time errors. Correcting one
+  part removes only its own message. This applies to expense Add/Edit and payment Add/Settle up/Edit
+  without changing combined `when` validation or persisted timestamps. Shared helper and responsive
+  error-placement coverage passed in the scoped unit/browser batch. See [[testing-strategy]].
 - Expense Add/Edit total amounts filter typed and bulk-inserted text to digits and one decimal
   point, then keep at most eight whole-number digits and two fractional digits without rounding.
   Further digits typed at the end are ignored; bulk-inserted/pasted values keep the first eight
   whole-number digits and first two fractional digits. This limits new entry to `99,999,999.99`
-  without a maximum-amount error or warning. The cap is specific to Expense Amount;
-  payer/split input precision is unchanged. Letters,
-  exponent markers, signs, whitespace, grouping separators, and other punctuation are removed
-  rather than interpreted.
+  without a maximum-amount error or warning. The same cap applies to every monetary field through
+  shared `MoneyInput`: payment Amount, payer contributions, Unequal/Adjust values, and minimum/
+  maximum amount filters. Shares/percentage ratio precision is unchanged. Letters, exponent
+  markers, signs, whitespace, grouping separators, and other punctuation are removed rather than
+  interpreted; Adjust alone retains a leading minus sign.
   Monetary validation still independently rejects more than two fractional digits from
   programmatic callers, zero/invalid totals, and unsafe values; input limiting does not replace
   save-time validation. Store/import safe-integer and aggregate limits are unchanged; the new
-  eight-digit limit applies only to user entry in Expense Amount.
-- Only the Expense Add/Edit **Amount** input visually groups the whole-number portion in threes,
+  eight-digit limit applies only to user entry, not historical/imported prefills at render time.
+- Expense Add/Edit and payment Add/Settle up/Edit **Amount** inputs visually group the whole-number portion in threes,
   independent of currency: `1234567.89` displays as `1,234,567.89`, including for INR. Decimal text,
   trailing decimal points/zeros, and accepted two-place precision remain intact without Number
   conversion.
   The shared Input's optional display formatter keeps commas out of React Hook Form values and
   preserves selection/caret positions through typing and reformatting; Backspace/Delete skip a
   display comma to delete the adjacent digit. Pasting grouped text is sanitized before regrouping.
-  Payer/split inputs, payment inputs, other displayed totals, parsing, and stored hundredths are
-  unchanged. New helper/browser coverage covers grouping, eight-digit/two-decimal caps, editing,
-  raw saves, and currency independence; helper cases and the final 2026-10-11 browser suite pass.
-  Future execution requires approval. See [[testing-strategy]].
+  Payer contributions, Unequal/Adjust values, and amount-filter bounds also use the shared
+  `MoneyInput`; their values and numeric suggestions use the same display-only input grouping.
+  Saved/derived currency-formatted totals retain their locale grouping, while shared formatter
+  options expose future locale/grouping/currency-label preferences without implementing a
+  preference UI. Parsing and stored hundredths are unchanged. Helper implementation and unit
+  coverage live under `src/shared/` so monetary fields use one contract.
+  Expanded helpers and format options passed in the 543-case scoped unit/store batch; lint,
+  TypeScript, and 17-file formatting passed. The three-file browser batch recorded 187 passes,
+  7 failures, and 4 expected viewport skips. Unequal/Adjust, payment, and historical monetary
+  prefill cases passed there; payer/filter/historical-Shares test fixes then passed in an eight-case
+  desktop/mobile focused rerun. No fresh full-suite/build/PWA pass is implied. Future execution
+  requires approval; see [[testing-strategy]]. Future monetary fields must
+  reuse `MoneyInput`, `formatCurrency`, and shared amount-input helpers instead of feature-local
+  formatting or caps; see [[money-representation-and-rounding]].
 - The shared expense/payment Hour and Minute inputs filter non-digits before limiting the result
   to two digits, so bulk insertion cannot retain letters or lose valid digits to an earlier raw-text
-  length limit. AM/PM controls, current-time filling, padding, time-range checks, and empty-minute
+  length limit. AM/PM controls, padding, time-range checks, and empty-minute
   Backspace navigation are unchanged. Hour auto-advance occurs only when its cleaned value changes
   to a valid advancing value; typing a rejected character into a valid hour does not steal focus.
   New browser coverage exercises amount Add/Edit, typing/bulk insertion, range/precision validation,
   and payment time Add/Edit; these revised checks pass in the final 2026-10-11 full browser suite.
   Save/reload checks wait for the post-save screen rather than interrupting an in-flight write.
-- **Use current time** fills the hour, minute, and AM/PM from the device clock when clicked without
-  changing the selected expense date. Manual entry remains available and time remains required;
-  omitting it does not silently assign the save time, which could misdate a past expense.
+- **Clear time** replaces **Use current time** everywhere the shared picker is used: Expense
+  Add/Edit and payment Add/Settle up/Edit. It empties Hour and Minute while preserving the selected
+  date and AM/PM setting. New records prefill the device's current local time once when the form
+  opens; the default is also present in the form value, so it can be saved without manual entry.
+  Clearing does not reapply the default on rerender or submission. Manual entry remains available,
+  and saving a cleared time is rejected until a valid time is entered. Default/clear/edit browser
+  coverage passed in the scoped desktop/mobile batch; future execution requires approval.
 - The shared expense/payment picker advances Hour to Minute on mobile, tablet, and desktop after a
   valid two-digit 12-hour value or a single digit from 2 to 9; an initial 0 or 1 waits for a second
   digit. Backspace in an empty Minute field returns focus to the end of Hour; deleting minute digits

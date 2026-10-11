@@ -16,6 +16,7 @@ export const EXPORT_CSV_COLUMNS = [
   "isActive",
   "color",
   "expenseName",
+  "description",
   "createdBy",
   "categoryId",
   "when",

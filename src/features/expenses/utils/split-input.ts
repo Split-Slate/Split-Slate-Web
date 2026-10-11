@@ -1,4 +1,5 @@
 import { calculateSplit, percentageText } from "@/features/expenses/utils/calculate-split";
+import { sanitizeAmountInput } from "@/shared/utils/amount-input";
 import { parseMoney } from "@/shared/utils/money";
 
 import type { SplitParticipant } from "@/features/expenses/types/expenses.types";
@@ -10,8 +11,19 @@ export const sanitizeDecimalInput = (value: string, allowNegative = false): stri
   return sign + whole + (fractions.length ? `.${fractions.join("")}` : "");
 };
 
-export const sanitizeSplitInput = (value: string, splitType: Expense["splitType"]): string =>
-  sanitizeDecimalInput(value, splitType === "adjustment");
+export const sanitizeSplitInput = (value: string, splitType: Expense["splitType"]): string => {
+  if (splitType === "amount" || splitType === "adjustment")
+    return sanitizeAmountInput(value, splitType === "adjustment");
+  const cleaned = sanitizeDecimalInput(value);
+  if (splitType !== "shares") return cleaned;
+  const [whole, fraction] = cleaned.split(".");
+  const limitedWhole = whole.slice(0, 7);
+  const remainingDigits = Math.min(6, 7 - limitedWhole.length);
+  // Ignore an unusable decimal point when all seven digits are already in the whole part.
+  return fraction === undefined || !remainingDigits
+    ? limitedWhole
+    : `${limitedWhole}.${fraction.slice(0, remainingDigits)}`;
+};
 
 export const capPercentageInput = (value: string, others: SplitParticipant[]): string => {
   const cleaned = sanitizeDecimalInput(value);

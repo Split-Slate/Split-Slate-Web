@@ -11,6 +11,81 @@ Last updated: 2026-10-11
 ---
 
 ## 2026-10-11
+- UPDATED wiki/log.md — resolve the upstream/stash conflict by retaining both app-workflow and landing-design history without dropping either side
+- UPDATED workflows/main-screen.md — reconcile source-confirmed recent-expense group ordering, current Add/Edit section layout, collapsed optional description/tags, Amount autofocus, and Overview transfer avatars; retain historical verification limits
+- UPDATED workflows/filtering.md — document added-date sorts, matching payment timeline merge, mobile Sort modal and shared control height cap; distinguish current source from historical eight-mode coverage
+- UPDATED decisions/testing-strategy.md — flag stale description/tag/date-layout and Sort-section browser assumptions without running checks or changing tests; separate historical passes from current UI verification
+- UPDATED roadmap/product-roadmap.md — record landing implementation commit 8e39f27 separately from accumulated wiki changes, preserving unrun deployment/verification status
+- UPDATED wiki/index.md — synchronize workflow summaries, record conflict reconciliation, and surface pending current-UI/test follow-up
+- UPDATED roadmap/product-roadmap.md — record approved v3 startup update checks, complete-snapshot immediate activation and worker-owned same-visit refresh, legacy-page support, persisted/consumed first-install loop guard, route isolation, failure/departure limits, and unrun verification; supersede waiting-tabs policy
+- UPDATED wiki/index.md — surface scoped offline snapshot v3 and automatic landing refresh without claiming tested behavior
+- UPDATED roadmap/product-roadmap.md — record approved removal of final local-use sentence after user-reported phone overlap on small screens, preserve CTA/artwork, bump landing cache to v2, and keep mobile verification pending
+- UPDATED wiki/index.md — surface mobile-overlap copy removal and offline snapshot v2
+- UPDATED roadmap/product-roadmap.md — record approved seven-item copy cleanup and landing-only versioned service worker; supersede no-worker restriction only for the separate website, preserve app/PWA boundaries, document directory/index aliases avoiding host redirects, complete snapshots/waiting updates/scope isolation/offline limits, and keep verification pending
+- UPDATED wiki/index.md — surface copy cleanup and offline landing caching without claiming runtime verification
+- UPDATED roadmap/product-roadmap.md — record approved default-All device filtering, 8/3/5 result sets, matching thumbnails/navigation/counts, current-image preservation, and reset on reopen without commands or verification
+- UPDATED wiki/index.md — surface default-All device filtering in the compact gallery roadmap entry
+- UPDATED roadmap/product-roadmap.md — document approved compact preview/native-dialog redesign after user rejection of large inline screenshots; retain all eight captures, explicit mobile parts, full-resolution/fallback links, modal navigation/focus/scroll boundaries, unchanged animation, and unrun checks
+- UPDATED wiki/index.md — surface compact three-card/lightbox gallery instead of superseded inline paired-image layout
+- UPDATED roadmap/product-roadmap.md — record approved eight-PNG actual-app gallery, Maldives Trip descriptions, separate ordered mobile scroll captures instead of synthetic stitching, approved asset-copy batch, unchanged animation/app boundaries, and unrun gallery verification
+- UPDATED wiki/index.md — surface supplied gallery screenshots and paired mobile captures in the roadmap entry
+- UPDATED roadmap/product-roadmap.md — document approved screenshot-aligned native mobile Overview replica, unchanged hand/non-phone artwork, derived Maya position/counts, two-decimal digital money, real-node docking/reversible internal panning, phone-only local app font/license, and unrun landing verification
+- UPDATED research/competitive-landscape.md — record user-supplied actual-app visual target and isolated Plus Jakarta Sans exception without a landing rebrand, framework, runtime font service, or app/PWA changes
+- UPDATED wiki/index.md — surface mobile-UI fidelity and phone docking/font boundaries while preserving unrelated app verification and existing wiki-log conflict content
+- UPDATED decisions/testing-strategy.md — record approved 543-unit/32-file and static/scoped-formatting passes, three-file browser batch with 187 passes/7 failures/4 expected skips, and eight-case passing single-worker follow-up after test-only fixes; preserve full-suite/build/PWA limits
+- UPDATED decisions/money-representation-and-rounding.md — replace unrun monetary coverage with scoped unit/static/browser evidence and passing focused follow-up, retaining mandatory reuse and execution approval
+- UPDATED architecture/split-types.md — record scoped Unequal/Adjust and seven-digit Shares browser passes plus historical-Shares change-event follow-up; keep Shares helper rerun distinct
+- UPDATED workflows/paid-by.md — record passing payer grouping/caps/raw-save/reopening follow-up after visible-label test actions, without production payer changes
+- UPDATED workflows/filtering.md — record passing raw-URL/grouping/caps follow-up using stable field names while validation text changes labels, and original historical-bound passes
+- UPDATED decisions/settlement-recording.md — record scoped payment Amount/date-time/year/error/typography/current-time/Clear time browser passes without claiming new full-suite/build/PWA coverage
+- UPDATED workflows/main-screen.md — reconcile description/monetary/date-time verification with the approved scoped batch and passing test-only follow-up
+- UPDATED architecture/domain-models.md — record description regressions rechecked in scoped monetary verification and link exact scope/limits
+- UPDATED decisions/string-input-normalization.md — record scoped monetary/description boundary passes and payer/filter test-only follow-up
+- UPDATED decisions/expense-edit-delete.md — record scoped description/edit/monetary/historical-prefill verification and passing focused historical-Shares follow-up
+- UPDATED decisions/import-export.md — record repeated compatibility/import unit/store passes in the scoped 543-case monetary batch without changing portable numbers
+- UPDATED decisions/full-backup.md — record repeated archive/actual-restore unit/store passes in the scoped monetary batch without changing backups
+- UPDATED systems/indexeddb-schema.md — record repeated description persistence passes and unchanged version 3/hundredths under scoped monetary verification
+- UPDATED wiki/index.md — distinguish earlier full baseline from latest scoped results and passing follow-up, reconcile linked verification notes, and preserve unrelated landing work/log conflict
+- UPDATED roadmap/product-roadmap.md — document approved dependency-free notebook-to-phone scroll story, exact fictional accounting, native scrub/continuity, static accessibility fallbacks, unchanged manual landing/app boundaries, adjusted hero claim location, and unrun verification
+- UPDATED research/competitive-landscape.md — distinguish historical Manrope/Zilla Slab approval from source-confirmed Montserrat/Saira/Space Grotesk and record the user's superseding plain HTML/CSS/JS animation constraint
+- UPDATED wiki/index.md — surface the new native story and current typography without claiming verified visuals or deployment
+- UPDATED architecture/split-types.md — document approved silent seven-total-digit Shares typing/paste cap, decimal-point exclusion, preserved six-decimal precision and untouched historical/store/import ratios, and unrun helper/browser coverage
+- UPDATED wiki/index.md — surface Shares-only input limits and keep revised verification pending
+- UPDATED decisions/string-input-normalization.md — correct blank selected payer semantics against source: deterministic remainder allocation rather than zero; only positive contributions persist
+- UPDATED wiki/index.md — surface the corrected blank-payer remainder contract
+- UPDATED decisions/money-representation-and-rounding.md — document mandatory shared formatCurrency/MoneyInput/amount-helper reuse, future format options, app-wide eight-whole-digit/two-decimal entry, signed Adjust, raw storage/URL boundaries, and unrun new checks
+- UPDATED architecture/split-types.md — extend shared monetary caps/grouping to Unequal/Adjust without changing ratio precision, calculations, or historical prefills
+- UPDATED workflows/paid-by.md — document grouped/capped payer inputs and suggestion placeholders with unchanged remainder behavior and raw hundredths persistence
+- UPDATED workflows/filtering.md — document shared monetary bounds, raw URL state, historical/invalid draft preservation, and unrun revised coverage
+- UPDATED decisions/settlement-recording.md — document reusable payment MoneyInput and future format extension points without changing defaults/storage
+- UPDATED workflows/main-screen.md — document app-wide monetary reuse and distinguish passing focused description coverage from unrun monetary-refactor changes
+- UPDATED architecture/domain-models.md — record focused description regressions passing before the subsequent presentation-only monetary refactor
+- UPDATED decisions/string-input-normalization.md — document central monetary filtering, signed Adjust, preserved raw values/prefills and ratios, and completed description normalization/persistence coverage
+- UPDATED decisions/expense-edit-delete.md — record focused description edit/detail passes and keep subsequent monetary changes unverified
+- UPDATED decisions/import-export.md — record description compatibility/import and five-case ZIP rerun passes plus scoped formatting, preserving unchanged portable numbers
+- UPDATED decisions/full-backup.md — record description archive/actual-restore passes before the presentation-only MoneyInput refactor
+- UPDATED systems/indexeddb-schema.md — record description persistence passes and unchanged version 3/hundredths under the unverified monetary presentation layer
+- UPDATED wiki/index.md — surface mandatory money reuse and accurate scoped description/static/ZIP results without claiming a new full-suite or monetary-refactor pass
+- UPDATED workflows/main-screen.md — document approved app-wide four-digit native date-year entry/keyboard cap, silent extra-digit removal and rollover prevention, preserved month/day, direct input restoration, clearing/reentry, and unrun coverage
+- UPDATED decisions/settlement-recording.md — document shared payment/expense/filter date-year entry limits without adding length errors or changing existing date/time save validation
+- UPDATED wiki/index.md — surface app-wide four-digit date-year entry and retain the verification approval gate
+- UPDATED architecture/domain-models.md — document approved optional plain-text expense descriptions, blank omission, old-record compatibility, and correct the stale blank-time default
+- UPDATED decisions/string-input-normalization.md — document description trimming, preserved internal whitespace, blank clearing, and optional transfer/backup validation without historical defaults
+- UPDATED decisions/expense-edit-delete.md — document description prefill/edit/clear, reference-only preservation, full-width plain-text detail rendering, and unrun regression coverage
+- UPDATED decisions/import-export.md — document descriptions across Link/CSV/ZIP, previous version 2/version 1 CSV headers, unchanged old integrity inputs, and old-reader compatibility limits
+- UPDATED decisions/full-backup.md — document optional description preservation, older description-free replace-only restore, unchanged integrity checks, and unrun archive/store coverage
+- UPDATED systems/indexeddb-schema.md — document why an optional non-indexed field needs no migration/backfill and correct the expense current-time default
+- UPDATED workflows/main-screen.md — document description field/detail placement and unrun form/persistence/transfer/restore/responsive coverage
+- UPDATED wiki/index.md — surface implemented descriptions and legacy compatibility without migration, with all new checks explicitly pending
+- UPDATED workflows/main-screen.md — document approved separate Date/Time error placement, independent invalid styling/accessibility, clock-transition time classification, unchanged combined save validation, and unrun helper/browser coverage
+- UPDATED decisions/settlement-recording.md — document field-specific picker errors across payment Add/Settle up/Edit without changing persisted timestamps or required-time validation
+- UPDATED wiki/index.md — surface independent picker validation and keep new helper/revised browser execution pending
+- UPDATED workflows/main-screen.md — document approved matching bold picker typography and shared payment/expense Amount grouping, filtering, eight-whole-digit/two-decimal entry caps, preserved raw values/prefills, and unrun revised coverage
+- UPDATED decisions/settlement-recording.md — extend expense Amount input behavior to payment Add/Settle up/Edit without changing persisted money limits or overpayment handling, and record shared date/time typography
+- UPDATED wiki/index.md — surface shared Amount and bold picker changes while keeping moved helper/browser verification pending
+- UPDATED workflows/main-screen.md — document approved current-time defaults at form opening and Clear time replacing Use current time across expense/payment creation and editing, preserved date/AM–PM and saved edit values, and unrun revised browser coverage
+- UPDATED decisions/settlement-recording.md — document Add/Settle up current-time prefill and shared Clear time behavior without changing required-time validation or saved edit timestamps
+- UPDATED wiki/index.md — surface shared time-picker behavior and distinguish pending revised checks from the earlier verified baseline
 - UPDATED decisions/testing-strategy.md — record the completed 503-unit/520-browser/18-PWA verification, clean static checks/builds, 44 explained skips, UI repairs, and rendered-route/save-completion invariants; replace interim checkpoint notes with final evidence and retain release limits
 - UPDATED architecture/layout-architecture.md — record verified navigation/clearance and pre-removal editor focus restoration, with committed-route synchronization for history tests
 - UPDATED workflows/member-management.md — document shared-editor focus repair and final all-width browser verification
@@ -64,6 +139,14 @@ Last updated: 2026-10-11
 - UPDATED wiki/index.md — surface both Add/Edit member modals and retain their unverified status
 - UPDATED workflows/member-management.md — document approved all-width Add member modal with fixed heading/actions, scrolling body, preserved edit layouts, and revised browser coverage awaiting approval to run
 - UPDATED wiki/index.md — surface all-width member creation and distinguish the unverified change from earlier passing checks
+- UPDATED roadmap/product-roadmap.md — correct current status after the approved five-file restoration from 5cdbf6a and removal of four rebrand font/license files; record the separate three-variant upright font pass, unchanged app/PWA/copy/motion, stopped browser batch, and unrun new checks
+- UPDATED research/competitive-landscape.md — preserve reference findings while recording the rejected over-elaborate direction, product-fit lesson, no-italic constraint, and approved Manrope 400/600 plus upright Zilla Slab 600 choice with licensed local assets
+- UPDATED wiki/index.md — surface the restored design and restrained typography instead of the discarded rebrand; retain accurate launch-promise and verification boundaries
+- UPDATED roadmap/product-roadmap.md — record the approved typography-led website rebrand, self-hosted licensed fonts, paired-plane identity and scroll compositions, retained launch claims, checkpoint 5cdbf6a, historical verification scope, and unrun local checks
+- UPDATED research/competitive-landscape.md — complete the eight desktop/mobile reference captures with Vibor video/Raven loader limits and record the adopted design without importing proprietary assets or changing the app
+- UPDATED wiki/index.md — surface the implemented reference-informed rebrand and its pending verification
+- UPDATED research/competitive-landscape.md — record the user-requested visual rebrand, four non-product references and source-confirmed fonts/motion, checkpoint commit 5cdbf6a, asset/license boundaries, and approved reference-browser review in progress; supersede the old retain-styling constraint
+- UPDATED wiki/index.md — surface visual-reference research and distinguish it from competitor feature/content evidence
 - UPDATED roadmap/product-roadmap.md — add the approved website launch promise ledger, exact pending sync/cross-device claims, supported claim baselines and release evidence requirements; distinguish revised launch copy from current app reality and the earlier browser checks
 - UPDATED research/competitive-landscape.md — record application of the eight-site lessons to original launch copy and link the canonical promise ledger, preserving pending design/implementation and deferred SEO
 - UPDATED wiki/index.md — surface the launch promise tracker and revised-copy verification pause

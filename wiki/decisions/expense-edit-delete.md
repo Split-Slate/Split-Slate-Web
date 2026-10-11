@@ -9,12 +9,13 @@ metadata:
 
 Purpose: document expense correction, permanent deletion, and their persistence guarantees.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-11
 
 ## Implementation Status
 
 Expense detail, editing, and confirmed hard deletion are implemented. The shared form supports
-all five split types, payer/participant changes, date/time, category, and tags. Attachment ingestion
+all five split types, payer/participant changes, optional plain-text description, date/time,
+category, and tags. Attachment ingestion
 and receipt editing remain pending; updates preserve existing attachment IDs and deletion cleans
 up owned attachment records.
 
@@ -37,6 +38,7 @@ None in MVP. Since the app is single-device and local, there is only ever one pe
 
 Implemented editable fields:
 - Expense name
+- Description (optional multiline plain text)
 - Amount
 - When (date + time)
 - Category
@@ -66,6 +68,17 @@ Create and update share monetary/reference validation. Updates replace the old a
 checking the aggregate spending ceiling. The expense and recalculated payer ranking commit in one
 transaction; memory changes only after commit. Cancellation writes nothing; failures retain input
 and allow retry. Save handlers guard repeated submissions.
+
+Descriptions reopen exactly as saved; historical expenses without the optional property show an
+empty field. Saving trims only outer whitespace, preserves internal spacing/line breaks, and a
+blank field clears the saved property. Quick category/tag changes preserve the description because
+they update only references. Detail shows a full-width themed Description card above Paid by/Split
+only when a description is present; it renders plain text with preserved whitespace and safe
+wrapping, never HTML. Description store and responsive browser regressions passed in the focused
+299-unit/store and six-browser batch before the shared MoneyInput refactor, and again in the scoped
+543-unit/store and three-file browser batch. Monetary/historical-prefill cases passed, with all four
+initially affected scenarios passing in an eight-case follow-up after test-only fixes. Exact scope
+and limits live in [[testing-strategy]]; reuse rules live in [[money-representation-and-rounding]].
 
 ### Resolved: Shares Metadata Precision Loss
 

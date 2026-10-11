@@ -41,6 +41,16 @@ const saved = (
 });
 
 describe("expenseFormValues", () => {
+  it("opens historical expenses without a description as an empty field", () => {
+    const expense = saved("equal", [{ memberId: "a", amount: 10001 }]);
+    expect(expenseFormValues(expense, members, "INR").description).toBe("");
+    expect(expense).not.toHaveProperty("description");
+  });
+  it("restores multiline descriptions without changing their content", () => {
+    const expense = saved("equal", [{ memberId: "a", amount: 10001 }]);
+    expense.description = "Dinner  and drinks\n\nReceipt reference: 123 🥘";
+    expect(expenseFormValues(expense, members, "INR").description).toBe(expense.description);
+  });
   it.each([
     ["equal", [5000, 5001], []],
     ["amount", [0, 10001], []],

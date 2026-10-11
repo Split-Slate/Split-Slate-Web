@@ -41,8 +41,8 @@ const GroupOverview = () => {
       groupSettlements,
     ),
   );
-  const memberName = (id: string) =>
-    groupMembers.find((member) => member.id === id)?.person?.name ?? "Unknown";
+  const memberPerson = (id: string) => groupMembers.find((member) => member.id === id)?.person;
+  const memberName = (id: string) => memberPerson(id)?.name ?? "Unknown";
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center justify-between gap-2">
@@ -82,12 +82,26 @@ const GroupOverview = () => {
               {transfers.slice(0, 3).map((transfer) => (
                 <li
                   key={`${transfer.fromMemberId}-${transfer.toMemberId}`}
-                  className="overview-transfer-row"
+                  className="overview-transfer-row !items-center"
                 >
                   <span className="overview-transfer-people">
-                    <span>{memberName(transfer.fromMemberId)}</span>
+                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                      <Avatar
+                        icon={memberPerson(transfer.fromMemberId)?.icon}
+                        name={memberName(transfer.fromMemberId)}
+                        className="!h-6 !w-6 shrink-0 !text-xs"
+                      />
+                      <span>{memberName(transfer.fromMemberId)}</span>
+                    </span>
                     <Icon icon={ArrowRight} size={14} />
-                    <span>{memberName(transfer.toMemberId)}</span>
+                    <span className="inline-flex min-w-0 items-center gap-1.5">
+                      <Avatar
+                        icon={memberPerson(transfer.toMemberId)?.icon}
+                        name={memberName(transfer.toMemberId)}
+                        className="!h-6 !w-6 shrink-0 !text-xs"
+                      />
+                      <span>{memberName(transfer.toMemberId)}</span>
+                    </span>
                   </span>
                   <strong className="money">
                     {formatCurrency(transfer.amount, group.currency)}

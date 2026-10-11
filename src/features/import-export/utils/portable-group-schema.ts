@@ -88,6 +88,7 @@ const expenseSchema = z.object({
   expenseId: idSchema,
   groupId: idSchema,
   expenseName: z.string().trim().min(1),
+  description: z.string().trim().min(1).optional(),
   createdBy: idSchema,
   categoryId: idSchema,
   createdAt: timestampSchema,

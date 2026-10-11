@@ -3,7 +3,6 @@ import { useEffect, useId, useRef, useState } from "react";
 import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import MemberPicker from "@/features/settlements/components/member-picker";
-import Input from "@/shared/components/form-elements/input";
 
 import type { SettlementFormValues } from "@/features/settlements/utils/settlement-schema";
 import { createSettlementSchema } from "@/features/settlements/utils/settlement-schema";
@@ -14,6 +13,7 @@ import type { SettlementInput } from "@/features/settlements/types/settlements.t
 import type { Expense, Group, Member, Person, Settlement, Tag } from "@/shared/types/domain.types";
 
 import DialogLayout from "@/shared/ui/dialog-layout";
+import MoneyInput from "@/shared/ui/money-input";
 import WhenPicker from "@/shared/ui/when-picker";
 
 interface PropsType {
@@ -61,7 +61,7 @@ const SettlementForm = ({
       toMemberId: initial?.toMemberId ?? suggested?.toMemberId ?? "",
       amount:
         initial || suggested ? moneyToDecimal((initial ?? suggested)!.amount, group.currency) : "",
-      when: initial ? localDateTime(initial.when) : "",
+      when: localDateTime(initial?.when ?? openedAt),
       tagIds: initial?.tagIds ?? [],
     },
   });
@@ -151,7 +151,7 @@ const SettlementForm = ({
               </div>
               <label className="block">
                 <span className="field-label">Amount ({group.currency})</span>
-                <Input name="amount" inputMode="decimal" placeholder="0.00" />
+                <MoneyInput name="amount" placeholder="0.00" />
               </label>
               <WhenPicker defaultDate={localDateTime(openedAt).slice(0, 10)} />
               {tags.length > 0 && (

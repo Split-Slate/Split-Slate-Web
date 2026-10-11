@@ -37,6 +37,65 @@ This policy overrides conflicting project instructions and historical notes in `
 check stays explicitly unverified; do not claim it passed or block unrelated approved work merely
 because it is pending. This preserves the user's control over time and the shared workspace.
 
+## Scoped Description and Monetary Verification — 2026-10-11
+
+The approved monetary-refactor batch passed **543 unit/store cases across 32 files** under
+`src/shared/tests/utils`, `src/features/expenses/tests`, `src/features/settlements/tests`, and
+`src/features/import-export/tests`. Repository lint and TypeScript passed. Prettier write/check
+passed on the 17 monetary-refactor source/test files only; this was not repository-wide formatting.
+The earlier description batch passed 299 cases across 21 files, six desktop/mobile description
+browser cases, and a separate five-case ZIP rerun with a scoped ZIP-test formatting check.
+
+The three-file desktop/mobile browser batch (`record-expense.e2e.ts`, `expense-filters.e2e.ts`,
+`settlements.e2e.ts`) finished with **187 passes, 7 failures, and 4 expected viewport skips** in
+9.7 minutes. All payment cases, description cases, Unequal/Adjust monetary entry, large monetary
+prefills, current-time/Clear time, picker errors/typography, and four-digit year cases passed.
+The Shares-only seven-total-digit entry cases also passed; that separate feature was preserved.
+
+Failures comprised payer-selection test actions on visually hidden checkboxes (two projects),
+filter locators whose exact label changed when validation text appeared (two projects), a Shares
+test refilling its unchanged historical value rather than actually changing it (two projects), and
+one desktop setup timeout. Approved fixes changed only the two expense browser test files:
+
+- Click the visible payer label/pill, as existing payer journeys already do.
+- Use stable input `name` selectors when an in-progress invalid amount adds text inside its label.
+- Clear historical Shares before refilling to trigger a real React change event; merely reopening
+  or submitting an untouched prefill must not apply the entry cap.
+
+The approved single-worker rerun selected those four scenarios on desktop and mobile:
+**8 passed in 41.6 seconds**, including the setup-timeout scenario without a timeout increase.
+Scoped two-file formatting/lint and TypeScript passed after the test fixes. No production code
+changed in this follow-up. The 543-case unit batch was not repeated after these test-only fixes;
+Shares helper coverage was not separately rerun. This is a repaired focused batch, not a fresh
+full-browser, build, PWA, or repository-formatting pass. All new execution needs approval.
+
+Browser artifacts:
+- `/tmp/opencode/currency-verification-2026-10-11` — original three-file failures/traces.
+- `/tmp/opencode/currency-focused-rerun-2026-10-11` — focused rerun output directory.
+
+That verification batch left unrelated landing edits and the `wiki/log.md` conflict untouched. See
+[[money-representation-and-rounding]], [[main-screen]], [[paid-by]], [[filtering]],
+[[split-types]], [[import-export]], and [[full-backup]].
+
+## Current UI and Commit Reconciliation — 2026-10-11
+
+The user approved resolving the wiki-log conflict, reconciling six wiki files, and committing the
+remaining app/wiki changes. Both conflict histories are retained. Landing implementation was
+already committed separately as `8e39f27`; this reconciliation does not modify landing files or
+application source/tests. No tests, builds, lint, type checks, formatting, servers, or push ran.
+
+Read-only source/test review found current Add/Edit uses closed-by-default Optional details for
+Description and Tags, places Date and time first, and autofocuses Amount. Existing
+`record-expense.e2e.ts` cases still access optional fields without opening the disclosure and
+assert date/time lies beneath Tags. `expense-filters.e2e.ts` still expects a sort section named
+Date; source now names it Expense date and adds Added date plus a mobile Sort dialog. These are
+stale test assumptions, not failures observed in a new run.
+
+Historical scoped passes above must not be treated as verification of this current layout,
+mobile Sort/dialog sizing, added-date payment merging, recent-expense group ordering, or Overview
+transfer-avatar refinements. Test updates and any fresh verification remain pending and require
+separate explicit approval. See [[main-screen]] and [[filtering]] for current behavior.
+
 ## Responsive Browser Coverage
 
 The 2026-10-08 pre-scaling full browser suite verified the mobile expense form's scroll boundary,

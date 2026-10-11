@@ -87,6 +87,18 @@ When more than one person contributed to paying a bill:
 - Payer validation is shown once as plain red text near the contribution rows; submitting an invalid
   draft does not add a duplicate alert-styled message below the split editor.
 
+Contribution fields use the shared `MoneyInput` with eight-whole-digit/two-decimal user-entry
+limits, digits/one decimal point only, and default three-digit comma grouping. Signs, letters,
+exponent markers, and other punctuation are discarded rather than interpreted. Suggested numeric
+placeholders use the same input formatter; live currency amounts use `formatCurrency`. Neither
+grouping nor placeholder presentation changes the contribution/remainder algorithm. Form values
+and saved hundredths contain no formatting. Opening historical larger contributions preserves
+their full text until the user changes a field. Grouping/caps/caret/raw-save/reopening browser
+coverage passed on desktop/mobile in the focused rerun after changing the test to click visible
+payer labels instead of their hidden checkboxes. No payer production behavior changed in that fix.
+See [[testing-strategy]] for the original batch and rerun; future monetary fields must reuse the
+shared APIs in [[money-representation-and-rounding]].
+
 ---
 
 ## Pre-selection Summary

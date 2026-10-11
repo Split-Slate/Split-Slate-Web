@@ -1,8 +1,8 @@
 # Competitive Landscape
 
-A dated competitor record preserving product research, website-content lessons, and launch-copy constraints.
+A dated record preserving competitor content lessons, visual references, and launch-copy constraints.
 
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 Product research snapshot: May 2026; volatile facts were rechecked on 2026-08-20.
 Website-content review: 2026-10-10, covering eight user-selected websites.
 Source: `app-featureset-context/expense-splitting-apps-feature-tables.md.pdf` + `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analysis for a Splitwise Alternative.pdf`
@@ -119,9 +119,11 @@ Their presence demonstrates content organization, not independently verified com
 
 ### Lessons to Carry Into the Next Content Pass
 
-1. **Keep distinctive design; improve literal clarity.** Retain the editorial layout and coordinated
-   animations. The creative headline must be accompanied by an immediate explanation of splitting
-   bills, tracking shared expenses, and seeing who owes whom.
+1. **Improve literal clarity independently of the visual direction.** The creative headline must
+   be accompanied by an immediate explanation of splitting bills, tracking shared expenses, and
+   seeing who owes whom. Retaining the original editorial styling was the earlier content-pass
+   constraint; a subsequent full rebrand was tried and rejected as overkill. The user chose to
+   restore that original styling, then refine its fonts without another full redesign.
 2. **Use concrete situations.** Name trips, roommates, rent, utilities, groceries, meals, transport,
    and shared events where relevant. Explain the shared-cost problem, not merely a lifestyle label.
 3. **Let the example teach.** Show who paid, which people share the cost, their allocations, and
@@ -173,6 +175,184 @@ app/PWA source, copy competitor assets/scripts, or start the technical SEO phase
 has not been formatted or browser-verified; earlier landing checks precede these text changes.
 
 ---
+
+## Visual Rebrand References — 2026-10-10
+
+Purpose: retain the user's typography/scroll-motion references separately from expense-app
+competitor research. These sites are not product or feature models for Split Slate.
+
+### Direction and Checkpoint
+
+- The user initially requested a full rebrand, then rejected the implemented reference-informed
+  direction. Their final clarification: the animations were good, but the UI/motion combination
+  was overkill for this expense-splitting product; the earlier design was better with font changes.
+  They explicitly approved exact restoration first, followed by a separately approved upright
+  typography refinement. The product name and agreed launch-copy constraints still apply.
+- User-selected references: [Vibor](https://www.vibor.it/),
+  [MIMCO Capital](https://www.mimcocapital.com/), [Raven](https://raven-trading.com/), and
+  [Saisei](https://saisei-sbj.webflow.io/). The user liked some fonts and scroll animations without
+  selecting exact sections. Do not infer that they approved every reference effect or color palette.
+- At the user's request, commit `5cdbf6a` (`chore: checkpoint landing page before visual rebrand`)
+  preserves the five landing files and four related wiki files before the next redesign. It was
+  committed locally and not pushed. No reset/revert or permission to discard unrelated work is implied.
+- HTML, CSS, and available public animation source were inspected. The approved Chromium review
+  completed eight captures at 1440×900 and 390×844, with an entrance wait and six scroll samples
+  per page. Screenshots, recordings, and `results.json` are under
+  `/tmp/opencode/brand-reference-review/`. This is partial-page reference sampling, not a full
+  usability/performance audit or a test of our landing page.
+
+### Source-Confirmed Typography and Motion Techniques
+
+| Reference | Typography declared by the site | Relevant source evidence |
+|-----------|----------------------------------|--------------------------|
+| Vibor | Formular variants, Formular Mono, and Canela. | Large mixed-family statements, masked translated/rotated headings, desktop-specific entrance transforms, Lottie brand artwork, and background video containers. |
+| MIMCO Capital | Aeonik across weights plus Aeonik Air. | Homepage intro/interactive-image modules; GSAP ScrollTrigger, line reveals, and image parallax in the public application bundle. |
+| Raven | PP Mondwest, PP NeueBit, Neue Montreal, and JetBrains Mono. | Pixel/display/mono contrast in the hero, text-scramble hooks, numbered chapter navigation, light/dark theme variables, scroll-snap rules, and Three.js imports. |
+| Saisei | Aeonik with PP Fragment serif. | Fluid oversized type; staggered masked line reveals, scroll-scrubbed character rotation/scale, image parallax, and coordinated panel/menu timelines in the public bundle. |
+
+These are declared families and available implementation mechanisms, not a claim that every
+mechanism ran successfully or that font names alone reproduce the visual result. Several reference
+fonts are commercial; serving a font publicly does not grant us a redistribution license.
+
+### Rendered Capture Findings and Limits
+
+- **Vibor:** the page and its intro transition rendered; the large brand wordmark and mixed-weight
+  text composition were captured on desktop/mobile. Its embedded Vimeo video showed a connection
+  security restriction, so the video content/effect is not a reviewed reference.
+- **MIMCO:** captured large white branding over architecture imagery and the transition to a
+  light, generously spaced typographic introduction. Aeonik was the computed body font. No page
+  exceptions were recorded in these samples; this is not a claim that all site behavior works.
+- **Raven:** both sizes reported `Cannot read properties of null (reading 'style')`. The desktop
+  loader remained visible while underlying scroll samples contained scrambled headings; that
+  obscures the intended composition. Mobile exposed the page with PP NeueBit hero text and
+  JetBrains Mono subheads. Do not describe the blocked desktop experience as successfully observed.
+- **Saisei:** captured oversized PP Fragment branding, a dark photographic opening, a light serif
+  introduction, and rearranged heading/image layouts on mobile. The source supplies evidence for
+  character-rotation/stagger mechanics; sampled screenshots alone do not establish their timing.
+- No loader bypass, embedded-video workaround, retry, installation, or local preview server ran.
+  Do not infer all-browser, physical-device, reduced-motion, or complete-page coverage.
+
+### Transferable Design Lessons and Boundaries
+
+- Use deliberate family contrast, size, weight, spacing, and alignment, but match the product's
+  scale. The current preference is a restrained font-focused refinement of the restored page,
+  not oversized typography/immersive choreography because unrelated references use them.
+- Build a few coherent sequences with a beginning, transition, and resolved state. Use masks,
+  stagger, scale, and parallax to coordinate the composition rather than revealing every card alike.
+- Translate motion into this product's meaning: separate contributions, a shared total, fair
+  allocations, and clear repayments. Do not import architecture, manufacturing, or crypto claims.
+- Keep product explanations and the canonical [[product-roadmap]] website-promise ledger intact.
+  A more immersive composition is not permission to remove useful FAQs or invent product features.
+- Do not copy reference logos, photography/video, font binaries, animation bundles, or analytics.
+  Properly licensed self-hosted alternatives are candidates; reference commercial fonts require
+  an appropriate license. Space Grotesk/Instrument Serif were acquired for the discarded rebrand,
+  then their two fonts and two license files were removed during approved restoration. The current
+  typography at that checkpoint used approved Manrope/Zilla Slab Latin WOFF2 assets and SIL OFL notices.
+  Unsupported glyphs use generic system fallback, not additional downloaded families/subsets.
+- Reference loaders, forced scroll snapping, hidden scrollbars, and disabled pinch zoom are not
+  requirements. Preserve ordinary scrolling, readable content without JavaScript, keyboard access,
+  reduced-motion handling, and lighter mobile behavior.
+- Website-only rebranding must preserve the independent manual Netlify deployment and stay outside
+  the installed PWA, app source/build/cache, and existing browser-data origin. SEO remains separate.
+
+### Discarded Website-Only Rebrand
+
+The user explicitly approved the thirteen-file rebuild plan and the bounded two-font/license
+download. That implementation replaced the receipt composition with near-black/chalk/vermilion,
+paired-plane geometry, oversized typography, masked character entrances, scroll-separated hero
+lines, progressive text resolution, and a sticky contribution/shares/repayment sequence. The split
+demo uses proportional full-width panels instead of decorated receipt cards. Functional launch
+copy, FAQ/fact claim anchors, separate deployment, and app-entry boundaries are retained.
+
+That version opened with “Shared life. Clear slate.” and did not copy reference photography,
+videos, loaders, commercial fonts, or proprietary assets. These describe discarded source, not
+the current page. Its approved formatter/syntax commands passed; browser scenarios at 280/320/390px
+completed before the user stopped execution. The interrupted batch ended with a context cleanup
+error, not complete coverage. No retry or deployment followed the refusal.
+
+### Restoration and Product-Fit Lesson
+
+With explicit approval, the five landing files were restored exactly from checkpoint `5cdbf6a`,
+and the four rebrand font/license files were removed. The receipt-based “Go halves. Stay whole.”
+design, launch-state copy, and original motion became the baseline again. The app/PWA was not
+changed, and wiki/reference findings were retained rather than reset.
+
+**Good motion in isolation is not sufficient product fit.** For this app's landing, the user
+preferred the earlier approachable composition to the more elaborate reference-derived UI.
+Do not interpret appreciation of an animation as approval for more animation or a new visual system.
+
+### Historical Approved Upright Typography Refinement
+
+The user's first concern was excessive typography variety, and they explicitly disliked italics.
+They suggested Montserrat, Clarity City, and Roboto Slab as examples of taste, not required choices.
+The approved response uses two self-hosted families and only three configured variants:
+
+| Variant | Intended role |
+|---------|---------------|
+| Manrope Regular 400, normal | Body copy, FAQs, explanations, supporting text. |
+| Manrope Semibold 600, normal | Navigation, controls, labels, identities, financial amounts. |
+| Zilla Slab Semibold 600, normal | Hero/main headings, receipt titles, selected display text. |
+
+Manrope supplies clean geometric text; Zilla Slab supplies upright slab-serif character suited to
+the restored receipt design. Both are SIL OFL 1.1 licensed. The two Manrope face declarations use
+one variable Latin WOFF2; only 400/600 are configured, not a weight range. Zilla Slab is one static
+600 face. Generic fallbacks handle loading failures/unsupported glyphs; no discretionary fallback
+font list or separate monospace family remains. Semantic emphasis stays in markup but is upright;
+browser-default bold is mapped to 600 and synthetic faces are disabled.
+
+The approved eleven-file scope changes fonts, preloads, documentation, and typography size/spacing/
+line-height only. Layout, colours, copy, animation script, favicon, app/PWA boundaries, and SEO
+deferral remain unchanged. Current implementation and launch promises are in [[product-roadmap]].
+The bounded official-source font/license download completed. No formatting, tests, browser runs,
+servers, installations, or font-loading/layout verification ran for this refinement. The new
+typography is implemented source, not a browser-verified visual result or permanent user acceptance.
+
+---
+
+### Current Source and Native Animation — 2026-10-11
+
+The earlier font-pass description is historical. Source inspection for the new animation found
+three different configured upright faces already in `landing/styles.css` and its local preloads:
+Montserrat Regular 400 for body copy, Saira Bold 700 for headings, and Space Grotesk Semibold 600
+for controls/identities/money. These current fonts and existing unused assets are preserved.
+The wiki must not infer the current implementation from the earlier Manrope/Zilla Slab approval.
+
+The user has now explicitly requested a complete notebook → frustration → phone → clear
+repayments → relief story. This supersedes the earlier restrained-motion preference for the
+opening experience, not the brand identity or the launch-capability constraints. The key metaphor
+is visual continuity: the same handwritten Dinner/Taxi labels and $120/$30 elements move into
+the illustrated app layout. Motion conveys removal of arithmetic, not merely digital note-taking.
+Maya/Leo/Nina's $150 equal-split example correctly suggests Leo → Maya $20 and Nina → Maya $50.
+
+The supplied prompt requested React/GSAP, but the user's subsequent explicit constraint takes
+precedence: plain HTML/CSS/JavaScript, no build process, and drag-and-drop deployment. The approved
+implementation uses original SVG strokes, native scroll-linked reversible transforms, shorter
+mobile travel, and static reduced-motion/short-screen/no-JavaScript alternatives. No libraries,
+dependency downloads, videos, or reference assets were added. The phone is an explicitly labelled
+illustrated walkthrough derived from app concepts, not a live app or a screenshot.
+
+Current implementation and deployment/accessibility boundaries live in [[product-roadmap]].
+
+**Approved actual-app visual alignment:** the user supplied their mobile Overview screenshot and
+requested its design with fictional story records. The native phone now uses the reference's
+lavender canvas, purple net-position hero, rounded white Members/Suggested transfers/Recent
+transactions cards in that order, full-width card actions, category/amount-below-title transactions,
+and five-item bottom navbar. Names and amounts remain Maya/Leo/Nina's mathematically correct example.
+It is a labelled presentation replica, not an embedded live React app or a screenshot replacement.
+
+To keep the replica faithful without rebranding the landing, the user approved one phone-only font
+exception: the existing app's Plus Jakarta Sans WOFF2 is copied into `landing/fonts/`, with its SIL
+OFL license. The app font applies to the phone and travelling digital labels/amounts; the three
+landing typography roles and SVG handwriting remain unchanged. The approved asset batch copied
+the local font and fetched its official notice. Nothing is downloaded at runtime, and no packages,
+frameworks, build tools, app/PWA changes, or new launch capabilities were introduced.
+
+Scroll-linked internal panning exposes the real card order without squeezing every section into
+one miniature screen. The original travelling nodes dock into the clipped phone document and
+return to paper on reverse scrolling. The hand and all non-phone artwork remain unchanged.
+
+No browser, syntax, formatting, server, performance, or deployment verification ran for this
+animation; it is implemented source, not a verified award-quality or production-ready result.
 
 ## Related
 

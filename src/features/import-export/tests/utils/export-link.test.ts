@@ -28,6 +28,20 @@ const incompressibleText = (byteLength: number): string => {
 };
 
 describe("transfer links", () => {
+  it("preserves multiline descriptions through compact links without adding them to old expenses", async () => {
+    const source = createExportSource({ expenseCount: 2 });
+    source.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';
+    const transfer = await buildGroupTransfer(source, {
+      ...GROUP_ONLY_SELECTION,
+      expenses: true,
+    });
+    const parsed = await decodeTransferPayload(`#${await encodeTransferPayload(transfer.bundle)}`);
+    expect(parsed).toEqual(await compactLinkIds(transfer.bundle));
+    expect(parsed.expenses[0].description).toBe(source.expenses[0].description);
+    expect(parsed.expenses[1]).not.toHaveProperty("description");
+    transfer.bundle.expenses[0].description = "Tampered description";
+    await expect(encodeTransferPayload(transfer.bundle)).rejects.toThrow("integrity");
+  });
   it("imports signed version-1 links without inventing payments", async () => {
     const { bundle } = await buildGroupTransfer(createExportSource(), {
       ...GROUP_ONLY_SELECTION,
@@ -78,6 +92,7 @@ describe("transfer links", () => {
     expect(restored.settlements).toEqual([]);
     expect(restored.schemaVersion).toBe(2);
     expect(restored.expenses).toEqual(bundle.expenses);
+    expect(restored.expenses[0]).not.toHaveProperty("description");
   });
   it("round-trips validated Unicode data through an import URL", async () => {
     const value = await createTransfer();

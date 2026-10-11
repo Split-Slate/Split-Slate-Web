@@ -15,7 +15,9 @@ import {
 
 describe("portable group ZIP", () => {
   it("round-trips the verified manifest, CSV, index, and receipt files", async () => {
-    const source = await buildGroupTransfer(createExportSource({ withAttachments: true }), {
+    const fixture = createExportSource({ withAttachments: true, expenseCount: 2 });
+    fixture.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';
+    const source = await buildGroupTransfer(fixture, {
       categories: true,
       tags: true,
       members: true,
@@ -27,6 +29,7 @@ describe("portable group ZIP", () => {
     expect(Object.keys(archive).sort()).toEqual([
       "README.txt",
       "attachments/1-attachment-0001-12345678-90ab-cdef.jpg",
+      "attachments/2-attachment-0002-12345678-90ab-cdef.jpg",
       "attachments/index.json",
       "group.csv",
       "manifest.json",
@@ -34,6 +37,35 @@ describe("portable group ZIP", () => {
     expect(strFromU8(archive["README.txt"])).toContain("new editable group");
     const parsed = await parsePortableGroupZip(bytes);
     expect(parsed.bundle).toEqual(source.bundle);
+    expect(parsed.bundle.expenses[0].description).toBe(fixture.expenses[0].description);
+    expect(parsed.bundle.expenses[1]).not.toHaveProperty("description");
+    expect(await parsed.attachmentFiles[0].blob.text()).toBe("receipt 1");
+  });
+
+  it("accepts a previous ZIP with a description-free CSV header and unchanged manifest digest", async () => {
+    const source = await buildGroupTransfer(createExportSource({ withAttachments: true }), {
+      ...GROUP_ONLY_SELECTION,
+      attachments: true,
+    });
+    const archive = unzipSync(await createPortableGroupZip(source));
+    // This legacy fixture has single-line cells; quoted nested JSON remains intact.
+    const lines = strFromU8(archive["group.csv"])
+      .replace(/^\uFEFF/u, "")
+      .split("\r\n");
+    const header = lines[0].match(/"(?:[^"]|"")*"/gu)!;
+    const descriptionIndex = header.indexOf('"description"');
+    expect(descriptionIndex).toBeGreaterThan(-1);
+    archive["group.csv"] = strToU8(
+      `\uFEFF${lines
+        .map((line) => {
+          const cells = line.match(/"(?:[^"]|"")*"/gu) ?? [];
+          return cells.filter((_, index) => index !== descriptionIndex).join(",");
+        })
+        .join("\r\n")}`,
+    );
+    const parsed = await parsePortableGroupZip(zipSync(archive));
+    expect(parsed.bundle).toEqual(source.bundle);
+    expect(parsed.bundle.expenses[0]).not.toHaveProperty("description");
     expect(await parsed.attachmentFiles[0].blob.text()).toBe("receipt 1");
   });
 

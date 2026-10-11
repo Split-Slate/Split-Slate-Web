@@ -10,7 +10,7 @@ metadata:
 Purpose: prevent floating-point accounting errors while guaranteeing that every computed split
 adds back to its expense total.
 
-Last updated: 2026-10-04
+Last updated: 2026-10-11
 
 ## Implementation Status
 
@@ -80,6 +80,52 @@ See [[expense-edit-delete]].
   write boundary.
 - Convert hundredths back to entered numeric amounts only at the display boundary before calling currency
   formatting APIs.
+
+## Mandatory Shared Formatting and Input Reuse
+
+All application monetary displays use `src/shared/utils/currency.ts` →
+`formatCurrency(amount, currency, options?)`. Its number argument is stored/derived integer
+hundredths, not a floating-point major-unit amount. Output is display-only text: formatting never
+writes to the database or changes calculations. Existing callers retain locale-based grouping,
+narrow currency symbols, and fixed two-decimal display. Optional `CurrencyFormatOptions` supports
+locale, locale/international/Indian/no grouping, and symbol/narrow-symbol/code/name presentation.
+Custom grouping preserves localized digits, decimal separators, currency placement, and signs.
+Exact decimal text reaches Intl without conversion to Number so large amounts retain their cents.
+
+All monetary fields must use `src/shared/ui/money-input` → `MoneyInput`, not an ordinary Input with
+a feature-local formatter. It wraps the existing React Hook Form Input and uses
+`src/shared/utils/amount-input.ts` → `sanitizeAmountInput` and `formatAmountInput`:
+
+- User entry keeps ASCII digits and one `.`; disallowed characters are filtered before limits.
+- At most **8 whole digits and 2 fractional digits**, without rounding, from shared constants in
+  `src/shared/constants/currency-format.constants.ts`.
+- `allowNegative` is enabled only for Adjust; one leading `-` is retained without counting toward
+  the digit cap. Other monetary fields discard signs.
+- Default input grouping is international three-digit comma grouping, independent of currency.
+- Formatting uses raw decimal text to preserve unfinished `12.`, zeros in `12.50`, and exact
+  values; `AmountInputFormatOptions` supports international/Indian/no grouping.
+- Display commas never enter form values, URL filters, parsed hundredths, or persisted records.
+- Caret/selection and comma-aware Backspace/Delete use the shared Input implementation.
+- Existing/suggested prefills are formatted, not sanitized or truncated at render time; the cap
+  applies when the user changes an input, not when an old/imported amount is opened.
+- Invalid URL drafts remain visible for correction rather than being silently rewritten.
+
+Coverage: expense Add/Edit total Amount, payment Add/Settle up/Edit Amount, every payer contribution
+(including numeric suggestion placeholders), Unequal owed amounts, signed Adjust amounts, and both
+expense amount-filter bounds. Shares and percentages are ratios, not money: their existing
+six-decimal precision and range rules remain unchanged. Currency selectors show labels/symbols,
+not monetary amounts. Free-text names/descriptions are not monetary inputs.
+
+Options/types and central defaults are extension points for future user preferences; no preference
+UI or stored preference is implemented here. Do not introduce fresh currency formatting, grouping
+regexes, digit caps, or Number conversions in feature components. Reuse these APIs so future
+preferences can change presentation without changing accounting or import/backup contracts.
+Format-option/input-limit coverage passed in the scoped 543-case unit/store batch, with lint,
+TypeScript, and 17-file formatting also passing. The three-file browser batch had 187 passes,
+7 failures, and 4 expected skips; all four affected scenarios subsequently passed on desktop/mobile
+in an eight-case focused rerun after test-only fixes. No full-suite/build/PWA rerun is implied;
+future execution requires approval. See [[testing-strategy]] for scope and artifacts, plus
+[[main-screen]], [[paid-by]], [[split-types]], [[filtering]], and [[settlement-recording]].
 
 ## Aggregate Limit
 

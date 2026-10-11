@@ -6,9 +6,16 @@ interface PropsType {
   children: ReactNode;
   onCancel: () => void;
   busy?: boolean;
+  className?: string;
 }
 
-const MobileEditorDialog = ({ title, children, onCancel, busy = false }: PropsType) => {
+const MobileEditorDialog = ({
+  title,
+  children,
+  onCancel,
+  busy = false,
+  className = "",
+}: PropsType) => {
   const dialogRef = useRef<HTMLDialogElement>(null);
 
   useLayoutEffect(() => {
@@ -38,7 +45,7 @@ const MobileEditorDialog = ({ title, children, onCancel, busy = false }: PropsTy
       ref={dialogRef}
       aria-label={title}
       onCancel={handleCancel}
-      className="app-dialog max-w-lg rounded-3xl border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] shadow-2xl backdrop:bg-black/60"
+      className={`app-dialog max-w-lg rounded-3xl border border-[var(--line)] bg-[var(--surface)] text-[var(--ink)] shadow-2xl backdrop:bg-black/60 ${className}`}
     >
       {children}
     </dialog>

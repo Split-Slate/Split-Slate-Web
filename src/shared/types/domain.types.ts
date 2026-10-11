@@ -69,6 +69,7 @@ export interface Expense {
   expenseId: string;
   groupId: string;
   expenseName: string;
+  description?: string;
   createdBy: string;
   categoryId: string;
   createdAt: number;

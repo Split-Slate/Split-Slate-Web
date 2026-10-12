@@ -82,29 +82,17 @@ const ExportContentSelector = ({ attachmentCount }: PropsType) => {
       <label className="choice-option text-sm">
         <input
           type="checkbox"
-          checked={selection.categories ?? false}
-          disabled={selection.expenses}
-          onChange={handleCategories}
+          checked={selection.expenses ?? false}
+          disabled={selection.attachments}
+          onChange={handleExpenses}
           className="choice-control"
         />
         <span>
-          <span className="block font-medium">Categories</span>
+          <span className="block font-medium">Expenses</span>
           <span className="block text-[var(--muted)]">
-            {selection.expenses ? "Required by selected expenses" : "All group categories"}
-          </span>
-        </span>
-      </label>
-      <label className="choice-option text-sm">
-        <input
-          type="checkbox"
-          checked={selection.tags ?? false}
-          onChange={handleTags}
-          className="choice-control"
-        />
-        <span>
-          <span className="block font-medium">Tags</span>
-          <span className="block text-[var(--muted)]">
-            All group tags; optional even when expenses are included
+            {selection.attachments
+              ? "Required by selected receipt files"
+              : "All expenses, splits, and recorded group payments"}
           </span>
         </span>
       </label>
@@ -128,17 +116,29 @@ const ExportContentSelector = ({ attachmentCount }: PropsType) => {
       <label className="choice-option text-sm">
         <input
           type="checkbox"
-          checked={selection.expenses ?? false}
-          disabled={selection.attachments}
-          onChange={handleExpenses}
+          checked={selection.categories ?? false}
+          disabled={selection.expenses}
+          onChange={handleCategories}
           className="choice-control"
         />
         <span>
-          <span className="block font-medium">Expenses</span>
+          <span className="block font-medium">Categories</span>
           <span className="block text-[var(--muted)]">
-            {selection.attachments
-              ? "Required by selected receipt files"
-              : "All expenses, splits, and recorded group payments"}
+            {selection.expenses ? "Required by selected expenses" : "All group categories"}
+          </span>
+        </span>
+      </label>
+      <label className="choice-option text-sm">
+        <input
+          type="checkbox"
+          checked={selection.tags ?? false}
+          onChange={handleTags}
+          className="choice-control"
+        />
+        <span>
+          <span className="block font-medium">Tags</span>
+          <span className="block text-[var(--muted)]">
+            All group tags; optional even when expenses are included
           </span>
         </span>
       </label>

@@ -28,7 +28,10 @@ const Dashboard = () => {
   const transfers = dashboardTransfers(state);
   const allCategories = currency ? dashboardCategories(state, currency) : [];
   const categories = allCategories.slice(0, 6);
-  const totalCategorySpend = allCategories.reduce((sum, category) => sum + category.amount, 0);
+  const totalCategorySpend = allCategories.reduce(
+    (sum, category) => sum + BigInt(category.amount),
+    0n,
+  );
 
   return (
     <div className="page dashboard-page flex flex-col gap-8">
@@ -56,7 +59,7 @@ const Dashboard = () => {
                 ? "You're owed overall"
                 : "You owe overall"
           }
-          amount={formatCurrency(Math.abs(get - give), currency)}
+          amount={formatCurrency(get >= give ? get - give : give - get, currency)}
           description={
             entries.length
               ? `Across ${entries.length} ${entries.length === 1 ? "group" : "groups"} · ${transfers.length} suggested ${transfers.length === 1 ? "transfer" : "transfers"}`

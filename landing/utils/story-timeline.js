@@ -68,13 +68,15 @@
       target: find(`[data-expense-card="${node.dataset.receipt}"]`),
       destination: null,
     }));
-    const strokes = all("[data-ink-start]").map((path) => ({
-      path,
-      start: Number(path.dataset.inkStart),
-      end: Number(path.dataset.inkEnd),
-      points: [],
-      lastOffset: -1,
-    })).sort((a, b) => a.start - b.start);
+    const strokes = all("[data-ink-start]")
+      .map((path) => ({
+        path,
+        start: Number(path.dataset.inkStart),
+        end: Number(path.dataset.inkEnd),
+        points: [],
+        lastOffset: -1,
+      }))
+      .sort((a, b) => a.start - b.start);
     let previousChapter = -1;
     let linkVisible = false;
     let previousEntryCount = -1;
@@ -114,8 +116,11 @@
       entryPan = Math.max(0, expensesBounds.y - expensesBounds.height / 2 - documentOrigin.y - 36);
       resultsPan = Math.max(
         0,
-        transfersBounds.y + transfersBounds.height / 2 - documentOrigin.y
-          - phoneViewport.clientHeight + 4,
+        transfersBounds.y +
+          transfersBounds.height / 2 -
+          documentOrigin.y -
+          phoneViewport.clientHeight +
+          4,
       );
       travellers.forEach((traveller) => {
         // Resize/reverse always starts from the original paper geometry, including ink samples.
@@ -123,8 +128,9 @@
         traveller.docked = false;
         traveller.origin = canvasRect(traveller.source, bounds, scale);
         traveller.destination = canvasRect(traveller.target, bounds, scale);
-        traveller.destination.scale = Number.parseFloat(getComputedStyle(traveller.target).fontSize)
-          / (traveller.amount ? 27 : 24);
+        traveller.destination.scale =
+          Number.parseFloat(getComputedStyle(traveller.target).fontSize) /
+          (traveller.amount ? 27 : 24);
         traveller.digital.textContent = traveller.target.textContent;
         placeTraveller(traveller, traveller.origin.x, traveller.origin.y, -7, 1);
       });
@@ -153,7 +159,8 @@
         penProgress = between(progress, active.start, active.end);
       } else {
         const nextIndex = strokes.findIndex((stroke) => stroke.start > progress);
-        active = nextIndex > 0 ? strokes[nextIndex - 1] : nextIndex === 0 ? strokes[0] : strokes.at(-1);
+        active =
+          nextIndex > 0 ? strokes[nextIndex - 1] : nextIndex === 0 ? strokes[0] : strokes.at(-1);
         next = nextIndex >= 0 ? strokes[nextIndex] : null;
         penProgress = nextIndex === 0 ? 0 : 1;
       }
@@ -188,11 +195,17 @@
       const paperFade = 1 - smooth(between(p, 0.54, 0.645));
       const enteringExpenses = smooth(between(p, 0.555, 0.605));
       const showingBalances = smooth(between(p, 0.7, 0.756));
-      const phonePan = entryPan * enteringExpenses * (1 - showingBalances)
-        + resultsPan * showingBalances;
+      const phonePan =
+        entryPan * enteringExpenses * (1 - showingBalances) + resultsPan * showingBalances;
       transform(phoneDocument, 0, -phonePan);
 
-      transform(notebook, -24 * transformation, pressure - 40 * transformation, -7 - 3 * transformation, 1 - 0.025 * transformation);
+      transform(
+        notebook,
+        -24 * transformation,
+        pressure - 40 * transformation,
+        -7 - 3 * transformation,
+        1 - 0.025 * transformation,
+      );
       notebook.style.opacity = String(paperFade);
       math.style.opacity = String(1 - smooth(between(p, 0.475, 0.54)));
       slash.style.opacity = String(1 - smooth(between(p, 0.48, 0.55)));
@@ -204,7 +217,13 @@
 
       const phoneEntry = smooth(between(p, 0.495, 0.59));
       phone.style.opacity = String(phoneEntry);
-      transform(phone, phoneShift, 65 * (1 - phoneEntry), 4 * (1 - phoneEntry), 0.94 + 0.06 * phoneEntry);
+      transform(
+        phone,
+        phoneShift,
+        65 * (1 - phoneEntry),
+        4 * (1 - phoneEntry),
+        0.94 + 0.06 * phoneEntry,
+      );
       halo.style.opacity = String(smooth(between(p, 0.52, 0.7)));
       transform(halo, phoneShift, 0, 0, 0.82 + 0.18 * final);
 
@@ -259,8 +278,9 @@
         const scaleX = mix(1, destination.width / width, flight);
         const scaleY = mix(1, destination.height / height, flight);
         const x = mix(startX, destination.x - width / 2, flight);
-        const y = mix(startY, destination.y - phonePan - height / 2, flight)
-          - Math.sin(flight * Math.PI) * 35;
+        const y =
+          mix(startY, destination.y - phonePan - height / 2, flight) -
+          Math.sin(flight * Math.PI) * 35;
         const rotation = mix(receipt.dinner ? -19 : 17, 0, flight);
         receipt.node.style.transform = `translate3d(${x}px, ${y}px, 0)
           rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`;
@@ -270,7 +290,13 @@
       cards.forEach((card, index) => {
         const entered = smooth(between(p, 0.57 + index * 0.035, 0.622 + index * 0.035));
         card.style.opacity = String(entered);
-        transform(card, 0, 14 * (1 - entered) - Math.sin(entered * Math.PI) * 2, 0, 0.975 + 0.025 * entered);
+        transform(
+          card,
+          0,
+          14 * (1 - entered) - Math.sin(entered * Math.PI) * 2,
+          0,
+          0.975 + 0.025 * entered,
+        );
       });
       members.forEach((member, index) => {
         const entered = smooth(between(p, 0.514 + index * 0.008, 0.56 + index * 0.008));
@@ -290,9 +316,12 @@
         });
         const sign = state.position > 0 ? "+" : state.position < 0 ? "−" : "";
         position.textContent = `${sign}${story.data.formatMoney(Math.abs(state.position))}`;
-        positionNote.textContent = state.position > 0
-          ? "↓ you are owed in this group"
-          : state.position < 0 ? "↑ you owe in this group" : "All square in this group";
+        positionNote.textContent =
+          state.position > 0
+            ? "↓ you are owed in this group"
+            : state.position < 0
+              ? "↑ you owe in this group"
+              : "All square in this group";
         previousEntryCount = entryCount;
       }
       autoMath.style.opacity = String(smooth(between(p, 0.686, 0.725)));
@@ -302,7 +331,9 @@
         const entered = smooth(between(p, 0.76 + index * 0.025, 0.805 + index * 0.025));
         card.style.opacity = String(entered);
         transform(card, 0, 13 * (1 - entered), 0, 0.98 + 0.02 * entered);
-        wires[index].style.strokeDashoffset = String(1 - between(p, 0.785 + index * 0.025, 0.828 + index * 0.025));
+        wires[index].style.strokeDashoffset = String(
+          1 - between(p, 0.785 + index * 0.025, 0.828 + index * 0.025),
+        );
       });
       transferAction.style.opacity = String(smooth(between(p, 0.817, 0.846)));
 
@@ -317,7 +348,9 @@
 
       const chapter = p < 0.399 ? 0 : p < 0.51 ? 1 : p < 0.725 ? 2 : p < 0.86 ? 3 : 4;
       if (chapter !== previousChapter) {
-        stageLabels.forEach((label, index) => label.classList.toggle("is-current", index === chapter));
+        stageLabels.forEach((label, index) =>
+          label.classList.toggle("is-current", index === chapter),
+        );
         element.dataset.storyStage = String(chapter + 1);
         previousChapter = chapter;
       }
@@ -336,7 +369,8 @@
     // controller once it finishes (or once the generic fallback is confirmed).
     if (document.fonts) {
       const refreshFontGeometry = () => window.dispatchEvent(new Event("resize"));
-      document.fonts.load('700 11px "Split Slate App"')
+      document.fonts
+        .load('700 11px "Split Slate App"')
         .then(refreshFontGeometry)
         .catch(refreshFontGeometry);
     }

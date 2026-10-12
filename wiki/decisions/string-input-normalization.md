@@ -10,11 +10,13 @@ metadata:
 Purpose: prevent blank or accidentally padded user input from being accepted as valid or entering
 persistent domain state.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Decision
 
-Every user-provided string is trimmed before field-specific validation and before persistence.
+Human-entered identity, group, category, tag, and expense text is trimmed before field-specific
+validation and persistence. This is not a blanket transformation of every string in the database:
+opaque IDs, restored snapshots, and payment date text have separate contracts below.
 Required fields reject an empty trimmed value, including input containing only spaces, tabs, line
 breaks, non-breaking spaces, or other whitespace. Optional numeric entry fields may use a blank
 value with explicit semantics, as described below.
@@ -22,7 +24,7 @@ value with explicit semantics, as described below.
 Trimming removes only leading and trailing whitespace. Meaningful internal spaces are preserved;
 for example, `"  Goa   Trip  "` becomes `"Goa   Trip"`.
 
-This applies to all current user-provided string fields, including:
+The trimming contract applies to:
 
 - LocalUser and Person names and icons
 - Group names, icons, and currencies
@@ -30,6 +32,8 @@ This applies to all current user-provided string fields, including:
 - Tag names and colors
 - onboarding and standalone group-creation form values
 - expense names, optional descriptions, amount/date text, and payer/split entry text
+- payment amount text through `parseMoney`; payment date text must already match the exact local
+  date/time format rather than being trimmed. Its store checks numeric amounts and timestamps
 
 Opaque IDs and optional internal values that users do not enter are outside this blanket
 required-string rule; individual schemas may still trim and validate them.
@@ -44,7 +48,10 @@ have defined meanings only where the selected mode allows them:
   only positive contributions are stored.
 - Exact-amount split: blank shares divide the remaining amount deterministically.
 - Adjustment split: blank means zero adjustment.
-- Shares and percentages: selected participants must have positive values; blank is invalid.
+- Shares: selected participants must have positive entered values; blank is invalid.
+- Percentages: blank selected fields share the remaining percentage deterministically; explicit
+  zero is invalid, and a zero suggestion is omitted from owed rows and metadata. Resolved
+  percentages must total exactly 100%.
 - Unselected participant values and fields belonging to an inactive payer/split mode do not
   contribute to the saved transactions.
 
@@ -84,10 +91,12 @@ for the original browser failures and passing focused follow-up; no fresh full-s
 
 ### Validation Boundaries
 
-Form schemas return normalized values so submit handlers receive trimmed strings. Store mutations
-independently normalize and validate persisted strings so programmatic callers cannot bypass form
-validation. Field-specific rules, such as tag-color format and case-insensitive uniqueness, run
-against normalized values.
+Expense `handleSubmit` receives parsed schema values. Some group/setup flows validate with
+`trigger` then read raw `getValues`; their store text helpers normalize before writing. Field-specific
+rules, such as tag-color format and case-insensitive uniqueness, run against normalized values.
+Payment form validation parses amount text and validates exact local date/time text; its store
+accepts numeric values rather than string form fields. Full-backup restore preserves validated
+snapshot strings and is not an outer-whitespace migration. See [[full-backup]].
 
 Trimming is not performed on every keystroke because that would interfere with ordinary typing.
 It occurs when validation or persistence is attempted.
@@ -99,7 +108,8 @@ contract at both boundaries.
 
 - whitespace-only input is treated the same as an empty string under the field's required or
   optional semantics
-- persisted user-provided strings have no leading or trailing whitespace
+- ordinary create/edit text mutations remove outer whitespace; restored historical snapshots are
+  not automatically rewritten
 - case and internal spacing remain unchanged unless a field has an additional canonical format
 - validation tests must include ordinary spaces, tabs, line breaks, and Unicode whitespace
 

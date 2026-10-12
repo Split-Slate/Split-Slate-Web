@@ -1,6 +1,7 @@
-import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { strFromU8, strToU8, zipSync } from "fflate";
 import { z } from "zod";
 
+import { boundedUnzip } from "@/features/import-export/utils/bounded-decompression";
 import {
   type FullBackupSnapshot,
   type FullBackupSource,
@@ -51,6 +52,7 @@ export const createFullBackupZip = async (
   source: FullBackupSource,
   theme: "light" | "dark",
 ): Promise<Uint8Array> => {
+  if (source.attachments.length + 3 > 10_000) throw new Error("Backup is too large");
   const archive: Record<string, Uint8Array> = {};
   const attachments = [];
   let totalBytes = 0;
@@ -108,6 +110,11 @@ export const createFullBackupZip = async (
   archive["README.txt"] = strToU8(
     "SplitSlate whole-app backup. Restore this ZIP in SplitSlate to replace all app data on a device. Keep this unencrypted file private.",
   );
+  if (
+    Object.values(archive).reduce((sum, bytes) => sum + bytes.byteLength, 0) >
+    MAX_BACKUP_EXPANDED_BYTES
+  )
+    throw new Error("Backup is too large");
   const zip = zipSync(archive, { level: 6 });
   if (zip.byteLength > MAX_BACKUP_ZIP_BYTES) throw new Error("Backup is too large");
   return zip;
@@ -122,7 +129,15 @@ export const parseFullBackupZip = async (bytes: Uint8Array): Promise<FullBackupS
   let groupTransfer = false;
   let archive: Record<string, Uint8Array>;
   try {
-    archive = unzipSync(bytes, {
+    archive = boundedUnzip(bytes, {
+      compressedBytes: MAX_BACKUP_ZIP_BYTES,
+      expandedBytes: MAX_BACKUP_EXPANDED_BYTES,
+      entryBytes: (name) =>
+        name === "backup.json"
+          ? MAX_BACKUP_JSON_BYTES
+          : ["manifest.json", "README.txt"].includes(name)
+            ? 4096
+            : MAX_BACKUP_EXPANDED_BYTES,
       filter: ({ name, originalSize }) => {
         if (name === "group.csv" || name === "attachments/index.json") {
           groupTransfer = true;

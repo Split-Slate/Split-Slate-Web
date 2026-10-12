@@ -9,7 +9,7 @@ metadata:
 
 Purpose: describe implemented group navigation, expense workflows, balances, and group transfer.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Current Implementation
 
@@ -21,7 +21,8 @@ cards and desktop/tablet sidebar groups share `sortGroupsByRecentExpense`: desce
 expense `createdAt` per group, then descending group `createdAt` for ties. Groups without expenses
 follow groups with expenses. This is recording recency, not expense occurrence time (`when`),
 payment activity, or a persisted `lastActiveAt` field. The helper sorts a copy without mutating
-store order. This ordering change has no fresh verification; see [[testing-strategy]].
+store order. Current automated evidence and its limits are recorded in [[testing-strategy]];
+no exhaustive source-audit or clean current full-browser sign-off is implied.
 
 ### Group Detail Routes
 
@@ -236,9 +237,11 @@ See [[layout-architecture]] and [[testing-strategy]].
   On mobile these are separate stacked cards followed by the closed-by-default **Optional details**
   disclosure; desktop keeps Optional details beneath Expense details beside Payment and split.
   The disclosure contains Description, Tags, and the existing-attachments notice. Opening it
-  does not save data, and its closed state does not clear prefilled fields. This layout has not
-  been freshly verified; existing browser tests still assume visible optional fields and the
-  previous date/time placement. See [[testing-strategy]].
+  does not save data, and its closed state does not clear prefilled fields. The approved audit
+  repaired browser access to hidden optional controls and date/time placement assertions, and added
+  autofocus/draft-preservation regressions. The full run had 12 failures; all failing scenarios
+  subsequently passed in a 22-case focused rerun, without application behavior repairs. This is
+  not a fresh clean full-suite sign-off. See [[testing-strategy]].
 - **Description (optional)** is a multiline field inside Optional details in Add/Edit. Saving trims outer
   whitespace while preserving internal spacing and line breaks; a blank field means no saved
   description and clears a previous one on edit. Historical expenses open with an empty field;
@@ -342,7 +345,9 @@ See [[layout-architecture]] and [[testing-strategy]].
 - One or multiple payers, all five split types, and existing optional group tags are supported.
 - React Hook Form and Zod validate input; the store revalidates current persisted references and
   saves the expense plus frequent-payer ranking atomically in IndexedDB.
-- A missing local membership or active category blocks entry. Receipts remain pending. Expense
+- A missing local membership blocks the recording UI. With no active category, the form remains
+  available and offers Add new category; a category is required before saving. Receipts remain
+  pending. Expense
   Add/Edit and detail support tag creation on mobile, tablet, and desktop. The existing tag modal
   retains its fixed heading/close control and Cancel/Create tag footer with body-only scrolling;
   creating selects the new tag without clearing expense drafts. Revised creation/editing,
@@ -390,4 +395,4 @@ Missing or cross-group detail/edit IDs show a not-found state. See [[expense-edi
 - [[balance-calculation]] — how the Balances view derives its data
 - [[solo-group-support]] — implemented zero-net overview and solo balance behavior
 - [[import-export]] — Group Settings export and the separate app-level import flow
-- [[product-roadmap]] — delivery horizons and the unresolved settlement-model decision
+- [[product-roadmap]] — delivery horizons, implemented payment recording, and pending settlement sharing

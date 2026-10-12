@@ -2,7 +2,7 @@
 
 A dated market thesis that records the acquisition hypotheses and recommendations from the research.
 
-Last updated: 2026-08-20
+Last updated: 2026-10-12
 Research snapshot: May 2026; not the committed implementation roadmap.
 Source: `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analysis for a Splitwise Alternative.pdf`
 
@@ -12,8 +12,9 @@ Source: `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analy
 
 The source research identified Splitwise's 2023–2024 paywall tightening and cooldown as a major
 market opening, based on complaints across Reddit, Hacker News, Trustpilot, Google Play, DesiDime,
-and IndianPersonalFinance. Splitwise's current official documentation lists a four-expenses-per-day
-free limit; exact limits and pricing are volatile. See [[competitive-landscape]].
+and IndianPersonalFinance. The 2026-08-20 official-documentation recheck listed a four-expenses-per-day
+free limit; this audit does not refresh external competitor facts. Limits and pricing are volatile.
+See [[competitive-landscape]].
 
 The May 2026 research found no competitor combining:
 - Polished cross-platform experience
@@ -27,7 +28,9 @@ The May 2026 research found no competitor combining:
 
 ## Target Positioning
 
-India-first launch. Primary wedge: Splitwise CSV import + "free forever for the core" promise.
+The research proposed an India-first launch and a Splitwise CSV import/free-core acquisition wedge.
+Current CSV import accepts Split Slate's typed transfer format, not arbitrary Splitwise CSV exports;
+third-party migration remains a research recommendation, not implemented behavior. See [[import-export]].
 
 The displaced Splitwise user is the primary acquisition target — they already understand the product category and are actively looking for an alternative.
 
@@ -54,19 +57,19 @@ items are pending or only captured as ideas in [[index]].
 
 ## Differentiators Where split-slate Can Win
 
-**India layer** (no competitor does all of these):
+**India-layer opportunities proposed by the dated research** (not a fresh competitor audit):
 - UPI deep-links to GPay/PhonePe/Paytm/CRED/Amazon Pay
 - Copy-UPI-ID fallback (UPI protocol prevents true third-party direct links)
 - Auto-fetch from Swiggy/Zomato/BlinkIt/BigBasket/Instamart/Zepto with item-level split
 - SMS expense auto-detect
 
-**Structural gaps in the market:**
+**Structural gaps claimed by the source snapshot:**
 - Sub-groups — Splitwise explicitly refused; no one else has it
 - Group admin / read-only members — prevents "drunk friend deletes all expenses"
 - Hostel/PG monthly cycle mode — Splitkaro partially has, no one does it well
 - Family/wedding mode — multi-event sub-tabs (mehndi/sangeet/reception)
 
-**Privacy advantage:**
+**Privacy positioning proposed in the snapshot:**
 - Local-first architecture (already our design) — only PeerSplit matches this; PeerSplit lacks native mobile
 
 ---

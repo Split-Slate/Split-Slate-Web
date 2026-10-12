@@ -9,7 +9,7 @@ metadata:
 
 Purpose: distinguish recorded external repayments from expenses, payment processing, and cross-group netting.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Decision
 
@@ -24,6 +24,11 @@ cross-group allocation/netting. See [[domain-models]].
 **Add payment** accepts a positive amount. **Settle up** preselects a suggested payer, recipient,
 and amount. A value above the current suggested amount shows a warning but remains saveable; actual
 overpayments can reverse a member's net position. Suggestions themselves are not records.
+Edit previews first validate saved final balances, then undo the edited payment using BigInt.
+Removing an offsetting payment for a preview can exceed the safe-number limit even when both the
+saved and proposed final states are valid; this intermediate value is not persisted. The existing
+transactional final-net guard still controls saving. A focused desktop/mobile regression saves an
+unchanged maximum-size offsetting payment and preserves its original timestamp precision.
 The Add, Settle up, and Edit actions open a payment modal. Payer and recipient use searchable
 avatar-and-name group-member dropdowns labeled **Paid by** and **Received by**. The shared expense
 date/time controls prefill new Add/Settle up payments with today's local date and current local
@@ -48,6 +53,11 @@ introduced; shared keyboard tracking blocks extra digits instead of native year 
 clearing/reentry and date-segment navigation remain available. Shared helper and desktop/mobile
 year-limit browser cases passed in the scoped verification batch. See [[main-screen]] and
 [[testing-strategy]].
+
+Expense and payment forms share `shared/utils/date-time.ts` local serialization, including padded
+four-digit years below 1000. This preserves date-entry text rather than relying on native controls
+to repair unpadded years. Payment persistence still rejects negative timestamps; padded form text
+does not expand that storage contract.
 
 Payment Add/Settle up/Edit Amount shares expense input formatting and filtering: three-digit
 comma grouping regardless of currency, digits and one decimal point only, and at most eight
@@ -78,9 +88,11 @@ names at 280–1920px. See [[selection-controls]], [[tag-management]], and [[tes
 
 Balances add payments made to each payer's net and subtract payments received from each recipient's
 net, without modifying expenses. Expense spending totals, categories, insights, and filtering remain
-expense-only. Payments appear as green blocks with a transfer icon in unfiltered date-sorted group
-history, recent Overview entries, and recorded-payment history on Balances. Expense filters and
-non-date sorting hide payment blocks in the ledger with an explanation; Balances still shows them.
+expense-only. Payments appear as green blocks with a transfer icon in unfiltered group history
+sorted by expense date or added date, recent Overview entries, and recorded-payment history on
+Balances. Expense filters and price/name/category/tag sorting hide payment blocks in the ledger
+with an explanation; Balances still shows them. Added-date modes use recording timestamps, not
+the editable payment date. See [[filtering]].
 See [[balance-calculation]] and [[main-screen]].
 
 The **Expenses** choice in selective group export also includes payment records, with member and

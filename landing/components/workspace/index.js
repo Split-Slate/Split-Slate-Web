@@ -56,25 +56,31 @@
     const count = letters.reduce((sum, letter) => sum + (GLYPHS[letter]?.length || 0), 0);
     let cursor = x;
     let stroke = 0;
-    const markup = letters.map((letter, index) => {
-      if (letter === " ") {
-        cursor += 11 * scale;
-        return "";
-      }
-      const paths = GLYPHS[letter] || [];
-      const tilt = index % 3 === 0 ? -2 : 1;
-      const result = paths.map((path) => {
-        const from = start + ((end - start) * stroke) / count;
-        const to = start + ((end - start) * (stroke + 0.82)) / count;
-        stroke += 1;
-        return `<path class="ss-ink" d="${path}" pathLength="1"
+    const markup = letters
+      .map((letter, index) => {
+        if (letter === " ") {
+          cursor += 11 * scale;
+          return "";
+        }
+        const paths = GLYPHS[letter] || [];
+        const tilt = index % 3 === 0 ? -2 : 1;
+        const result = paths
+          .map((path) => {
+            const from = start + ((end - start) * stroke) / count;
+            const to = start + ((end - start) * (stroke + 0.82)) / count;
+            stroke += 1;
+            return `<path class="ss-ink" d="${path}" pathLength="1"
           data-ink-start="${from}" data-ink-end="${to}" ${extra} />`;
-      }).join("");
-      const group = `<g transform="translate(${cursor} ${y + (index % 2) * 0.8})
+          })
+          .join("");
+        const group = `<g transform="translate(${cursor} ${y + (index % 2) * 0.8})
         scale(${scale}) rotate(${tilt})">${result}</g>`;
-      cursor += (letter === "m" || letter === "w" ? 27 : letter === "i" || letter === "l" ? 13 : 23) * scale;
-      return group;
-    }).join("");
+        cursor +=
+          (letter === "m" || letter === "w" ? 27 : letter === "i" || letter === "l" ? 13 : 23) *
+          scale;
+        return group;
+      })
+      .join("");
     return markup;
   };
 
@@ -131,7 +137,24 @@
           ${Array.from({ length: 16 }, (_, index) => {
             const x = 17 + (index % 4) * 31;
             const y = 87 + Math.floor(index / 4) * 28;
-            const labels = ["7", "8", "9", "+", "4", "5", "6", "−", "1", "2", "3", "÷", "C", "0", ".", "="];
+            const labels = [
+              "7",
+              "8",
+              "9",
+              "+",
+              "4",
+              "5",
+              "6",
+              "−",
+              "1",
+              "2",
+              "3",
+              "÷",
+              "C",
+              "0",
+              ".",
+              "=",
+            ];
             return `<rect x="${x}" y="${y + 2}" width="24" height="20" rx="4" fill="#26212d"/>
               <rect x="${x}" y="${y}" width="24" height="20" rx="4" fill="${index === 15 ? "#deedaa" : "#887c96"}"/>
               <text x="${x + 12}" y="${y + 14}" text-anchor="middle" fill="${index === 15 ? "#393343" : "#fffaf3"}">${labels[index]}</text>`;
@@ -151,8 +174,11 @@
           <path d="M19 1H465L470 478H19Z" fill="url(#ss-paper-shade)"/>
           <path d="M53 1V478" stroke="#d5abac" stroke-width="1" opacity=".6"/>
           ${Array.from({ length: 12 }, (_, index) => `<path d="M28 ${100 + index * 29}H452" stroke="#ded9db" stroke-width=".7"/>`).join("")}
-          ${Array.from({ length: 15 }, (_, index) => `<ellipse cx="25" cy="${22 + index * 30}" rx="4" ry="5" fill="#c8bcae"/>
-            <path d="M27 ${19 + index * 30}C-6 ${7 + index * 30}-5 ${37 + index * 30}24 ${25 + index * 30}" fill="none" stroke="#7d7586" stroke-width="3"/>`).join("")}
+          ${Array.from(
+            { length: 15 },
+            (_, index) => `<ellipse cx="25" cy="${22 + index * 30}" rx="4" ry="5" fill="#c8bcae"/>
+            <path d="M27 ${19 + index * 30}C-6 ${7 + index * 30} -5 ${37 + index * 30} 24 ${25 + index * 30}" fill="none" stroke="#7d7586" stroke-width="3"/>`,
+          ).join("")}
           <g class="ss-paper-heading"><text x="77" y="47">ONE GOOD NIGHT.</text>
             <text x="77" y="73" class="ss-paper-subheading">Maya, Leo &amp; Nina · Friday, 8:42 pm</text></g>
           <rect data-source="dinner-title" x="76" y="119" width="128" height="40" fill="none"/>

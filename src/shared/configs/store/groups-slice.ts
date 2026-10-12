@@ -223,34 +223,32 @@ export const createGroupsSlice: SliceCreator<GroupsSlice> = (set, get) => ({
   },
 
   removeMember: async (memberId) => {
-    const member = get().members.find((item) => item.id === memberId);
-    if (!member) {
-      throw new Error("Member not found");
-    }
-    if (member.personId === get().localUser?.id) {
-      throw new Error("You cannot remove yourself from a group you created");
-    }
-
-    const inUse = get().expenses.some(
-      (e) =>
-        e.createdBy === memberId ||
-        e.transactions.paid.some((t) => t.memberId === memberId) ||
-        e.transactions.owes.some((t) => t.memberId === memberId),
-    );
-    if (inUse) {
-      throw new Error("Cannot remove a member referenced by expenses or payments");
-    }
-
-    const group = get().groups.find((g) => g.id === member.groupId);
-    const person = get().people.find((item) => item.id === member.personId);
-    const event = await db.transaction(
+    const result = await db.transaction(
       "rw",
-      db.members,
-      db.groups,
-      db.settlements,
-      db.activityEvents,
+      [
+        db.localUser,
+        db.people,
+        db.members,
+        db.groups,
+        db.expenses,
+        db.settlements,
+        db.activityEvents,
+      ],
       async () => {
-        if (!(await db.members.get(memberId))) throw new Error("Member not found");
+        const member = await db.members.get(memberId);
+        if (!member) throw new Error("Member not found");
+        const localUser = await db.localUser.toCollection().first();
+        if (member.personId === localUser?.id)
+          throw new Error("You cannot remove yourself from a group you created");
+        if (
+          (await db.expenses.toArray()).some(
+            (expense) =>
+              expense.createdBy === memberId ||
+              expense.transactions.paid.some((row) => row.memberId === memberId) ||
+              expense.transactions.owes.some((row) => row.memberId === memberId),
+          )
+        )
+          throw new Error("Cannot remove a member referenced by expenses or payments");
         if (
           (await db.settlements.where("groupId").equals(member.groupId).toArray()).some(
             (item) =>
@@ -261,13 +259,14 @@ export const createGroupsSlice: SliceCreator<GroupsSlice> = (set, get) => ({
         ) {
           throw new Error("Cannot remove a member referenced by payments");
         }
+        const group = await db.groups.get(member.groupId);
+        const person = await db.people.get(member.personId);
         await db.members.delete(memberId);
         if (group?.frequentPayerIds.includes(memberId)) {
-          await db.groups.update(group.id, {
-            frequentPayerIds: group.frequentPayerIds.filter((id) => id !== memberId),
-          });
+          group.frequentPayerIds = group.frequentPayerIds.filter((id) => id !== memberId);
+          await db.groups.update(group.id, { frequentPayerIds: group.frequentPayerIds });
         }
-        return writeActivity({
+        const event = await writeActivity({
           group,
           kind: "member",
           action: "deleted",
@@ -275,16 +274,13 @@ export const createGroupsSlice: SliceCreator<GroupsSlice> = (set, get) => ({
           icon: person?.icon,
           subjectId: memberId,
         });
+        return { event, group };
       },
     );
     set((s) => ({
       members: s.members.filter((m) => m.id !== memberId),
-      groups: s.groups.map((g) =>
-        g.id === group?.id
-          ? { ...g, frequentPayerIds: g.frequentPayerIds.filter((id) => id !== memberId) }
-          : g,
-      ),
-      activityEvents: [...s.activityEvents, event],
+      groups: s.groups.map((g) => (g.id === result.group?.id ? result.group : g)),
+      activityEvents: [...s.activityEvents, result.event],
     }));
   },
 });

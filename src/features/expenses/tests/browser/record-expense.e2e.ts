@@ -1,9 +1,17 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 import type * as DbModule from "@/shared/configs/db";
 import type * as StoreModule from "@/shared/configs/store";
 
 import type { OnboardingSettings } from "@/shared/types/domain.types";
+
+const openOptionalDetails = async (page: Page) => {
+  const details = page.locator("details").filter({ hasText: "Optional details" });
+  if (!(await details.evaluate((element: HTMLDetailsElement) => element.open))) {
+    await details.locator("summary").click();
+  }
+};
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/onboarding");
@@ -61,8 +69,41 @@ test.beforeEach(async ({ page }) => {
   await page.getByRole("button", { name: "AM", exact: true }).click();
 });
 
+test("autofocuses Amount and keeps optional details closed without clearing saved drafts", async ({
+  page,
+}) => {
+  await page.reload();
+  const details = page.locator("details").filter({ hasText: "Optional details" });
+  const description = page.locator('textarea[name="description"]');
+  await expect(page.getByLabel("Amount (INR)", { exact: true })).toBeFocused();
+  await expect(description).toBeHidden();
+  await expect(details).not.toHaveAttribute("open", "");
+  await openOptionalDetails(page);
+  await description.fill("Retained optional draft");
+  await page.getByLabel("Holiday", { exact: true }).check();
+  await details.locator("summary").click();
+  await expect(description).toBeHidden();
+  await page.getByLabel("Expense name", { exact: true }).fill("Closed optional details");
+  await page.getByLabel("Amount (INR)", { exact: true }).fill("10");
+  await page.getByRole("button", { name: "Save expense", exact: true }).click();
+  await page
+    .getByRole("list", { name: "Expenses" })
+    .getByRole("link", { name: /^Closed optional details /u })
+    .click();
+  await page.getByRole("link", { name: "Edit expense", exact: true }).click();
+  await expect(description).toBeHidden();
+  await expect(description).toHaveValue("Retained optional draft");
+  await page.getByLabel("Expense name", { exact: true }).fill("Name-only correction");
+  await page.getByRole("button", { name: "Save changes", exact: true }).click();
+  await expect(page.getByRole("region", { name: "Description", exact: true })).toContainText(
+    "Retained optional draft",
+  );
+  await expect(page.getByRole("list", { name: "Tags", exact: true })).toContainText("Holiday");
+});
+
 test("creates, reloads, edits, and clears a multiline plain-text description", async ({ page }) => {
   const description = 'Dinner  for everyone\n\nInvoice: "123" 🥘\n<b>Plain text only</b>';
+  await openOptionalDetails(page);
   const field = page.getByRole("textbox", { name: "Description (optional)", exact: true });
   await expect(field).toBeEmpty();
   await field.fill(` \t${description}\n `);
@@ -82,17 +123,20 @@ test("creates, reloads, edits, and clears a multiline plain-text description", a
   await expect(card).toBeVisible();
   expect(await card.locator("p").textContent()).toBe(description);
   await page.getByRole("link", { name: "Edit expense", exact: true }).click();
+  await openOptionalDetails(page);
   await expect(field).toHaveValue(description);
   await page.getByLabel("Expense name", { exact: true }).fill("Renamed dinner");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(card).toBeVisible();
   expect(await card.locator("p").textContent()).toBe(description);
   await page.getByRole("link", { name: "Edit expense", exact: true }).click();
+  await openOptionalDetails(page);
   await field.fill("Updated  details\nAnother line");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(card).toBeVisible();
   expect(await card.locator("p").textContent()).toBe("Updated  details\nAnother line");
   await page.getByRole("link", { name: "Edit expense", exact: true }).click();
+  await openOptionalDetails(page);
   await field.fill(" \t\n\u00a0 ");
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(page.getByRole("link", { name: "Edit expense", exact: true })).toBeVisible();
@@ -121,6 +165,7 @@ test("keeps descriptions optional and opens historical expenses with an empty fi
     .click();
   await expect(page.getByRole("region", { name: "Description", exact: true })).toHaveCount(0);
   await page.getByRole("link", { name: "Edit expense", exact: true }).click();
+  await openOptionalDetails(page);
   await expect(
     page.getByRole("textbox", { name: "Description (optional)", exact: true }),
   ).toBeEmpty();
@@ -136,6 +181,7 @@ test("keeps descriptions optional and opens historical expenses with an empty fi
 
 test("wraps long descriptions across viewport widths and both themes", async ({ page }) => {
   const description = `Shared dinner\n\nReference: ${"x".repeat(500)}\nLast line`;
+  await openOptionalDetails(page);
   const field = page.getByRole("textbox", { name: "Description (optional)", exact: true });
   await field.fill(description);
   for (const width of [320, 820, 1440]) {
@@ -813,21 +859,21 @@ test("matches bold date and time typography at every picker width", async ({ pag
   }
 });
 
-test("places date and time beneath tags, side by side when possible and stacked on narrow screens", async ({
+test("places date and time first, side by side when possible and stacked on narrow screens", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 600, height: 800 });
-  const tags = page.getByRole("group", { name: "Tags (optional)" });
+  const name = page.getByLabel("Expense name", { exact: true });
   const when = page.getByRole("group", { name: "Date and time" });
   const fields = when.locator(".when-picker");
   const dateField = when.locator(".when-picker-field").first();
   const timeField = when.locator(".when-picker-field").last();
 
-  const tagsBox = await tags.boundingBox();
+  const nameBox = await name.boundingBox();
   const whenBox = await when.boundingBox();
   const dateBox = await dateField.boundingBox();
   const timeBox = await timeField.boundingBox();
-  expect(whenBox!.y).toBeGreaterThanOrEqual(tagsBox!.y + tagsBox!.height);
+  expect(whenBox!.y + whenBox!.height).toBeLessThanOrEqual(nameBox!.y);
   expect(timeBox!.y).toBe(dateBox!.y);
 
   for (const width of [320, 280]) {
@@ -866,6 +912,7 @@ test("sizes dashed Add actions like the category and tag pills at every width", 
   expect(Math.abs(categoryButtonBox.height - categoryChipBox.height)).toBeLessThan(4);
   expect(categoryButtonBox.y).toBe(categoryChipBox.y);
 
+  await openOptionalDetails(page);
   const tags = page.getByRole("group", { name: "Tags (optional)" });
   const addTag = tags.getByRole("button", { name: "Add new tag" });
   await expect(addTag).toBeVisible();
@@ -1500,6 +1547,7 @@ test("creates and selects tags without losing Add/Edit expense drafts at every w
 }) => {
   await page.getByLabel("Expense name", { exact: true }).fill("Weekend lunch");
   await page.getByLabel("Amount (INR)", { exact: true }).fill("42");
+  await openOptionalDetails(page);
   await page.getByRole("button", { name: "Add new tag" }).click();
   const dialog = page.getByRole("dialog", { name: "Create new tag" });
   await dialog.getByRole("textbox", { name: "Tag name" }).fill("Unsaved tag");
@@ -1534,6 +1582,7 @@ test("creates and selects tags without losing Add/Edit expense drafts at every w
     .getByRole("link", { name: /^Weekend lunch /u })
     .click();
   await page.getByRole("link", { name: "Edit expense", exact: true }).click();
+  await openOptionalDetails(page);
   await page.getByRole("button", { name: "Add new tag", exact: true }).click();
   await dialog.getByRole("textbox", { name: "Tag name" }).fill("Travel");
   await dialog.getByRole("button", { name: "Create tag", exact: true }).click();
@@ -1554,6 +1603,7 @@ test("creates and selects tags without losing Add/Edit expense drafts at every w
 });
 
 test("records an equal expense, updates balances, and survives reload", async ({ page }) => {
+  await openOptionalDetails(page);
   const tag = page.getByLabel("Holiday", { exact: true });
   await expect(tag).toHaveClass(/choice-control/u);
   await expect(page.getByLabel("One person", { exact: true })).toBeChecked();
@@ -1874,6 +1924,7 @@ test("cancels without recording anything", async ({ page }) => {
 test("inspects, edits, and deletes an expense with live balance updates", async ({ page }) => {
   await page.getByLabel("Expense name", { exact: true }).fill("Dinner");
   await page.getByLabel("Amount (INR)", { exact: true }).fill("300");
+  await openOptionalDetails(page);
   await page.getByLabel("Holiday", { exact: true }).check();
   await page.getByRole("button", { name: "Save expense", exact: true }).click();
   await page
@@ -1900,6 +1951,7 @@ test("inspects, edits, and deletes an expense with live balance updates", async 
   await page.getByLabel("Expense name", { exact: true }).fill("Dinner and dessert");
   await page.getByLabel("Amount (INR)", { exact: true }).fill("600");
   await page.getByRole("radio", { name: "Paid by Bea" }).locator("..").click();
+  await openOptionalDetails(page);
   await page.getByLabel("Holiday", { exact: true }).uncheck();
   await page.getByRole("button", { name: "Save changes", exact: true }).click();
   await expect(

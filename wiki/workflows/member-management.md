@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document member management, persisted membership guards, and remaining recovery limits.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 A member is a link from a group to a person in the global directory. See [[global-people-directory]] and [[people-directory]].
 
@@ -37,15 +37,17 @@ footer with body-only scrolling. Member row presentation and controls remain unc
 See [[layout-architecture]].
 
 `addMember` checks persisted group/person existence and `(groupId, personId)` links, then inserts
-within one read-write transaction spanning groups, people, and members. Concurrent calls cannot
-create duplicate memberships even when client state is stale. `removeMember` rejects missing
-members and protects the local user's member link. `removePerson` separately checks persisted
-LocalUser identity before deletion, even if hydrated identity is missing.
+within one read-write transaction spanning groups, people, members, and activity events. Concurrent calls cannot
+create duplicate memberships even when client state is stale. Both removal paths protect persisted
+LocalUser identity, even if hydrated identity or memberships are missing.
 
-Expense involvement is checked from hydrated state; payment references are rechecked against
-persisted rows within the removal transaction. `removeMember` deletes its link and updates payer
-references in one transaction; `removePerson` deletes the person and member links and updates
-affected groups in one transaction. Failed transactions leave those records unchanged.
+Expense and payment involvement are checked from persisted records inside the removal transaction.
+`removeMember` deletes its persisted link and updates the current group payer ranking;
+`removePerson` deletes the persisted person and all current member links and prunes current rankings.
+Both commit cleanup and activity atomically, then update memory. Failed transactions leave records
+and memory unchanged. Regression coverage includes unseen creator/payer/participant references,
+missing hydrated self identity, newer payer rankings, and rollback after activity failure.
+This is transaction-time integrity, not automatic full-store cross-tab sync. See [[state-management]].
 
 ## Adding Members
 

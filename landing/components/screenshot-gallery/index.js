@@ -27,9 +27,10 @@
   }));
   const FILTER_LABELS = { all: "All", desktop: "Desktop", mobile: "Mobile" };
   let deviceFilter = "all";
-  const matchingIndices = () => [...items.keys()].filter(
-    (index) => deviceFilter === "all" || items[index].device === deviceFilter,
-  );
+  const matchingIndices = () =>
+    [...items.keys()].filter(
+      (index) => deviceFilter === "all" || items[index].device === deviceFilter,
+    );
   let filteredIndices = matchingIndices();
   let selected = 0;
   let opener = null;
@@ -75,7 +76,10 @@
       button.setAttribute("aria-pressed", String(button.dataset.gallerySelectGroup === item.group));
     });
     devices.forEach((button) => {
-      button.setAttribute("aria-pressed", String(button.dataset.gallerySelectDevice === deviceFilter));
+      button.setAttribute(
+        "aria-pressed",
+        String(button.dataset.gallerySelectDevice === deviceFilter),
+      );
     });
     thumbnails.setAttribute(
       "aria-label",
@@ -131,8 +135,13 @@
   const handleOpen = (event) => {
     // Preserve modified clicks/new-tab requests, and never intercept unless showModal succeeds.
     if (
-      event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey ||
-      event.shiftKey || event.altKey || dialog.open
+      event.defaultPrevented ||
+      event.button !== 0 ||
+      event.metaKey ||
+      event.ctrlKey ||
+      event.shiftKey ||
+      event.altKey ||
+      dialog.open
     ) {
       return;
     }
@@ -180,7 +189,7 @@
     deviceFilter = nextFilter;
     filteredIndices = matchingIndices();
     const sameGroup = filteredIndices.find((index) => items[index].group === items[selected].group);
-    render(filteredIndices.includes(selected) ? selected : sameGroup ?? filteredIndices[0]);
+    render(filteredIndices.includes(selected) ? selected : (sameGroup ?? filteredIndices[0]));
   };
   const navigate = (direction) => {
     const position = filteredIndices.indexOf(selected);
@@ -214,10 +223,11 @@
   const isBackdrop = (event) => {
     const bounds = dialog.getBoundingClientRect();
     return (
-      event.target === dialog && (
-        event.clientX < bounds.left || event.clientX > bounds.right ||
-        event.clientY < bounds.top || event.clientY > bounds.bottom
-      )
+      event.target === dialog &&
+      (event.clientX < bounds.left ||
+        event.clientX > bounds.right ||
+        event.clientY < bounds.top ||
+        event.clientY > bounds.bottom)
     );
   };
   const handlePointerDown = (event) => {

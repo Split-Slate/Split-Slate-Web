@@ -28,6 +28,14 @@ const incompressibleText = (byteLength: number): string => {
 };
 
 describe("transfer links", () => {
+  it("rejects a small link that expands beyond the decoded quota", async () => {
+    const bytes = zlibSync(new Uint8Array(300_000));
+    const payload = btoa(Array.from(bytes, (byte) => String.fromCharCode(byte)).join(""))
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/u, "");
+    await expect(decodeTransferPayload(`v2.${payload}`)).rejects.toThrow("too large");
+  });
   it("preserves multiline descriptions through compact links without adding them to old expenses", async () => {
     const source = createExportSource({ expenseCount: 2 });
     source.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';

@@ -1,12 +1,19 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildGroupTransfer } from "@/features/import-export/utils/build-transfer";
+import { createPortableGroupCsv } from "@/features/import-export/utils/export-csv";
 import {
   AppBackupFileError,
   createPortableGroupZip,
   parsePortableGroupZip,
 } from "@/features/import-export/utils/export-zip";
+import { sealPortableGroup } from "@/features/import-export/utils/transfer-integrity";
+
+import {
+  MAX_GROUP_EXPANDED_BYTES,
+  MAX_GROUP_TEXT_BYTES,
+} from "@/features/import-export/constants/export.constants";
 
 import {
   createExportSource,
@@ -14,6 +21,60 @@ import {
 } from "@/features/import-export/tests/fixtures/transfer-fixture";
 
 describe("portable group ZIP", () => {
+  it("rejects an oversized receipt before reading its bytes", async () => {
+    const source = await buildGroupTransfer(createExportSource({ withAttachments: true }), {
+      categories: true,
+      tags: true,
+      members: true,
+      expenses: true,
+      attachments: true,
+    });
+    const blob = source.attachmentFiles[0].blob;
+    Object.defineProperty(blob, "size", { value: MAX_GROUP_EXPANDED_BYTES });
+    const read = vi.spyOn(blob, "arrayBuffer");
+    await expect(createPortableGroupZip(source)).rejects.toThrow("too large");
+    expect(read).not.toHaveBeenCalled();
+    read.mockRestore();
+  });
+  it("does not emit a CSV or ZIP that its own text intake rejects", async () => {
+    const source = await buildGroupTransfer(createExportSource(), GROUP_ONLY_SELECTION);
+    source.bundle = await sealPortableGroup({
+      ...source.bundle,
+      group: { ...source.bundle.group, name: "a".repeat(MAX_GROUP_TEXT_BYTES) },
+    });
+    await expect(createPortableGroupCsv(source.bundle)).rejects.toThrow("too large");
+    await expect(createPortableGroupZip(source)).rejects.toThrow("too large");
+  });
+  it("rejects duplicate supplied receipts rather than silently collapsing them", async () => {
+    const source = await buildGroupTransfer(createExportSource({ withAttachments: true }), {
+      categories: true,
+      tags: true,
+      members: true,
+      expenses: true,
+      attachments: true,
+    });
+    source.attachmentFiles.push(source.attachmentFiles[0]);
+    await expect(createPortableGroupZip(source)).rejects.toThrow("do not match");
+  });
+  it("rejects repeated receipt IDs or paths even with a valid index count", async () => {
+    const source = await buildGroupTransfer(
+      createExportSource({ withAttachments: true, expenseCount: 2 }),
+      {
+        categories: true,
+        tags: true,
+        members: true,
+        expenses: true,
+        attachments: true,
+      },
+    );
+    for (const field of ["id", "path"] as const) {
+      const archive = unzipSync(await createPortableGroupZip(source));
+      const index = JSON.parse(strFromU8(archive["attachments/index.json"]));
+      index[1][field] = index[0][field];
+      archive["attachments/index.json"] = strToU8(JSON.stringify(index));
+      await expect(parsePortableGroupZip(zipSync(archive))).rejects.toThrow("duplicate");
+    }
+  });
   it("round-trips the verified manifest, CSV, index, and receipt files", async () => {
     const fixture = createExportSource({ withAttachments: true, expenseCount: 2 });
     fixture.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';

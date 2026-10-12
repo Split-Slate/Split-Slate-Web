@@ -78,6 +78,18 @@ test.beforeEach(async ({ page }) => {
       createdAt: 1,
       blob: new Blob(["lunch"], { type: "image/png" }),
     });
+    await db.settlements.put({
+      id: "payment",
+      groupId: "trip",
+      kind: "payment",
+      fromMemberId: "b",
+      toMemberId: "a",
+      amount: 25,
+      recordedBy: "a",
+      createdAt: 1,
+      when: 1,
+      tagIds: ["holiday"],
+    });
     const onboarding: OnboardingSettings = {
       id: "onboarding",
       complete: true,
@@ -95,6 +107,7 @@ test("warns, allows cancellation, then deletes the group and navigates home", as
   await page.getByRole("button", { name: "Delete group", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "Delete Trip?" });
   await expect(dialog).toContainText("permanent and cannot be undone");
+  await expect(dialog).toContainText("expenses, payments, members");
   await expect(dialog).toContainText("shared contacts and other groups will remain");
   await dialog.getByRole("button", { name: "Cancel" }).click();
   await expect(dialog).not.toBeVisible();
@@ -116,6 +129,7 @@ test("warns, allows cancellation, then deletes the group and navigates home", as
     return {
       groups: (await db.groups.toArray()).map((row) => row.id),
       expenses: await db.expenses.count(),
+      payments: await db.settlements.count(),
       receipts: await db.attachments.count(),
       people: await db.people.count(),
       onboarding: await db.settings.get("onboarding"),
@@ -124,6 +138,7 @@ test("warns, allows cancellation, then deletes the group and navigates home", as
   expect(remaining).toMatchObject({
     groups: ["home"],
     expenses: 0,
+    payments: 0,
     receipts: 0,
     people: 2,
     onboarding: { groupId: "home" },

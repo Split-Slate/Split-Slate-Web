@@ -11,7 +11,7 @@ const normalizeTagName = (name: string) => name.trim();
 const normalizeTagColor = (color: string) => color.trim().toLowerCase();
 const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/;
 
-export const createTagsSlice: SliceCreator<TagsSlice> = (set, get) => ({
+export const createTagsSlice: SliceCreator<TagsSlice> = (set) => ({
   tags: [],
 
   addTag: async (groupId, name, color) => {
@@ -23,23 +23,24 @@ export const createTagsSlice: SliceCreator<TagsSlice> = (set, get) => ({
     if (!HEX_COLOR_PATTERN.test(normalizedColor)) {
       throw new Error("Tag color must be a valid hex color");
     }
-    const duplicate = get().tags.some(
-      (tag) => tag.groupId === groupId && tag.name.toLowerCase() === normalizedName.toLowerCase(),
-    );
-    if (duplicate) {
-      throw new Error("Tag already exists");
-    }
-
     const tag: Tag = {
       id: uuid(),
       groupId,
       name: normalizedName,
       color: normalizedColor,
     };
-    const event = await db.transaction("rw", db.tags, db.activityEvents, async () => {
+    const event = await db.transaction("rw", [db.groups, db.tags, db.activityEvents], async () => {
+      const group = await db.groups.get(groupId);
+      if (!group) throw new Error("Group not found");
+      if (
+        (await db.tags.where("groupId").equals(groupId).toArray()).some(
+          (item) => item.name.trim().toLowerCase() === normalizedName.toLowerCase(),
+        )
+      )
+        throw new Error("Tag already exists");
       await db.tags.add(tag);
       return writeActivity({
-        group: get().groups.find((item) => item.id === groupId),
+        group,
         kind: "tag",
         action: "created",
         label: tag.name,
@@ -54,26 +55,10 @@ export const createTagsSlice: SliceCreator<TagsSlice> = (set, get) => ({
   },
 
   updateTag: async (tagId, patch) => {
-    const existing = get().tags.find((tag) => tag.id === tagId);
-    if (!existing) {
-      throw new Error("Tag not found");
-    }
-
     const normalizedName = patch.name === undefined ? undefined : normalizeTagName(patch.name);
     const normalizedColor = patch.color === undefined ? undefined : normalizeTagColor(patch.color);
     if (normalizedName !== undefined && !normalizedName) {
       throw new Error("Tag name is required");
-    }
-    if (normalizedName !== undefined) {
-      const duplicate = get().tags.some(
-        (tag) =>
-          tag.groupId === existing.groupId &&
-          tag.id !== tagId &&
-          tag.name.toLowerCase() === normalizedName.toLowerCase(),
-      );
-      if (duplicate) {
-        throw new Error("Tag already exists");
-      }
     }
     if (normalizedColor !== undefined && !HEX_COLOR_PATTERN.test(normalizedColor)) {
       throw new Error("Tag color must be a valid hex color");
@@ -84,31 +69,43 @@ export const createTagsSlice: SliceCreator<TagsSlice> = (set, get) => ({
       ...(normalizedName !== undefined ? { name: normalizedName } : {}),
       ...(normalizedColor !== undefined ? { color: normalizedColor } : {}),
     };
-    const updated: Tag = { ...existing, ...normalizedPatch };
-    const event = await db.transaction("rw", db.tags, db.activityEvents, async () => {
+    const result = await db.transaction("rw", [db.groups, db.tags, db.activityEvents], async () => {
+      const existing = await db.tags.get(tagId);
+      if (!existing) throw new Error("Tag not found");
+      const group = await db.groups.get(existing.groupId);
+      if (!group) throw new Error("Group not found");
+      if (
+        normalizedName !== undefined &&
+        (await db.tags.where("groupId").equals(existing.groupId).toArray()).some(
+          (item) =>
+            item.id !== tagId && item.name.trim().toLowerCase() === normalizedName.toLowerCase(),
+        )
+      )
+        throw new Error("Tag already exists");
+      const updated: Tag = { ...existing, ...normalizedPatch };
       if (!(await db.tags.update(tagId, normalizedPatch))) throw new Error("Tag not found");
-      return writeActivity({
-        group: get().groups.find((item) => item.id === existing.groupId),
+      const event = await writeActivity({
+        group,
         kind: "tag",
         action: "updated",
         label: updated.name,
         subjectId: tagId,
       });
+      return { updated, event };
     });
     set((state) => ({
-      tags: state.tags.map((tag) => (tag.id === tagId ? updated : tag)),
-      activityEvents: [...state.activityEvents, event],
+      tags: state.tags.some((tag) => tag.id === tagId)
+        ? state.tags.map((tag) => (tag.id === tagId ? result.updated : tag))
+        : [...state.tags, result.updated],
+      activityEvents: [...state.activityEvents, result.event],
     }));
-    return updated;
+    return result.updated;
   },
 
   removeTag: async (tagId) => {
     const result = await db.transaction(
       "rw",
-      db.tags,
-      db.expenses,
-      db.settlements,
-      db.activityEvents,
+      [db.groups, db.tags, db.expenses, db.settlements, db.activityEvents],
       async () => {
         const tag = await db.tags.get(tagId);
         if (!tag) {
@@ -131,7 +128,7 @@ export const createTagsSlice: SliceCreator<TagsSlice> = (set, get) => ({
           settlement.tagIds = tagIds;
         }
         const event = await writeActivity({
-          group: get().groups.find((item) => item.id === tag.groupId),
+          group: await db.groups.get(tag.groupId),
           kind: "tag",
           action: "deleted",
           label: tag.name,

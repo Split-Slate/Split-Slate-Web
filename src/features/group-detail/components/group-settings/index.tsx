@@ -379,9 +379,10 @@ const GroupSettings = () => {
         title={`Delete ${group.name}?`}
         description={
           <>
-            Deleting this group is permanent and cannot be undone. All its expenses, members,
-            categories, tags, and receipts will be deleted. Your shared contacts and other groups
-            will remain. Download an app backup from Settings first if you may need this data.
+            Deleting this group is permanent and cannot be undone. All its expenses, payments,
+            members, categories, tags, and receipts will be deleted. Your shared contacts and other
+            groups will remain. Download an app backup from Settings first if you may need this
+            data.
           </>
         }
         confirmLabel="Delete group permanently"

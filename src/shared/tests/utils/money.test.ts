@@ -1,8 +1,28 @@
 import { describe, expect, it } from "vitest";
 
-import { currencyDecimals, moneyToDecimal, parseMoney } from "@/shared/utils/money";
+import {
+  currencyDecimals,
+  moneyPercentage,
+  moneyToDecimal,
+  parseMoney,
+} from "@/shared/utils/money";
 
 describe("money conversion", () => {
+  it("formats exact aggregate hundredths beyond the persisted-number limit", () => {
+    const aggregate = BigInt(Number.MAX_SAFE_INTEGER) * 2n;
+    expect(moneyToDecimal(aggregate, "INR")).toBe("180143985094819.82");
+    expect(moneyToDecimal(-aggregate, "INR")).toBe("-180143985094819.82");
+    expect(() => moneyToDecimal(Number(aggregate), "INR")).toThrow("safe integer");
+    expect(() => parseMoney("180143985094819.82", "INR")).toThrow("too large");
+  });
+  it("bounds chart ratios without converting huge accounting totals to numbers", () => {
+    const huge = 10n ** 400n;
+    expect(moneyPercentage(huge, huge * 4n)).toBe(25);
+    expect(moneyPercentage(0n, huge)).toBe(0);
+    expect(moneyPercentage(1n, 0n)).toBe(0);
+    expect(moneyPercentage(1n, huge)).toBeGreaterThan(0);
+    expect(moneyPercentage(huge, 1n)).toBe(100);
+  });
   it.each([
     ["INR", "123.45", 12345],
     ["USD", "0.01", 1],

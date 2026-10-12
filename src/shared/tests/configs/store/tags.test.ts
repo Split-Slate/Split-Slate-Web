@@ -282,3 +282,49 @@ describe("removeTag", () => {
     },
   );
 });
+
+describe("persisted tag writes", () => {
+  it("serializes concurrent duplicate names", async () => {
+    const results = await Promise.allSettled([
+      useStore.getState().addTag("g", "Holiday", "#abcdef"),
+      useStore.getState().addTag("g", " holiday ", "#123456"),
+    ]);
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(await db.tags.count()).toBe(3);
+  });
+  it("rejects persisted duplicate names missing from hydration", async () => {
+    useStore.setState({ tags: [] });
+    await expect(useStore.getState().addTag("g", " TRIP ", "#abcdef")).rejects.toThrow(
+      "already exists",
+    );
+    await expect(useStore.getState().updateTag("keep", { name: " TRIP " })).rejects.toThrow(
+      "already exists",
+    );
+  });
+  it("preserves newer persisted fields while patching a stale tag", async () => {
+    await db.tags.update("trip", { name: "New name" });
+    const updated = await useStore.getState().updateTag("trip", { color: "#abcdef" });
+    expect(updated).toMatchObject({ name: "New name", color: "#abcdef" });
+    expect(useStore.getState().tags.find((tag) => tag.id === "trip")).toEqual(updated);
+  });
+  it.each(["add", "update"])("rejects a missing group on tag %s", async (action) => {
+    await db.groups.delete("g");
+    const result =
+      action === "add"
+        ? useStore.getState().addTag("g", "Holiday", "#abcdef")
+        : useStore.getState().updateTag("trip", { name: "Holiday" });
+    await expect(result).rejects.toThrow("Group not found");
+  });
+  it.each(["add", "update"])("rolls back tag %s and memory on activity failure", async (action) => {
+    const tags = await db.tags.toArray();
+    const state = useStore.getState();
+    vi.spyOn(db.activityEvents, "add").mockRejectedValueOnce(new Error("Disk full"));
+    const result =
+      action === "add"
+        ? state.addTag("g", "Holiday", "#abcdef")
+        : state.updateTag("trip", { name: "Holiday" });
+    await expect(result).rejects.toThrow("Disk full");
+    expect(await db.tags.toArray()).toEqual(tags);
+    expect(useStore.getState()).toBe(state);
+  });
+});

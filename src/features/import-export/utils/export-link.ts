@@ -1,5 +1,9 @@
-import { strFromU8, strToU8, unzlibSync, zlibSync } from "fflate";
+import { strFromU8, strToU8, zlibSync } from "fflate";
 
+import {
+  boundedUnzlib,
+  DecompressionLimitError,
+} from "@/features/import-export/utils/bounded-decompression";
 import { compactLinkIds } from "@/features/import-export/utils/compact-link-ids";
 import { verifyPortableGroup } from "@/features/import-export/utils/transfer-integrity";
 
@@ -59,9 +63,11 @@ export const decodeTransferPayload = async (hash: string): Promise<PortableGroup
     throw new Error("Unsupported transfer-link version");
   let decoded: Uint8Array;
   try {
-    decoded = unzlibSync(decodeBase64Url(payload.slice(3)));
-  } catch {
-    throw new Error("Transfer link payload could not be decoded");
+    decoded = boundedUnzlib(decodeBase64Url(payload.slice(3)), MAX_DECODED_LINK_BYTES);
+  } catch (failure) {
+    if (failure instanceof DecompressionLimitError)
+      throw new Error("Transfer link payload is too large", { cause: failure });
+    throw new Error("Transfer link payload could not be decoded", { cause: failure });
   }
   if (decoded.byteLength > MAX_DECODED_LINK_BYTES) {
     throw new Error("Transfer link payload is too large");

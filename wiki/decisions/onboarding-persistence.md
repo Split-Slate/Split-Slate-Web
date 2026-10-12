@@ -9,7 +9,7 @@ metadata:
 
 Purpose: explain why standard setup saves each completed step and how it resumes after reload.
 
-Last updated: 2026-10-04
+Last updated: 2026-10-12
 
 ## Decision
 
@@ -58,10 +58,20 @@ Onboarding progress lives as one row in the shared `settings` table (a discrimin
 | identity | `setLocalUser` (put-upsert — reuses id on Back-edit) |
 | group | `createGroup(name, icon, currency)` **once** using the form's initial `"INR"` value (also auto-creates the creator Member); Back-edits call `updateGroup` |
 | currency | `updateGroup(groupId, { currency })` |
-| categories | on Save and Proceed: `addCategory` for each newly-selected, `removeCategory` for each deselected (diffed against the DB); **≥1 required** to advance |
+| categories | on Save and Proceed: add newly-selected and remove deselected categories, diffing names against hydrated group categories; **≥1 required** in the form to advance |
 | members | on the final "Save and Finish": add each new Person when needed, then `addMember` for each row added in the central form. After all sequential writes succeed, set `onboarding.complete = true` and navigate to `/dashboard` |
 
-The group is created at the **group** step with the default `"INR"` currency (a group row requires a currency, but currency is chosen one step later); the **currency** step then updates it. The create-once guard (`groupId === null`) ensures the auto-created creator Member is never duplicated when the user navigates Back and edits.
+The group is created at the **group** step with the form's initial default `"INR"` currency; the
+**currency** step updates it. The guard is whether a matching group is present in hydrated `groups`,
+not simply whether `groupId` is null. Normal Back-edits update that group instead of creating a new
+creator membership. The group write and the onboarding group-reference/progress writes are separate.
+
+Standard setup is resumable but not atomic per step. Category additions/removals and final
+person/member writes are sequential; a later failure retains earlier successful writes. A group
+created before its onboarding reference fails can remain unreferenced by progress. Completion only
+follows successful final writes. `persistMembers` adds new rows and skips rows with IDs; removing an
+already-persisted row from the form does not itself delete that membership. These limits differ
+from atomic import-specific setup below. See [[state-management]] and [[group-creation]].
 
 ### Completion signal moved off `localUser`
 Per-step save creates `localUser` at step 1, so completion is an explicit

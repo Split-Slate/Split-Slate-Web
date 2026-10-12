@@ -93,6 +93,7 @@ test("copies a tag name and color with multiple group sources", async ({ page })
 
 test("suggests a tag inside the expense-entry dialog at every width", async ({ page }) => {
   await page.goto("/groups/current/expenses/new");
+  await page.locator("details").filter({ hasText: "Optional details" }).locator("summary").click();
   await page.getByRole("button", { name: "Add new tag" }).click();
   const dialog = page.getByRole("dialog", { name: "Create new tag" });
   await dialog.getByPlaceholder("e.g. Weekend").fill("week");

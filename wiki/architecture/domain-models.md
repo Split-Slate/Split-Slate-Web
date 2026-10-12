@@ -9,7 +9,7 @@ metadata:
 
 Purpose: describe persisted domain shapes and their implemented invariants.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## LocalUser (Device Owner)
 
@@ -58,7 +58,7 @@ A single device-local directory of people ("friends list"), reused across every 
 ```
 
 **Currency** is singular per group (MVP: no multi-currency). Onboarding and standalone creation set
-it, defaulting to INR. Settings can change its display/grouping label; if expenses exist, the user
+it, defaulting to INR. Settings can change its display/grouping label; if expenses or payments exist, the user
   confirms that their expense and payment amounts will not be exchanged or rewritten. Every amount uses fixed
 hundredths regardless of this label.
 
@@ -182,8 +182,9 @@ exactly, ratios use scaled integer arithmetic, and the shared formatter consumes
 **Enforced create/update invariant:** `sum(paid[].amount)` equals `sum(owes[].amount)` with a positive
 safe-integer total. Members, category, and optional tags are checked against persisted group
 records inside the write transaction. Creation and editing reject a save if accumulated group spending
-would exceed `Number.MAX_SAFE_INTEGER` hundredths, keeping derived balances and spending within
-the supported numeric range. An update replaces the old total instead of counting it twice.
+would exceed `Number.MAX_SAFE_INTEGER` hundredths. A separate payment-aware balance check rejects
+unsafe final member nets; the spending cap alone is not sufficient when payments exist. An update
+replaces the old total instead of counting it twice.
 
 - Updates preserve expense/group IDs, creator identity, creation time, and attachment IDs.
 - `createdAt` is set automatically and cannot be edited; expense detail shows its recording date
@@ -227,8 +228,9 @@ See [[expense-model-design]] for why both arrays are stored, and [[balance-calcu
 }
 ```
 
-The payer and recipient are distinct group members; the recorder is the device owner's member in
-that group. A payment is neither an expense nor a category-spending event. Its amount adjusts group
+The payer and recipient are distinct group members; new payments record the device owner's member
+in that group. Editing preserves the original `recordedBy` and `createdAt`, including on imported
+records. A payment is neither an expense nor a category-spending event. Its amount adjusts group
 net balances, not paid/owed expense transactions. See [[settlement-recording]].
 
 ---

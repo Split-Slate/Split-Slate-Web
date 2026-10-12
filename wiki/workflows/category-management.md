@@ -9,14 +9,21 @@ metadata:
 
 Purpose: explain group-category selection, editing, guarded deletion, and pending activation UI.
 
-Last updated: 2026-10-08
+Last updated: 2026-10-12
 
 ## Implementation Status
 
 The group **Categories & Tags** route currently implements category list/read, custom add, name/icon
 edit, and guarded delete. Store guards enforce non-empty case-insensitively unique names, prevent
 deleting an in-use category, and preserve at least one category per group. Group creation also
-implements mandatory category selection with defaults.
+implements mandatory category selection with defaults. Store create/update recheck group existence
+and name uniqueness against persisted rows in their write transaction; partial edits preserve newer
+persisted fields. Deletion rechecks expense references and category count in the same transaction.
+Concurrent delete calls leave at least one category; failures roll back activity and entity writes
+without changing memory. These guards do not add automatic cross-tab UI synchronization.
+The low-level `createGroup` action does not create a category:
+normal flows add selected categories afterward and can leave partial groups if later writes fail.
+See [[state-management]] and [[group-creation]].
 On mobile the main pane scrolls between sections without scrolling the browser window, while the
 category card itself is 50vh tall and scrolls independently. Categories title, available count,
 and the dark Add category button are above the card, not sticky within it; the shared group Back
@@ -84,7 +91,8 @@ After the group name/icon and currency are set, the creator is shown the master 
 **The screen explains:**
 > "Pick the categories that make sense for this group. You can always add more later."
 
-- This step is **mandatory — at least one category must be selected.** Because `categoryId` is required on every expense, a group cannot be created with zero categories.
+- This UI step is **mandatory — at least one category must be selected** because every expense
+  requires `categoryId`. It does not make group/category creation one atomic database operation.
 - The default set is pre-selected, so the step needs no effort unless the creator wants to change it; they can deselect, add custom categories, or both — as long as one remains.
 - During onboarding, selected categories are instantiated when **Save and Proceed** is pressed. In
   the standalone create-group flow, all selected categories are written sequentially after the

@@ -10,7 +10,7 @@ metadata:
 Purpose: define the implemented offline group-transfer contract and distinguish it from future
 settlement sharing.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Decision
 
@@ -78,7 +78,11 @@ Schema version `2` carries:
 
 All formats reconstruct and validate the same logical contract. Validation covers schema version,
 selection dependencies, declared counts, unique IDs, group ownership, complete references,
-paid/owed equality, split metadata, and aggregate safe-integer spending. Any digest, schema, count,
+paid/owed equality, split metadata, aggregate safe-integer spending, and safe final payment-aware
+member nets. Stored owed amounts are not recomputed from split metadata: validation checks
+references, metadata shape/ranges, and string-percentage sums rather than proving every stored
+allocation matches the split algorithm. Legacy numeric ratio validation is intentionally more
+permissive than current string inputs. Any digest, schema, count,
 or reference mismatch rejects the complete package before writes. Monetary values remain integer
 hundredths under [[money-representation-and-rounding]]. Previously signed version 1 transfers
 remain importable: after verification they become version 2 groups with no recorded payments.
@@ -161,7 +165,11 @@ ZIP is always available and is the only format enabled when receipts are selecte
 - `attachments/index.json`
 - selected receipt blobs under sanitized `attachments/` paths
 
-Creation rejects missing or surplus receipt files. Import requires the manifest and CSV to describe
+Creation rejects missing, surplus, or duplicate receipt files, and enforces import-compatible quotas
+before returning output: 16 MiB CSV/JSON entries, 64 MiB compressed ZIP, 128 MiB total expanded ZIP,
+and 10,000 entries including metadata. Receipt sizes are checked before reading bytes; aggregate
+quotas include CSV, manifest, index, and README. CSV creation also rejects output above 16 MiB.
+Import requires the manifest and CSV to describe
 the same dataset, checks the declared archive paths, verifies each receipt's SHA-256 digest, and
 rejects undeclared files. A ZIP without receipts remains a valid transfer option.
 Exported group files use the sanitized group name with `.zip` or `.csv`; renaming does not change
@@ -215,7 +223,7 @@ revalidated against persisted data inside the import transaction; unresolved or 
 abort the entire import. A fresh import may still reuse a Person ID with an exact matching snapshot.
 
 The complete import runs in one Dexie transaction across identity, groups, people, members,
-categories, tags, expenses, payments, attachments, and settings. It validates receipt metadata before the
+categories, tags, expenses, payments, attachments, settings, and activity events. It validates receipt metadata before the
 transaction, remaps IDs, applies approved contact renames, writes every selected record, verifies persisted collection counts, and
 then commits. Any failure rolls back all import writes. Zustand is rehydrated only after commit.
 
@@ -224,6 +232,14 @@ already-completed device retains its existing onboarding progress record.
 
 ## Deliberate Limits
 
+- Group CSV and textual ZIP entries are limited to 16 MiB; group ZIP input to 64 MiB and total
+  expanded ZIP content to 128 MiB, with at most 10,000 entries. File size is checked before reading;
+  direct CSV parsing also checks UTF-8 bytes. Link output remains bounded to 256 KiB after expansion.
+- Shared bounded decompression inspects ZIP directory metadata before inflation, rejects duplicate
+  file names, and counts actual streamed output using small compressed slices. Local records must
+  match the directory, and actual sizes must match declarations; forged sizes cannot bypass quotas.
+  Receipt index IDs and archive paths must each be unique. These bounds do not promise constant
+  memory or availability on every device; permitted output still needs memory for validation/blobs.
 - Importing the same transfer twice creates two independent groups; there is no merge, replacement,
   or add-new-expenses mode.
 - Integrity digests detect accidental change or corruption; they are not signatures or encryption.

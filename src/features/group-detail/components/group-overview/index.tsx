@@ -32,7 +32,10 @@ const GroupOverview = () => {
     .slice(0, 5);
   const allCategories = categorySpending(groupExpenses, groupCategories);
   const categories = allCategories.slice(0, 6);
-  const totalCategorySpend = allCategories.reduce((sum, category) => sum + category.amount, 0);
+  const totalCategorySpend = allCategories.reduce(
+    (sum, category) => sum + BigInt(category.amount),
+    0n,
+  );
   const featuredMembers = overviewMembers(groupMembers, groupExpenses);
   const transfers = suggestTransfers(
     calculateBalances(

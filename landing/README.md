@@ -23,6 +23,7 @@ A standalone static marketing website. It is not part of the expense application
 - `fonts/plus-jakarta-sans.woff2` — existing app font, copied locally for the phone replica only.
 - `fonts/plus-jakarta-sans-license.txt` — upstream SIL OFL notice for the app-replica font.
 - `fonts/*-license.txt` — upstream font-license notices; other existing font assets are retained.
+- `tests/browser/landing.e2e.ts` — local-only Playwright verification, not a deployment asset.
 
 There is no build step, package installation, runtime font service, analytics, or PWA manifest.
 The user approved a landing-only service worker for offline access, superseding the earlier
@@ -146,10 +147,10 @@ The former inline gallery tabs and their enhancement were removed; other page ef
 
 This gallery pass does not change the illustrated phone, handwriting, hand, story timeline, app
 source, or Netlify drag-and-drop boundaries. All eight assets travel with `landing/`; the deployed
-site never needs access to the source screenshot directory. Browser/layout checks remain pending.
-The All/Desktop/Mobile filter update edited source and documentation only; no commands or checks
-ran. Filtered counts, thumbnail visibility, navigation wraparound, current-image preservation, and
-reset-to-All on reopen remain unverified in a browser.
+site never needs access to the source screenshot directory. The later approved audit verifies
+All/Desktop/Mobile counts, matching thumbnails, keyboard wraparound, reset-to-All on reopen,
+Escape/button closure, opener focus, and scroll restoration. Coverage limits and logs are below;
+this is not an exhaustive browser or physical-device sign-off.
 
 ## Animation and accessibility boundaries
 
@@ -236,7 +237,7 @@ versions. Missing entries can be repaired online; fetch or storage failure has a
 
 **For every landing-content/asset change before uploading**, increment `CACHE_VERSION` in
 `service-worker.js` (initially `2026-10-11-v1`) and upload the complete `landing/` folder together.
-The current cache version is `2026-10-11-v3`. Startup explicitly calls `update()` on an existing
+The current cache version is `2026-10-12-v5`. Startup explicitly calls `update()` on an existing
 matching registration; initial registration and update checks bypass the worker script's HTTP cache.
 The user approved **automatic same-visit updates**, replacing the previous wait-for-tabs policy:
 after the entire snapshot and update metadata are stored successfully, the new worker calls
@@ -258,8 +259,9 @@ There is no periodic background poll or guarantee of updating an already-departe
 Offline availability is not a cold-first-visit guarantee: the browser must have cached the site
 before going offline. Clearing site data, private-mode restrictions, storage eviction, or a failed
 installation can remove/prevent it. App-entry links still open the separate expense app; this worker
-does not establish offline availability for that origin. Runtime registration/cache behavior, offline
-reloads, all-image browsing, update transitions, and failure/eviction recovery remain unverified.
+does not establish offline availability for that origin. Local Chromium tests verify completed
+installation, offline entry URLs, and all-image browsing. Deployment, physical-device storage pressure,
+and real browser eviction remain separate release checks; see the verification evidence below.
 
 The user-approved copy cleanup also removes the opening scroll hint/icon, visible walkthrough and
 gallery data notes, lightbox instructions/original link, and the local-storage caveat. Animation code
@@ -273,7 +275,9 @@ description reference. The hand, story data, device filtering, and app source re
 2. Drag this `landing/` folder into Netlify's manual deployment area. `index.html` must be at the
     uploaded site's root, beside `styles.css`, `animations.js`, `scroll-story.js`, `offline.js`,
     `service-worker.js`, `favicon.svg`, and
-   the complete `components/`, `utils/`, `constants/`, `fonts/`, and `images/` directories.
+    the complete `components/`, `utils/`, `constants/`, `fonts/`, and `images/` directories.
+   Use a staging copy that omits `tests/` and this README; they are local verification/documentation
+   material, not runtime files. Keep the repository originals intact.
 3. Netlify serves these ready-made static files; no build command is needed.
 4. Confirm the app-entry links open the expense application.
 5. For later landing changes, bump the worker's `CACHE_VERSION` and upload this whole folder again
@@ -287,29 +291,67 @@ manual deployment; configure its domain and site settings in Netlify's dashboard
 
 For a basic local look, open `index.html` in a browser; the page has no external runtime dependencies.
 Browser automation, servers, formatting, and other verification require explicit user approval
-under the project's execution policy. **The new native scroll animation has not been verified.**
-No formatting, syntax checks, tests, servers, browser automation, dependency installations, or
-deployment ran for this work. The approved asset-only batch copied the existing app font and fetched
-its license; this is not verification. Scroll reversal, actual-node docking/undocking, phone panning,
-notebook/phone alignment after app-font loading, phone text/settlement fit, narrow/tablet/short
-viewports, keyboard skip/CTA behavior, motion toggling, no-JavaScript fallback, and physical-device
-performance remain pending. Hand artwork and the rest of the landing were not changed for this UI pass.
-The later gallery-only pass ran its approved eight-PNG copy batch and updated HTML/CSS/documentation.
-The subsequent compact-card/lightbox redesign edited HTML/CSS/JavaScript and documentation only;
-no commands, verification, image processing, installation, or deployment ran for that redesign.
-Compact layout, lightbox navigation/device switching, backdrop/Escape closure, keyboard focus,
-touch scroll locking/restoration, image-load failure, original links, short/narrow/tablet/desktop
-rendering, and no-JavaScript/reduced-motion behavior remain unverified. Earlier checks below do not
-verify the current gallery or animation.
-The copy-cleanup/offline-cache pass also ran no commands, checks, installs, servers, or deployment.
-Removal-related animation/dialog behavior, precache completion, first-visit control, offline entry
-URLs/all screenshots/fonts, automatic same-visit updates, scope isolation, and install/storage failures
-are explicitly pending. Editing approval is not permission to run those checks.
-The automatic-update pass also ran no commands, browser checks, or deployment. Startup detection,
-legacy-page refresh, multiple-tab refresh, first-install/no-change loop guards, update failure,
-and preservation of query/fragment URLs remain unverified.
-The initial version was not verified. Before the content revision and this font pass, the receipt
-design had the following approved, landing-only results from 2026-10-10:
+under the project's execution policy. Editing approval alone does not authorize checks; approval
+does not carry into a new session.
+
+### Current approved audit evidence — 2026-10-12
+
+The standalone suite in `tests/browser/landing.e2e.ts`, configured by the repository-root
+`playwright.landing.config.ts`, passes **36 cases**: six scenarios in two Chromium projects,
+each repeated three times. The final landing-only rerun passes in 3.3 minutes after repairing
+malformed notebook-ring SVG coordinates and adding browser-console error assertions; the earlier
+renewed frozen batch passes in 2.7 minutes. That frozen batch also passes repository static
+checks and **580 application browser cases**, with 44 viewport-specific skips and zero failures.
+No source files changed during that batch. Application tests do not substitute for landing coverage.
+
+The landing scenarios cover:
+
+- Eight screenshot filters, matching thumbnails, keyboard navigation/wraps, reset on reopen,
+  Escape/button closure, opener focus, and scroll restoration.
+- All five exact demo allocations under reduced motion and the static story fallback.
+- Usable copy and direct screenshot links with JavaScript disabled.
+- Complete prior-install offline entry and successful loading of all eight screenshots.
+- Page/console errors and horizontal overflow at 280/390/820/1440/1920px.
+- Forward/backward story totals and viewer position, plus the motion-toggle fallback. The test
+  waits for fonts and first-frame measured story geometry before scrolling.
+
+An actual 280px decorative overflow was repaired locally on the privacy illustration; the entire
+page is not globally clipped. The later SVG repair restores ring strokes by separating cubic-curve
+coordinates; it bumps the offline snapshot to v5. Forty loaded top/bottom viewport captures supplement those checks;
+sampled privacy/demo/gallery/reduced-motion views show no observed content clipping. Whole-page
+captures alone are unreliable for sticky-story whitespace, lazy images, and fixed headers.
+
+Logs: `/tmp/opencode/audit-closure-stable-{check,landing,browser}.log`. Results and the unchanged-source
+record: `audit-closure-stable-results.json` and `audit-closure-stable-source-result.json` in that
+directory. Loaded captures: `/tmp/opencode/audit-landing-viewport-captures/`. Earlier failures and
+retries are retained and explained in [Testing Strategy](../wiki/decisions/testing-strategy.md).
+Final console-aware landing rerun: `/tmp/opencode/audit-closure-landing-console.log`; post-repair
+static/syntax/diff results: `/tmp/opencode/audit-closure-console-static-results.json`.
+
+The independent staged-copy recovery harness passes **seven scenarios**: missing story script,
+missing gallery script, missing gallery image with navigation recovery, rejected installation from
+a missing snapshot asset, manually evicted-entry online repair, manually evicted-entry offline 503
+guidance, and a two-revision worker update. The update verifies no first-install refresh, exactly one
+upgrade navigation, preserved query/fragment, old-cache cleanup, and an offline reload of revision 2.
+Results: `/tmp/opencode/audit-landing-recovery-static/results.json`. The stage and harness are outside
+the repository; no deployed files or application database are changed. Earlier custom-response
+servers stalled installation; their failed results are preserved, and the exact transport cause is
+not established. The final harness uses the same standard static server as the passing landing suite.
+
+This establishes scoped local Chromium behavior, not pixel-perfect docking/panning, every keyboard
+or backdrop path, short-landscape/native-dialog compatibility, Safari/Firefox, real-device performance,
+actual two-deployment updates, multi-tab/legacy-page updates, or physical storage-pressure behavior.
+The recovery run manually removes individual entries; it does not simulate real browser eviction,
+Cache API write rejection, or an HTML-fallback host response. Its local two-revision result is not
+a physical-device or actual-deployment update rehearsal.
+No dependency installation, deployment, commit, or push occurred in this audit.
+
+### Retained historical evidence
+
+The native-story, phone, gallery, copy-cleanup, and automatic-update implementation passes originally
+ran no verification; their asset-copy/license-fetch operations were not tests. The audit evidence
+above supersedes that original unverified status only for the scenarios actually exercised.
+Before those revisions, the receipt design had these approved landing-only results from 2026-10-10:
 
 - `node --check landing/animations.js` passes.
 - Eleven Chromium scenarios pass: widths 280, 320, 390, 768, 1024, 1440, and 1920px; touch landscape

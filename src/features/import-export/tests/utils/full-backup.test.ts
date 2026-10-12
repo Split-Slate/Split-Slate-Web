@@ -1,5 +1,5 @@
 import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import { buildGroupTransfer } from "@/features/import-export/utils/build-transfer";
 import { createPortableGroupZip } from "@/features/import-export/utils/export-zip";
@@ -45,7 +45,36 @@ const backupSource = (): FullBackupSource => {
   };
 };
 
+it("rejects a backup with forged directory expansion sizes", async () => {
+  const zip = await createFullBackupZip(backupSource(), "light");
+  const view = new DataView(zip.buffer, zip.byteOffset, zip.byteLength);
+  for (let offset = 0; offset + 28 <= zip.length; offset += 1) {
+    if (view.getUint32(offset, true) === 0x02014b50) {
+      view.setUint32(offset + 24, 1, true);
+      break;
+    }
+  }
+  await expect(parseFullBackupZip(zip)).rejects.toThrow("could not be opened");
+});
+
 describe("whole-app backup ZIP", () => {
+  it("rejects excessive entry counts before reading receipts", async () => {
+    const source = backupSource();
+    source.attachments = Array.from({ length: 9998 }, () => source.attachments[0]);
+    const read = vi.spyOn(source.attachments[0].blob, "arrayBuffer");
+    await expect(createFullBackupZip(source, "light")).rejects.toThrow("too large");
+    expect(read).not.toHaveBeenCalled();
+    read.mockRestore();
+  });
+  it("rejects excessive receipt sizes before reading receipts", async () => {
+    const source = backupSource();
+    const blob = source.attachments[0].blob;
+    Object.defineProperty(blob, "size", { value: 512 * 1024 * 1024 + 1 });
+    const read = vi.spyOn(blob, "arrayBuffer");
+    await expect(createFullBackupZip(source, "light")).rejects.toThrow("too large");
+    expect(read).not.toHaveBeenCalled();
+    read.mockRestore();
+  });
   it("preserves descriptions alongside older expenses without descriptions", async () => {
     const source = backupSource();
     source.expenses[0].description = 'Dinner  and drinks\n\nInvoice: "123" 🥘';

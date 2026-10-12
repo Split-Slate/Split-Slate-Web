@@ -9,7 +9,7 @@ metadata:
 
 Purpose: explain why group memberships refer to one device-local people directory.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-12
 
 ## Decision
 
@@ -38,8 +38,15 @@ The old decision conflated *global* identity with *online* identity. A purely lo
 
 Because a person is shared, "delete" has two distinct meanings, each with its own guard:
 
-- **Remove from one group** — allowed only if that person is in none of *that group's* expenses.
-- **Delete from the directory** — allowed only if that person is in *no expense in any group*. Deleting also prunes their group memberships and any frequent-payer references.
+- **Remove from one group** — blocked by expense creator/payer/participant references or payment
+  payer/recipient/recorder references in that group. The local user cannot be removed.
+- **Delete from the directory** — blocked by expense/payment references through memberships in any
+  group, and by persisted self identity. Deletion also prunes memberships and frequent-payer references.
+
+Both deletion paths read persisted identity, memberships, expense and payment references, and payer
+rankings inside their write transaction. Unseen referenced memberships cannot be deleted, and cleanup
+does not depend on stale hydrated member IDs. Rollback leaves records and memory unchanged.
+These transaction-time guards do not implement automatic cross-tab UI synchronization. See [[state-management]].
 
 ## Self
 

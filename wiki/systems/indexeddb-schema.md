@@ -9,7 +9,7 @@ metadata:
 
 Purpose: describe the persisted records, indexes, and implemented write boundaries.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Current Implementation Scope
 
@@ -97,8 +97,12 @@ A member links a group to a person — it stores no name/icon of its own; displa
 | groupId  | UUID   | index → foreign key to groups |
 | personId | UUID   | index → foreign key to people |
 
-Indexes: `groupId` (members of a group), `personId` (memberships linked to a person). The current
-person-deletion guard resolves memberships from hydrated state rather than querying that index.
+Indexes: `groupId` (members of a group), `personId` (memberships linked to a person). Person deletion
+queries the persisted `personId` index inside its write transaction to derive membership IDs for
+expense/payment guards and cleanup. Member deletion also protects persisted self identity and current
+payer rankings; category/tag writes validate current names and references transactionally. These are
+action-level guards, not automatic cross-tab UI sync or database foreign-key declarations.
+See [[state-management]].
 
 ---
 
@@ -164,7 +168,7 @@ two decimal places even for currencies with different ISO defaults. See
 | kind         | string  | `'payment'`                             |
 | fromMemberId | UUID    | group member who paid                   |
 | toMemberId   | UUID    | distinct group member who received     |
-| recordedBy   | UUID    | group member representing this device  |
+| recordedBy   | UUID    | original recording member; preserved on edit/import |
 | amount       | number  | positive safe-integer hundredths       |
 | when         | number  | editable unix-ms external payment time |
 | createdAt    | number  | automatic unix-ms recording time       |

@@ -11,6 +11,22 @@ const getFiltersTrigger = (page: Page) =>
     ? page.getByRole("button", { name: /^Filters(?: \(\d+\))?$/u })
     : page.locator("summary").filter({ hasText: "Filters" });
 
+const getSortTrigger = (page: Page) =>
+  (page.viewportSize()?.width ?? 0) < 768
+    ? page.getByRole("button", { name: "Sort", exact: true })
+    : page.locator("summary").filter({ hasText: "Sort" });
+
+const closeSort = async (page: Page) => {
+  if ((page.viewportSize()?.width ?? 0) < 768) {
+    await page
+      .getByRole("dialog", { name: "Sort expenses", exact: true })
+      .getByRole("button", { name: "Done", exact: true })
+      .click();
+  } else {
+    await getSortTrigger(page).click();
+  }
+};
+
 const closeFilters = async (page: Page) => {
   if ((page.viewportSize()?.width ?? 0) < 768) {
     await page
@@ -165,7 +181,7 @@ test("stacks mobile search above usable sort and filter controls after scrolling
 
   const form = page.getByRole("form", { name: "Expense filters" });
   const search = form.getByRole("searchbox", { name: "Search expenses" });
-  const sort = form.locator("summary").filter({ hasText: "Sort" });
+  const sort = getSortTrigger(page);
   const filters = getFiltersTrigger(page);
   const searchBox = (await search.boundingBox())!;
   const sortBox = (await sort.boundingBox())!;
@@ -182,6 +198,7 @@ test("stacks mobile search above usable sort and filter controls after scrolling
   await expect(form).toBeInViewport();
   await sort.click();
   await expect(page.getByRole("group", { name: "Sort expenses" })).toBeVisible();
+  await closeSort(page);
   await filters.click();
   await expect(page.getByRole("group", { name: "Categories" })).toBeVisible();
   await closeFilters(page);
@@ -218,16 +235,18 @@ test("summarizes matching expenses without changing full-group balances", async 
   await expect(page).toHaveURL(filteredUrl);
   await expect(insights.getByText("Matching expenses only")).toBeVisible();
 
-  await page.locator("summary").filter({ hasText: "Sort" }).click();
-  const sortPanel = page.getByRole("group", { name: "Sort expenses" }).locator("..");
+  await getSortTrigger(page).click();
+  const sortPanel =
+    (page.viewportSize()?.width ?? 0) < 768
+      ? page.getByRole("group", { name: "Sort controls", exact: true })
+      : page.getByRole("group", { name: "Sort expenses" }).locator("..");
   await expect(sortPanel).toBeVisible();
-  await expect
-    .poll(() => sortPanel.evaluate((element) => element.scrollHeight > element.clientHeight))
-    .toBe(true);
+  await expect(sortPanel).toHaveCSS("overflow-y", "auto");
   await page
     .getByRole("group", { name: "Sort expenses" })
     .getByRole("radio", { name: "High to low" })
-    .check();
+    .click();
+  await expect(page).toHaveURL(/sort=highest/u);
   await expect(insights.getByText("₹100.01").first()).toBeVisible();
 
   await page.getByLabel("Search expenses", { exact: true }).fill("no matching expense");
@@ -833,26 +852,129 @@ test("uses a scrollable mobile filter modal with live selections, clearing, and 
   await expect(dialog).toHaveCount(0);
 });
 
+test("sorts added dates with payments independently of expense dates and retains the URL", async ({
+  page,
+}) => {
+  await page.evaluate(async () => {
+    const path = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ path)) as typeof DbModule;
+    await db.expenses.update("dinner", { createdAt: 40 });
+    await db.expenses.update("taxi", { createdAt: 10 });
+    await db.expenses.update("hotel", { createdAt: 20 });
+    await db.settlements.add({
+      id: "payment",
+      groupId: "trip",
+      kind: "payment",
+      fromMemberId: "b",
+      toMemberId: "a",
+      recordedBy: "a",
+      amount: 100,
+      when: new Date("2026-09-19T12:00:00+05:30").getTime(),
+      createdAt: 30,
+      tagIds: [],
+    });
+  });
+  await page.reload();
+  const entries = page.getByRole("list", { name: "Expenses", exact: true }).locator(":scope > li");
+  await expect(entries).toContainText(["Hotel", "Airport taxi", "Dinner", "Bea paid Amy"]);
+  for (const [label, value, order] of [
+    ["Newest first", "added-newest", ["Dinner", "Bea paid Amy", "Hotel", "Airport taxi"]],
+    ["Oldest first", "added-oldest", ["Airport taxi", "Hotel", "Bea paid Amy", "Dinner"]],
+  ] as const) {
+    await getSortTrigger(page).click();
+    await page
+      .getByRole("group", { name: "Added date", exact: true })
+      .getByRole("radio", { name: label, exact: true })
+      .click();
+    await expect(page).toHaveURL(new RegExp(`sort=${value}`, "u"));
+    await expect(entries).toContainText([...order]);
+    expect(new URL(page.url()).searchParams.get("sort")).toBe(value);
+    await page.reload();
+    await expect(entries).toContainText([...order]);
+  }
+  await page.getByLabel("Search expenses", { exact: true }).fill("dinner");
+  await expect(entries).toHaveCount(1);
+  await expect(entries).toContainText(["Dinner"]);
+  await expect(page.getByText(/Payments are hidden while/u)).toBeVisible();
+  await page.getByRole("button", { name: "Clear all filters", exact: true }).click();
+  await expect(entries).toContainText(["Airport taxi", "Hotel", "Bea paid Amy", "Dinner"]);
+  expect(new URL(page.url()).searchParams.get("sort")).toBe("added-oldest");
+});
+
+test("keeps mobile Sort controls fixed, restores focus, and closes on a breakpoint change", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 568 });
+  const trigger = getSortTrigger(page);
+  const dialog = page.getByRole("dialog", { name: "Sort expenses", exact: true });
+  await trigger.click();
+  await expect(dialog).toBeVisible();
+  const bounds = (await dialog.boundingBox())!;
+  expect(bounds.x).toBeGreaterThanOrEqual(15.5);
+  expect(bounds.y).toBeGreaterThanOrEqual(15.5);
+  expect(bounds.x + bounds.width).toBeLessThanOrEqual(304.5);
+  expect(bounds.y + bounds.height).toBeLessThanOrEqual(552.5);
+  expect(bounds.height).toBeLessThanOrEqual(568 * 0.75 + 1);
+  await page.setViewportSize({ width: 320, height: 480 });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByRole("button", { name: "Done", exact: true })).toBeInViewport();
+  const controls = dialog.getByRole("group", { name: "Sort controls", exact: true });
+  await expect
+    .poll(() => controls.evaluate((element) => element.scrollHeight > element.clientHeight))
+    .toBe(true);
+  const header = dialog.locator(".dialog-header");
+  const footer = dialog.locator(".dialog-footer");
+  const headerY = (await header.boundingBox())!.y;
+  const footerY = (await footer.boundingBox())!.y;
+  await controls.evaluate((element) => {
+    element.scrollTop = element.scrollHeight;
+  });
+  expect((await header.boundingBox())!.y).toBeCloseTo(headerY, 0);
+  expect((await footer.boundingBox())!.y).toBeCloseTo(footerY, 0);
+  await dialog.getByRole("radio", { name: "Same tags", exact: true }).click();
+  await expect(page).toHaveURL(/sort=tags/u);
+  await expect(dialog).toHaveCount(0);
+  await expect(trigger).toBeFocused();
+  expect(new URL(page.url()).searchParams.get("sort")).toBe("tags");
+  for (const dismissal of ["Done", "Close sort", "Escape"]) {
+    await trigger.click();
+    if (dismissal === "Escape") await page.keyboard.press("Escape");
+    else await dialog.getByRole("button", { name: dismissal, exact: true }).click();
+    await expect(dialog).toHaveCount(0);
+    await expect(trigger).toBeFocused();
+    expect(new URL(page.url()).searchParams.get("sort")).toBe("tags");
+  }
+  await trigger.click();
+  await page.setViewportSize({ width: 820, height: 900 });
+  await expect(dialog).toHaveCount(0);
+  await getSortTrigger(page).click();
+  await expect(page.getByRole("group", { name: "Sort expenses", exact: true })).toBeVisible();
+});
+
 test("sorts by total paid and date, preserving sort through filters and detail navigation", async ({
   page,
 }) => {
   const names = page.getByRole("list", { name: "Expenses" }).locator(":scope > li");
-  const sortSummary = page.locator("summary").filter({ hasText: "Sort" });
+  const sortSummary = getSortTrigger(page);
   const sort = page.getByRole("group", { name: "Sort expenses" });
   await sortSummary.click();
-  await expect(sort.getByRole("group", { name: "Date" }).getByRole("radio")).toHaveCount(2);
+  const expenseDate = sort.getByRole("group", { name: "Expense date", exact: true });
+  const addedDate = sort.getByRole("group", { name: "Added date", exact: true });
+  await expect(expenseDate.getByRole("radio")).toHaveCount(2);
+  await expect(addedDate.getByRole("radio")).toHaveCount(2);
   await expect(sort.getByRole("group", { name: "Price" }).getByRole("radio")).toHaveCount(2);
   await expect(sort.getByRole("group", { name: "Name" }).getByRole("radio")).toHaveCount(2);
   await expect(sort.getByRole("group", { name: "Group by" }).getByRole("radio")).toHaveCount(2);
-  await expect(sort.getByRole("radio", { name: "Newest first" })).toBeChecked();
+  await expect(expenseDate.getByRole("radio", { name: "Newest first" })).toBeChecked();
   await expect(names).toContainText(["Hotel", "Airport taxi", "Dinner"]);
 
-  await sort.getByRole("radio", { name: "High to low" }).check();
+  await sort.getByRole("radio", { name: "High to low" }).click();
   await expect(names).toContainText(["Hotel", "Dinner", "Airport taxi"]);
   await expect(page).toHaveURL(/sort=highest/u);
 
   await sortSummary.click();
-  await sort.getByRole("radio", { name: "Low to high" }).check();
+  await sort.getByRole("radio", { name: "Low to high" }).click();
+  await expect(page).toHaveURL(/sort=lowest/u);
   await expect(names).toContainText(["Airport taxi", "Dinner", "Hotel"]);
   await page.getByLabel("Search expenses", { exact: true }).fill("hotel");
   await expect(page.getByRole("status")).toHaveText("1 of 3 expenses");
@@ -868,22 +990,26 @@ test("sorts by total paid and date, preserving sort through filters and detail n
   await sortSummary.click();
   await expect(sort.getByRole("radio", { name: "Low to high" })).toBeChecked();
 
-  await sort.getByRole("radio", { name: "Oldest first" }).check();
+  await expenseDate.getByRole("radio", { name: "Oldest first" }).click();
+  await expect(page).toHaveURL(/sort=oldest/u);
   await expect(names).toContainText(["Dinner", "Airport taxi", "Hotel"]);
   await sortSummary.click();
-  await sort.getByRole("group", { name: "Name" }).getByRole("radio", { name: "A–Z" }).check();
+  await sort.getByRole("group", { name: "Name" }).getByRole("radio", { name: "A–Z" }).click();
+  await expect(page).toHaveURL(/sort=name-asc/u);
   await expect(names).toContainText(["Airport taxi", "Dinner", "Hotel"]);
   await sortSummary.click();
-  await sort.getByRole("group", { name: "Name" }).getByRole("radio", { name: "Z–A" }).check();
+  await sort.getByRole("group", { name: "Name" }).getByRole("radio", { name: "Z–A" }).click();
+  await expect(page).toHaveURL(/sort=name-desc/u);
   await expect(names).toContainText(["Hotel", "Dinner", "Airport taxi"]);
   await sortSummary.click();
-  await sort.getByRole("radio", { name: "Same category" }).check();
+  await sort.getByRole("radio", { name: "Same category" }).click();
+  await expect(page).toHaveURL(/sort=category/u);
   await expect(names).toContainText(["Dinner", "Hotel", "Airport taxi"]);
   await sortSummary.click();
-  await sort.getByRole("radio", { name: "Same tags" }).check();
+  await sort.getByRole("radio", { name: "Same tags" }).click();
   await expect(names).toContainText(["Dinner", "Airport taxi", "Hotel"]);
   await expect(page).toHaveURL(/sort=tags/u);
   await sortSummary.click();
-  await sort.getByRole("radio", { name: "Newest first" }).check();
+  await expenseDate.getByRole("radio", { name: "Newest first" }).click();
   await expect(page).toHaveURL(/\/groups\/trip\/expenses$/u);
 });

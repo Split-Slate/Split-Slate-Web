@@ -9,15 +9,22 @@ metadata:
 
 Purpose: describe implemented tag management, expense references, and cascade boundaries.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## What Tags Are
 
 Tags are durable, free-form records scoped to one group. The same tag cannot be reused across groups; two groups may independently create tags with the same name.
 
-Expenses optionally reference tags through `tagIds[]`. An expense may have no tags, and removing every tag reference leaves the expense valid.
+Expenses and payments optionally reference tags through `tagIds[]`. Removing every tag reference
+leaves either record valid. Expense Add/Edit controls are inside the initially closed Optional
+details disclosure; payment tags remain in the payment modal. See [[settlement-recording]].
 
 Tag names are trimmed and case-insensitively unique within a group. Every tag also has a required six-digit hex color used as its visual identifier.
+
+Create and update validate current group existence and persisted name uniqueness in their write
+transaction, serializing concurrent duplicate additions. Partial edits preserve newer persisted
+fields instead of starting from hydration. The tag and its activity snapshot roll back together;
+Zustand updates only after commit. See [[state-management]] and [[testing-strategy]].
 
 ## Creating and Renaming Tags
 
@@ -72,12 +79,16 @@ shared group Back header remains sticky, but the duplicate visible page title is
 stacks Categories above Tags; desktop keeps the bounded cards side by side. Short tag names share
 a row with Edit/Delete at laptop widths.
 
-Deleting a tag requires confirmation. `removeTag` performs one read-write IndexedDB transaction
-on tags, expenses, and activity events:
+Deleting a tag requires confirmation. Its copy separately counts affected expenses and payments,
+and states that neither transaction type will be deleted. A focused desktop/mobile regression
+checks the count/copy and persisted tag cleanup while retaining both records.
+`removeTag` performs one read-write IndexedDB transaction
+on groups, tags, expenses, settlements, and activity events:
 
 1. Read the persisted tag; reject a missing tag, including repeated deletion.
-2. Read the current expenses in the persisted tag's group.
-3. Delete the tag and update only `tagIds` on existing expenses that reference it.
+2. Read the current expenses and payments in the persisted tag's group.
+3. Delete the tag and update only `tagIds` on existing expenses/payments that reference it.
+4. Save a tag-deleted activity snapshot in the same transaction.
 
 All reads and writes share the transaction. An expense created before cleanup is included; a
 later create/update that still references the deleted tag fails persisted-reference validation.
@@ -85,9 +96,9 @@ Concurrent expense edits/deletions and tag removals serialize through the shared
 fields, unrelated tags/groups, attachments, and payer rankings are preserved. Any write failure
 rolls back the tag deletion and all reference changes without updating Zustand.
 
-After commit, the store removes the tag from memory and replaces that group's expense snapshot
+After commit, the store removes the tag from memory and replaces that group's expense/payment snapshots
 with the persisted records read and cleaned in the transaction. This removes stale deleted rows
-from the local view and includes previously unseen expenses. Other groups' expense state is
+from the local view and includes previously unseen records. Other groups' state is
 retained. This refresh is specific to this action; it does not implement automatic cross-tab
 synchronization of the full store. See [[state-management]].
 

@@ -29,6 +29,21 @@ const expense = (id: string, categoryId: string, paid: number[]): Expense => ({
 });
 
 describe("category spending", () => {
+  it("preserves combined category cents across independently valid maximum-size groups", () => {
+    const maximum = Number.MAX_SAFE_INTEGER;
+    const rows = categorySpending(
+      [
+        expense("first", "food", [maximum]),
+        { ...expense("second", "dining", [maximum]), groupId: "other" },
+        expense("small", "travel", [1]),
+      ],
+      categories,
+    );
+    expect(rows).toEqual([
+      { name: "Food", icon: "🍔", amount: BigInt(maximum) * 2n },
+      { name: "Travel", icon: "🚕", amount: 1 },
+    ]);
+  });
   it("returns no rows without expenses, even when categories exist", () => {
     expect(categorySpending([], categories)).toEqual([]);
   });

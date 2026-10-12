@@ -3,6 +3,7 @@ import { verifyPortableGroup } from "@/features/import-export/utils/transfer-int
 import {
   EXPORT_CSV_COLUMNS,
   EXPORT_SCHEMA_VERSION,
+  MAX_GROUP_TEXT_BYTES,
 } from "@/features/import-export/constants/export.constants";
 import type {
   ExportRecordType,
@@ -138,7 +139,10 @@ export const createPortableGroupCsv = async (bundle: PortableGroup): Promise<str
   const lines = bundleRows(validated).map((row) =>
     EXPORT_CSV_COLUMNS.map((key) => escapeCsvCell(row[key])).join(","),
   );
-  return `\uFEFF${[header, ...lines].join("\r\n")}\r\n`;
+  const csv = `\uFEFF${[header, ...lines].join("\r\n")}\r\n`;
+  if (new TextEncoder().encode(csv).byteLength > MAX_GROUP_TEXT_BYTES)
+    throw new Error("Group transfer CSV is too large");
+  return csv;
 };
 
 const parseCsvRows = (csv: string): string[][] => {
@@ -200,6 +204,11 @@ const parseInteger = (value: string, field: string, signed = false): number => {
 };
 
 export const parsePortableGroupCsv = async (csv: string): Promise<PortableGroup> => {
+  if (
+    csv.length > MAX_GROUP_TEXT_BYTES ||
+    new TextEncoder().encode(csv).byteLength > MAX_GROUP_TEXT_BYTES
+  )
+    throw new Error("Group transfer CSV is too large");
   const rows = parseCsvRows(csv.replace(/^\uFEFF/u, ""));
   const header = rows.shift();
   const columns = [EXPORT_CSV_COLUMNS, PRE_DESCRIPTION_COLUMNS, LEGACY_COLUMNS].find(

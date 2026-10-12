@@ -10,14 +10,15 @@ metadata:
 Purpose: prevent floating-point accounting errors while guaranteeing that every computed split
 adds back to its expense total.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Implementation Status
 
-Implemented for expense creation, editing, filtering, display, and group currency relabeling.
+Implemented for expense/payment creation and editing, filtering, display, and group currency relabeling.
 `shared/utils/money.ts` parses decimal strings with BigInt arithmetic into fixed integer
 hundredths for every supported currency. The formatter always shows two decimal places, regardless
-of locale or ISO defaults. Monetary outputs remain safe integers.
+of locale or ISO defaults. Persisted amounts remain safe-integer numbers; derived cross-group
+summaries may use BigInt to retain totals above the persisted-number limit.
 
 The split calculator uses exact integer quotas, largest remainders, and ascending member IDs for
 ties. Shares/percentage inputs allow six decimal places and use scaled integer ratios. The form
@@ -61,7 +62,7 @@ This applies to:
 - `transactions.owes[].amount`
 - expense totals derived from those arrays
 - adjustment split values in `splitMeta[]`
-- future settlement amounts
+- recorded external payment amounts (`Settlement.amount`)
 
 Shares and percentage metadata are ratios, not money, and therefore do not use hundredths.
 Their validated decimal input is stored as text, while computation converts it directly to scaled
@@ -84,7 +85,7 @@ See [[expense-edit-delete]].
 ## Mandatory Shared Formatting and Input Reuse
 
 All application monetary displays use `src/shared/utils/currency.ts` →
-`formatCurrency(amount, currency, options?)`. Its number argument is stored/derived integer
+`formatCurrency(amount, currency, options?)`. Its number or BigInt argument is stored/derived integer
 hundredths, not a floating-point major-unit amount. Output is display-only text: formatting never
 writes to the database or changes calculations. Existing callers retain locale-based grouping,
 narrow currency symbols, and fixed two-decimal display. Optional `CurrencyFormatOptions` supports
@@ -137,12 +138,23 @@ exclude the old expense before adding its replacement, so its total is not count
 
 Individually valid expenses can otherwise overflow a derived total and make the safe-integer
 formatter throw during rendering. With nonnegative balanced transactions, bounding total group
-spending also bounds each member's cumulative paid, owed, and net amounts. Concurrent saves are
+spending bounds expense-only paid, owed, and net amounts. Recorded payments can exceed those
+expense-only bounds; `calculateBalances` separately rejects unsafe final member nets inside
+expense/payment write and deletion transactions. It accumulates with BigInt so offsetting payments
+are evaluated exactly. Concurrent saves are
 serialized by the transaction, so they cannot independently pass against an outdated total.
 
 This guard applies to creation and updates; it does not repair existing invalid development data.
 The implemented group-transfer import enforces the same limit. See [[import-export]] and
 [[state-management]].
+
+Valid individual groups can exceed the number limit when combined. Dashboard get/give and
+cross-group category spending accumulate exactly with BigInt; shared formatting accepts those
+derived totals without converting them to Number or imposing a device-wide spending cap. Group
+amounts and storage schemas stay unchanged. Charts use bounded presentation percentages, never
+those approximate ratios for accounting. Payment editing similarly undoes the edited payment with
+BigInt after validating saved final nets, so an unsafe intermediate net cannot crash its modal.
+See [[dashboard]] and [[settlement-recording]].
 
 ## Deterministic Split Rounding
 
@@ -160,8 +172,9 @@ uses the **largest remainder method**:
 The resulting `owes[]` values are stored explicitly. They are not recomputed during ordinary reads.
 
 For adjustment splits, validate the exact final quotas as non-negative, then apply the same
-allocation method to those final quotas. Exact-amount splits and payer contributions are already
-entered in hundredths and must sum exactly; they do not need calculated remainder allocation.
+allocation method to those final quotas. Manually entered exact amounts and payer contributions
+are already hundredths. Blank fields in those modes share the remaining amount using deterministic
+equal allocation; explicit and resolved amounts must sum exactly. See [[paid-by]] and [[split-types]].
 
 ## Required Invariants
 

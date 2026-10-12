@@ -34,7 +34,8 @@ type TagMode = "add" | "edit" | null;
 const DEFAULT_TAG_COLOR = "#6366f1";
 
 const TagManagement = () => {
-  const { group, groupTags, groupExpenses } = useOutletContext<GroupDetailContext>();
+  const { group, groupTags, groupExpenses, groupSettlements } =
+    useOutletContext<GroupDetailContext>();
   const { addTag, updateTag, removeTag } = useStore();
   const [tagMode, setTagMode] = useState<TagMode>(null);
   const [editingTagId, setEditingTagId] = useState<string | null>(null);
@@ -123,6 +124,9 @@ const TagManagement = () => {
   const confirmTag = groupTags.find((tag) => tag.id === confirmTagId);
   const confirmTagExpenseCount = groupExpenses.filter((expense) =>
     expense.tagIds.includes(confirmTagId ?? ""),
+  ).length;
+  const confirmTagPaymentCount = groupSettlements.filter((payment) =>
+    payment.tagIds.includes(confirmTagId ?? ""),
   ).length;
   const editor = tagMode && (
     <FormProvider {...tagForm}>
@@ -242,7 +246,7 @@ const TagManagement = () => {
         <ConfirmationDialog
           open={Boolean(confirmTag)}
           title={`Delete ${confirmTag?.name ?? "tag"}?`}
-          description={`This tag will be removed from ${confirmTagExpenseCount} ${confirmTagExpenseCount === 1 ? "expense" : "expenses"}. The expenses will not be deleted.`}
+          description={`This tag will be removed from ${confirmTagExpenseCount} ${confirmTagExpenseCount === 1 ? "expense" : "expenses"} and ${confirmTagPaymentCount} ${confirmTagPaymentCount === 1 ? "payment" : "payments"}. The expenses and payments will not be deleted.`}
           confirmLabel="Delete tag"
           onCancel={() => setConfirmTagId(null)}
           onConfirm={handleConfirmDelete}

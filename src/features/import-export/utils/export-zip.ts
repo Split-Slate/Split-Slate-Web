@@ -1,6 +1,7 @@
-import { strFromU8, strToU8, unzipSync, zipSync } from "fflate";
+import { strFromU8, strToU8, zipSync } from "fflate";
 import { z } from "zod";
 
+import { boundedUnzip } from "@/features/import-export/utils/bounded-decompression";
 import {
   createPortableGroupCsv,
   parsePortableGroupCsv,
@@ -11,6 +12,11 @@ import {
   verifyPortableGroup,
 } from "@/features/import-export/utils/transfer-integrity";
 
+import {
+  MAX_GROUP_EXPANDED_BYTES,
+  MAX_GROUP_TEXT_BYTES,
+  MAX_GROUP_ZIP_BYTES,
+} from "@/features/import-export/constants/export.constants";
 import type { GroupTransferSource } from "@/features/import-export/types/import-export.types";
 
 const attachmentIndexSchema = z.array(
@@ -44,11 +50,13 @@ export const createPortableGroupZip = async (source: GroupTransferSource): Promi
     source.attachmentFiles.map((attachment) => [attachment.id, attachment]),
   );
   if (
+    source.attachmentFiles.length !== bundle.attachments.length ||
     filesById.size !== bundle.attachments.length ||
     bundle.attachments.some((attachment) => !filesById.has(attachment.id))
   ) {
     throw new Error("Attachment files do not match the transfer manifest");
   }
+  if (bundle.attachments.length + 4 > 10_000) throw new Error("Group transfer ZIP is too large");
 
   const archive: Record<string, Uint8Array> = {
     "manifest.json": strToU8(JSON.stringify(bundle, null, 2)),
@@ -64,6 +72,12 @@ export const createPortableGroupZip = async (source: GroupTransferSource): Promi
       ].join("\n"),
     ),
   };
+  let expandedBytes = Object.values(archive).reduce((sum, bytes) => sum + bytes.byteLength, 0);
+  if (
+    archive["manifest.json"].byteLength > MAX_GROUP_TEXT_BYTES ||
+    expandedBytes > MAX_GROUP_EXPANDED_BYTES
+  )
+    throw new Error("Group transfer ZIP is too large");
   const attachmentIndex: z.infer<typeof attachmentIndexSchema> = [];
 
   for (const [index, metadata] of bundle.attachments.entries()) {
@@ -76,7 +90,12 @@ export const createPortableGroupZip = async (source: GroupTransferSource): Promi
       throw new Error("Attachment file metadata does not match the transfer manifest");
     }
     const path = `attachments/${index + 1}-${safeSegment(metadata.id)}.${extensionForMimeType(metadata.mimeType)}`;
+    if (expandedBytes + attachment.blob.size > MAX_GROUP_EXPANDED_BYTES)
+      throw new Error("Group transfer ZIP is too large");
     const bytes = new Uint8Array(await attachment.blob.arrayBuffer());
+    expandedBytes += bytes.byteLength;
+    if (expandedBytes > MAX_GROUP_EXPANDED_BYTES)
+      throw new Error("Group transfer ZIP is too large");
     archive[path] = bytes;
     attachmentIndex.push({
       id: metadata.id,
@@ -87,15 +106,31 @@ export const createPortableGroupZip = async (source: GroupTransferSource): Promi
     });
   }
   archive["attachments/index.json"] = strToU8(JSON.stringify(attachmentIndex, null, 2));
-  return zipSync(archive, { level: 6 });
+  if (
+    archive["attachments/index.json"].byteLength > MAX_GROUP_TEXT_BYTES ||
+    expandedBytes + archive["attachments/index.json"].byteLength > MAX_GROUP_EXPANDED_BYTES
+  )
+    throw new Error("Group transfer ZIP is too large");
+  const zip = zipSync(archive, { level: 6 });
+  if (zip.byteLength > MAX_GROUP_ZIP_BYTES) throw new Error("Group transfer ZIP is too large");
+  return zip;
 };
 
 export const parsePortableGroupZip = async (bytes: Uint8Array): Promise<GroupTransferSource> => {
   let archive: Record<string, Uint8Array>;
   try {
-    archive = unzipSync(bytes);
-  } catch {
-    throw new Error("ZIP could not be opened");
+    archive = boundedUnzip(bytes, {
+      compressedBytes: MAX_GROUP_ZIP_BYTES,
+      expandedBytes: MAX_GROUP_EXPANDED_BYTES,
+      entryBytes: (name) =>
+        name.endsWith(".json") || name.endsWith(".csv")
+          ? MAX_GROUP_TEXT_BYTES
+          : MAX_GROUP_EXPANDED_BYTES,
+    });
+  } catch (failure) {
+    throw new Error("ZIP could not be opened: invalid archive or size limit exceeded", {
+      cause: failure,
+    });
   }
   if (archive["backup.json"] && archive["manifest.json"]) {
     throw new AppBackupFileError("This ZIP contains a whole-app backup, not a group transfer.");
@@ -120,6 +155,12 @@ export const parsePortableGroupZip = async (bytes: Uint8Array): Promise<GroupTra
   const attachmentIndex = attachmentIndexSchema.parse(indexValue);
   if (attachmentIndex.length !== bundle.attachments.length) {
     throw new Error("ZIP attachment index does not match the transfer manifest");
+  }
+  if (
+    new Set(attachmentIndex.map((item) => item.id)).size !== attachmentIndex.length ||
+    new Set(attachmentIndex.map((item) => item.path)).size !== attachmentIndex.length
+  ) {
+    throw new Error("ZIP attachment index contains duplicate IDs or paths");
   }
 
   const metadataById = new Map(bundle.attachments.map((attachment) => [attachment.id, attachment]));

@@ -9,7 +9,7 @@ metadata:
 
 Purpose: explain exact member balances and deterministic suggested transfers.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-12
 
 ## Implementation Status
 
@@ -20,7 +20,9 @@ Four pure helpers are implemented in `src/shared/utils/balances.ts`:
 - `calculateBalances(expenses, memberIds, settlements?)` — includes all members and recorded group payments
 - `suggestTransfers(balances)` — returns positive integer transfers that clear a zero-sum balance map
 
-The overview and sidebar use the first two helpers. The `/groups/:groupId/balances` route shows
+Overview uses `calculateBalances`/`suggestTransfers` and derives spending from category totals;
+the sidebar uses `calculateMemberNet`. Dashboard group previews use `calculateGroupTotal`.
+The `/groups/:groupId/balances` route shows
 all-member balances and suggested payments, updating after expense or payment changes.
 Solo groups show zero net and no suggested payments, with explanatory personal-spending copy.
 

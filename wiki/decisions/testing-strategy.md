@@ -10,7 +10,7 @@ metadata:
 Purpose: keep accounting tests fast, make every implemented area verifiable, and reserve real
 browser coverage for behavior that depends on browser storage, navigation, or offline capability.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Execution Permission — Highest Project Priority
 
@@ -36,6 +36,300 @@ This policy overrides conflicting project instructions and historical notes in `
 `CLAUDE.md`, and the wiki. Every command below is conditional on this gate. A denied or deferred
 check stays explicitly unverified; do not claim it passed or block unrelated approved work merely
 because it is pending. This preserves the user's control over time and the shared workspace.
+
+## 2026-10-12 Audit Evidence — Not an Exhaustive Sign-Off
+
+### Audit Closure and Commit Preparation
+
+Purpose: provide the consolidated handoff for the completed automated audit, its repairs, executed
+checks, retained limitations, and proposed commit scope. The detailed chronology below preserves
+earlier failures and narrower evidence; it must not be read as a new authorization to run commands.
+
+**Outcome:** discovered defects are repaired and the approved automated closure batches pass.
+This is not an exhaustive manual audit or a product-launch sign-off. Commit preparation only edits
+documentation; it does not implement remaining roadmap features or claim unrun checks passed.
+
+#### Completed repairs and documentation
+
+| Area | Completed work | Canonical detail |
+|------|----------------|------------------|
+| Monetary summaries | Exact BigInt cross-group dashboard/category totals, BigInt-aware decimal/currency formatting, and bounded presentation-only chart ratios. Stored amounts and validated form inputs remain safe-integer numbers; currencies are not converted or netted together. | [[money-representation-and-rounding]], [[dashboard]] |
+| Payment editing and dates | Payment previews validate saved balances, then undo the edited payment with BigInt so intermediate overflow cannot break the editor. Shared local date serialization pads early years to four digits. Final persisted-net/input guards remain intact. | [[settlement-recording]], [[string-input-normalization]] |
+| Persisted store guards | Person/member/category removal and category/tag name checks use current persisted records inside transactions, not stale hydrated snapshots. Cleanup preserves newer fields and transaction rollback includes activity. | [[state-management]], [[people-directory]], [[member-management]], [[category-management]], [[tag-management]] |
+| Import intake | Pre-read file-size limits, streamed bounded decompression, actual-output and ZIP-directory consistency checks, and unique receipt-index IDs/paths. Invalid or oversized input is rejected before persistence. | [[import-export]], [[full-backup]] |
+| Export safety | CSV/group ZIP/whole-app backup enforce import-compatible text/archive/expanded-size quotas; receipt sizes are checked before reading, and duplicate supplied group-export receipts are rejected. | [[import-export]], [[full-backup]] |
+| Destructive warnings | Group and tag deletion warnings include recorded payments, matching the payment-aware cleanup behavior. | [[group-deletion]], [[confirmation-dialogs]], [[tag-management]] |
+| Application regressions | Browser journeys use current Optional details and responsive Sort controls. Added regressions cover autofocus/draft preservation, added-date/payment order, Sort scrolling/focus/breakpoints, stale persisted state, concurrent writes, preserved current fields, rollback, monetary boundaries, and transfer quotas. | [[main-screen]], [[filtering]], and the chronology below |
+| Landing repairs | Local clipping fixes decorative privacy-orbit overflow at 280px. Explicit SVG coordinate separators restore notebook-ring strokes. The worker snapshot version is `2026-10-12-v5`; first-frame story tests await font/geometry readiness and layout tests collect console errors as well as page errors. | [[product-roadmap]], `landing/README.md` |
+| Repository reconciliation | Approved formatting/syntax normalization and source-backed corrections to architecture, schema, workflow, research, testing, and roadmap notes. The landing README now distinguishes verified behavior, retained limits, and local-only tests/docs excluded from runtime upload. | [[index]], [[log]] |
+
+The repairs do **not** add automatic cross-tab UI synchronization, atomic standard multi-step group
+creation, live cloud synchronization, or cross-device continuity. Existing file transfer remains a
+fresh-ID snapshot import, not a merge or sync protocol. See [[state-management]] and [[product-roadmap]].
+
+#### Final executed verification
+
+These are recorded results from the completed approved runs, not commands executed again during
+commit preparation. Logs listed below are under `/tmp/opencode/` unless otherwise stated.
+
+| Command or bounded check | Recorded result | Evidence |
+|--------------------------|-----------------|----------|
+| `pnpm test` | **672 passed across 45 files** after the persisted-store/export repairs. | `audit-closure-final-unit.log`, `audit-closure-final-results.json` |
+| `pnpm check` | ESLint, repository Prettier checks, and TypeScript pass, including the final audit documentation rerun. | `audit-final-documentation-check.log`, `audit-final-integrity-results.json` |
+| `pnpm build` | Ordinary production build passes. | `audit-closure-final-build.log` |
+| `VITE_ENABLE_DEVTOOLS=true pnpm build` | Devtools-enabled production build passes. | `audit-closure-final-build-devtools.log` |
+| `pnpm test:pwa --output=/tmp/opencode/audit-closure-pwa-artifacts` | **18 passed** against the production application. | `audit-closure-final-pwa.log`, `audit-closure-final-results.json` |
+| `pnpm test:e2e --output=/tmp/opencode/audit-closure-browser-stable-artifacts` | **580 passed, 44 viewport-specific skips, zero failures** in 22.8 minutes; 624 scheduled project/test combinations. Skips cover inapplicable layouts, with passing coverage in the appropriate project. | `audit-closure-stable-browser.log`, `audit-closure-stable-results.json` |
+| `pnpm exec playwright test -c playwright.landing.config.ts --repeat-each=3 --output=/tmp/opencode/audit-closure-landing-console-artifacts` | **36 passed** in 3.3 minutes after the SVG/console-error repair: six scenarios, two Chromium projects, three repetitions each. | `audit-closure-landing-console.log` |
+| `node /tmp/opencode/audit-landing-recovery.mjs` | **Seven passed** with a staged copy and standard static server: missing scripts/image, rejected missing-asset installation, manual entry eviction repair/offline guidance, and a two-revision update. | `audit-landing-recovery-static.log`, `audit-landing-recovery-static/results.json` |
+| JavaScript syntax and TypeScript/JSONC parsing | **13 JavaScript/module syntax checks, 251 TypeScript syntax trees, and three JSONC configurations pass.** | `audit-closure-console-static-results.json`, `audit-closure-final-syntax.json` |
+| File/hash/asset/wiki integrity and `git diff --check` | **738 files** (731 tracked plus seven new), **43 indexed wiki pages**, local Markdown/landing asset links, and whitespace checks pass. Unchanged-byte binary checks cover 382 PNG CRCs/decoded payloads, nine WOFF2 headers, ten WebP headers, and two PDF header/end markers. | `audit-final-file-inventory.json`, `audit-final-integrity-results.json` |
+
+The unit/build/PWA closure batch kept source frozen. The final full-browser batch also recorded
+`changed: []` for its non-wiki source snapshot. Only landing README/artwork/worker-version/test files
+changed after that clean application run; the final integrity comparison found no `src/` changes.
+Those landing changes have their own subsequent 36-case and seven-scenario verification above.
+Forty loaded viewport captures at 280/390/820/1440/1920px supplement the tests with sampled visual
+review; they do not establish pixel parity or exhaustive visual coverage.
+
+Chunk-size and service-worker `inlineDynamicImports` deprecation warnings are non-failing. Browser
+automation covers desktop/mobile-emulated Chromium, not physical phones, Safari, or Firefox.
+
+#### Failures, retries, and limits retained
+
+- Initial application browser run: **562 passes, 12 failures, 44 skips**. Sort tests used `.check()`
+  on radios removed when their dialog closed; repaired actions use `.click()` and assert output.
+  Other isolated editor/navigation/layout failures did not recur in the **22-case focused rerun**;
+  reload interference is suspected, not proven. Later frozen full-browser runs are clean.
+- Landing full-page capture work initially exceeded a 30-second scenario budget. A 90-second budget
+  accommodates five captures; the two-case screenshot rerun passed. Older captures/traces are kept.
+- The post-repair closure landing run had **11 passes and one mobile first-frame story failure**.
+  Font/geometry synchronization and instant scrolling repair the test; an intervening check then
+  caught its formatting. Final repeated landing runs pass after both corrections.
+- Static checks caught the Dexie overload mismatch when adding a fifth tag-deletion transaction
+  table; using the table-array overload fixes the type error without reducing transaction scope.
+- The independent recovery harness first hung on an unbounded worker wait, then custom-response
+  server variants stalled installation. Bounded diagnostics are retained. The staged standard-server
+  run passes without a repository worker repair; the exact custom-server transport cause is unproven.
+  Final readiness polling awaits async results, and refresh assertions count browser navigations,
+  not network document requests that can be satisfied by the worker cache.
+- Console capture exposed malformed ring SVG paths missed by page-error-only checks. This was a
+  genuine rendering defect, repaired and covered by the final console-aware regression.
+
+See the chronology below for per-attempt logs, outputs, and narrower historical results. Failed
+attempts are never added to passing totals or treated as proof of a different root cause.
+
+#### Pending work, separated by purpose
+
+| Category | Still pending or not established | Consequence |
+|----------|----------------------------------|-------------|
+| Manual audit scope | Exhaustive per-file/per-line source/test reading, individual asset/font/PDF review, and pixel-perfect story docking/panning. | Automated inventory and sampled screenshots are not exhaustive manual sign-off. |
+| Device/browser coverage | Physical-device usability/performance, Safari/Firefox, short-landscape/native-dialog compatibility, and all keyboard/backdrop paths. | Local Chromium passes do not establish universal browser/device behavior. |
+| Deployment/recovery evidence | Actual two-deployment rehearsals, multi-tab and legacy-page landing refresh, failed-update retention, HTML-fallback host rejection, and Cache API write rejection. | The seven local scenarios clear only their tested paths. |
+| Persistence/release evidence | Real storage pressure/eviction, real-user versioned upgrade preservation, and persistence-failure UX across every write. | Manually deleting a cache entry is not real eviction; existing schema versions are not a full deployment-upgrade rehearsal. |
+| Advertised launch functionality | Live group updates and connected-device continuity require an approved sync/identity/conflict/security/recovery/cost design and implementation. | These remain launch blockers; audit repairs do not deliver SYNC-01. |
+| Remaining local product work | Category activation/deactivation UI, receipt ingestion/compression/lazy loading, group duplication, backup reminders, and settlement-specific sharing. Other roadmap candidates and SEO remain separate scope. | Do not label the whole roadmap complete or implement these merely to make this commit. |
+| Delivery | Review/stage the proposed files, confirm commit scope/message, then commit and separately authorize push/deployment. | Documentation preparation is not a commit, push, or deployment instruction. |
+| Evidence retention | Raw logs/screenshots/inventories and the external recovery harness live in temporary locations, not Git. | The committed wiki preserves compiled outcomes; temporary files are not guaranteed permanent or available after a fresh clone. Archive externally only with approval. |
+
+Licensing/contribution policy is also undecided: do not claim an open-source release until a license
+is approved. Product priorities and launch claims remain canonical in [[product-roadmap]]. There are
+no unfinished automated audit jobs; new execution requires authorization under the permission gate.
+
+#### Initial proposed commit scope and checklist
+
+The read-only preparation inspection found branch **`development`**, base commit **`818e417`**
+(`feat(expenses): add descriptions and unify monetary and date-time inputs`), **91 modified tracked
+files**, **seven new files**, and an empty staging area: **98 candidate paths** in total. Counts are
+the preparation snapshot, not a promise that later user changes may be staged without review.
+The tracked scope is the reviewed audit changes in `src/`, `landing/`, and `wiki/`.
+This checklist records the initial preparation handoff. The user subsequently reviewed the unstaged
+functional changes, accepted the archive-limit explanation, approved the receipt-photo capacity
+prerequisite in [[product-roadmap]], and authorized staging all changed files and one detailed audit
+commit. That later authorization does not request new tests, push, or deployment; Git records the
+commit outcome rather than this historical checklist being a live repository-status monitor.
+
+All seven new files must be considered explicitly; directory-only status output can hide their names:
+
+- `landing/tests/browser/landing.e2e.ts`
+- `playwright.landing.config.ts`
+- `src/features/dashboard/tests/utils/dashboard-data.test.ts`
+- `src/features/import-export/tests/utils/bounded-decompression.test.ts`
+- `src/features/import-export/utils/bounded-decompression.ts`
+- `src/features/settlements/tests/utils/payment-preview.test.ts`
+- `src/features/settlements/utils/payment-preview.ts`
+
+Suggested single audit-batch commit message:
+
+```text
+fix(audit): harden offline data integrity and reconcile verification
+
+- keep derived money summaries and payment previews exact
+- validate persisted deletion/name guards and bound transfer intake/exports
+- repair landing overflow/SVG paths and add browser regression coverage
+- document passing audit evidence, retained failures, and release gaps
+```
+
+- [x] Record completed repairs, command results, retry history, exclusions, and unfinished work.
+- [x] Inspect branch/base, changed/new files, and staging state without modifying Git.
+- [x] Prepare the proposed scope and message; preserve prior raw evidence outside the repository.
+- [ ] Review and stage only the agreed audit paths, including the seven new files.
+- [ ] Inspect the staged diff and decide whether a single audit-batch commit or a split is preferred.
+- [ ] If desired, approve a fresh post-documentation integrity/static check or hash refresh. The
+  preparation edits change four wiki pages after the last inventory; earlier whole-tree hashes and
+  static/link results remain point-in-time evidence, not a fresh check of these prose edits.
+- [ ] Create the approved commit; separately decide on push and deployment.
+
+No tests, builds, formatter, server, hash refresh, or other verification ran during the initial documentation
+preparation, and that step staged or committed no files. It changed no application or landing runtime
+source. The last process inspection found an existing project `vite --host` development server;
+all audit/recovery automation had finished. This is a process snapshot, not a promise about future
+runtime state, and the existing server was left untouched.
+
+### Approved hardening continuation
+
+Cross-group summaries now retain exact BigInt totals, payment edit previews allow large intermediate
+nets without weakening saved-net guards, date serialization pads early years, group/tag deletion
+warnings include payments, and bounded decompression/file-size/receipt-index checks protect intake.
+Fresh evidence: **644 unit cases across 45 files**, TypeScript, and the **eight-case desktop/mobile
+hardening browser batch** pass. Logs: `/tmp/opencode/audit-hardening-unit.log`,
+`audit-hardening-types.log`, and `audit-hardening-browser-focused.log`.
+The post-edit `pnpm check` rerun passes (`audit-hardening-check-rerun.log`).
+The standalone landing suite passes **12 desktop/mobile cases in 1.5 minutes**
+(`/tmp/opencode/audit-landing-final.log`), covering the eight screenshot filters/wraps, modal focus and
+scroll restoration, exact reduced-motion demo allocations, no-JavaScript links, complete prior-install
+offline screenshot access, five responsive widths, runtime errors, and reversible story accounting.
+An actual 280px overflow was repaired by clipping the privacy illustration's decorative orbits;
+the offline snapshot version is bumped. Test corrections wait for font readiness, read the actual
+captured scroll position after opening, follow the native new-tab screenshot, and click its image.
+The test captures do not establish visual pixel parity or deployed update/storage-pressure behavior.
+The tracked asset inventory validates 382 PNG CRCs/decoded payloads, nine WOFF2 headers, and ten
+WebP headers with zero errors (`/tmp/opencode/audit-file-inventory.json`), not individual visual review.
+The fresh frozen application batch subsequently passed **644 unit cases**, both builds, **18 PWA
+cases**, and **580 full-browser cases with 44 viewport-specific skips and zero failures** (22.7 minutes).
+Logs: `/tmp/opencode/audit-hardening-final-{unit,build,build-devtools,pwa,browser}.log`.
+Only the three landing repair/test files changed during that run; application sources stayed frozen.
+The later screenshot follow-up passes two cases after extending its budget for five full-page
+captures per project (`audit-landing-screenshots-rerun.log`); the initial 30-second capture timeout
+is preserved in `audit-landing-screenshots.log`. Captures are not pixel-parity evidence: long native
+sticky-story spacers and offscreen lazy images make whole-page screenshots incomplete visual proof.
+
+The approved final review repairs persisted member/person/category deletion guards and category/tag
+name uniqueness, preserving newer persisted fields and atomic activity rollback. CSV/group ZIP/full
+backup exports now enforce import-compatible quotas. **672 unit cases across 45 files pass**
+(`/tmp/opencode/audit-closure-unit.log`). Static checks caught a Dexie transaction overload type issue
+after adding the groups table to tag deletion; the transaction now uses a typed table array.
+The frozen closure batch passes repository static checks, **672 units**, both builds, and **18 PWA
+cases**, with zero source changes during execution (`audit-closure-final-results.json`). It stops
+after landing has 11 passes and one mobile story failure: the test can attempt scrolling before
+the first animation-frame layout has populated `--ss-story-height`. The test now waits for font
+readiness and positive measured travel and scrolls explicitly without smooth animation.
+An intervening static pass correctly stopped on test formatting; that one file was formatted.
+The renewed frozen batch passes static checks, **36 landing cases** (each desktop/mobile scenario
+repeated three times, 2.7 minutes), and **580 application browser cases with 44 viewport-specific
+skips and zero failures** (22.8 minutes). No non-wiki source changed during the run. Logs:
+`/tmp/opencode/audit-closure-stable-{check,landing,browser}.log`; results and freeze record:
+`audit-closure-stable-results.json` and `audit-closure-stable-source-result.json`.
+
+The separate recovery harness initially hung on an unbounded worker wait; only its identified Node
+and Chromium parent were stopped. Bounded, awaited, and isolated custom-response-server attempts
+retain three passing fallback scenarios and four failing worker scenarios in their separate
+`/tmp/opencode/audit-landing-recovery-{bounded,diagnostic,awaited,isolated}/results.json` files.
+Installation stalls also reproduce against the isolated custom server, while a standard static-server
+probe succeeds; the exact transport cause is unproven. Early async `waitForFunction` predicates
+returned without establishing readiness, so the final harness uses awaited `expect.poll` and captures
+installation state transitions without a competing second registration. None of those earlier
+worker failures is counted as a pass or evidence of a repository worker repair.
+
+Browser-console collection reveals malformed notebook-ring SVG cubic coordinates, which the earlier
+page-error-only listener missed. Explicit coordinate separators repair the artwork; landing cache
+version is now `2026-10-12-v5`. The layout regression now collects console errors as well as page
+errors. The final console-aware landing rerun passes **36 cases in 3.3 minutes**
+(`/tmp/opencode/audit-closure-landing-console.log`); post-repair repository static checks, 13 JavaScript
+syntax checks, and `git diff --check` pass (`audit-closure-console-static-results.json`). Fresh parsing
+also passes all 251 TypeScript syntax trees and three JSONC configurations
+(`audit-closure-final-syntax.json`). No application source changed after its clean full-browser run.
+
+The final independent harness uses a staging copy under `/tmp/opencode/audit-landing-recovery-static/site`
+and the same standard Python static server as the landing suite. **All seven scenarios pass**:
+missing story script, missing gallery script, gallery-image failure/navigation recovery, installation
+rejection from a missing snapshot asset, manually evicted-entry online repair, offline 503 guidance,
+and a two-revision update. Results: `/tmp/opencode/audit-landing-recovery-static/results.json`.
+The update changes only staged HTML/version markers and verifies no first-install refresh, exactly
+one browser-observed upgrade navigation, query/fragment preservation, old-cache cleanup, and offline
+reload of the second revision. Counting server document requests was unsuitable because controlled
+navigation is cache-served; the final assertion counts main-frame navigations instead.
+
+These seven scenarios do not establish an actual two-deployment rehearsal, multi-tab or legacy-page
+refresh, failed-update retention, HTML-fallback rejection, Cache API write failure, or physical storage
+pressure/eviction. Manually deleting one cached entry is not real browser eviction. No repository
+worker repair, dependency installation, deployment, commit, or push occurred in the recovery follow-up.
+`landing/README.md` now reconciles verification/cache status and excludes local tests/docs from the
+runtime upload instructions. Earlier evidence and failures remain preserved.
+
+File inventory covers **731 tracked and seven untracked files (738 total)**, with per-file hashes:
+`/tmp/opencode/audit-closure-file-inventory.json`. Checks pass for 251 TypeScript syntax trees,
+13 JavaScript/module syntax checks, three JSONC TypeScript configurations, JSON/XML documents,
+382 PNG CRCs/decoded payloads, nine WOFF2 and ten WebP headers, and two PDF headers/end markers.
+All **43 wiki Markdown pages** are indexed, with no unresolved wiki/local Markdown links; landing
+HTML/CSS local asset references and `git diff --check` pass. This is file-level automated coverage,
+not exhaustive manual reading of every source/test line, PDF, font glyph, or raster asset.
+The final refreshed inventory is `/tmp/opencode/audit-final-file-inventory.json`, with results in
+`audit-final-integrity-results.json`: all 738 file hashes refreshed, all 43 pages/Markdown links and
+landing asset references checked, and final `pnpm check`/`git diff --check` passing. Binary validation
+results are retained only where bytes match the earlier validated hash; syntax checks are refreshed.
+The source comparison confirms zero `src/` changes after the clean 580-case browser run; only the
+landing README, SVG artwork, worker version, and landing console-error regression changed afterward.
+Final static log: `/tmp/opencode/audit-final-check.log`. At that verification point, audit changes
+remained uncommitted and unpushed; subsequent delivery authorization is recorded in the handoff above.
+
+Loaded visible landing views are captured separately at 280/390/820/1440/1920px in
+`/tmp/opencode/audit-landing-viewport-captures` (40 top/bottom viewport captures). Sampled narrow
+privacy/demo, tablet gallery, desktop gallery, and wide reduced-motion hero views have no observed
+content clipping; the decorative orbit repair preserves the phone/backup illustration. Earlier
+whole-element screenshots contain sticky/fixed-header capture artifacts and are retained separately
+in `audit-landing-visible-sections`; they are not treated as actual overlapping content defects.
+This remains sampled local Chromium visual review, not pixel parity or physical-device sign-off.
+Exhaustive manual per-file review is not established. No deployment or real-device sign-off is implied.
+
+### Initial audit phase
+
+The approved audit corrected current-UI browser assumptions in expense recording/filtering, tag
+suggestions, and shared modal layout. Optional description/tag controls are opened explicitly;
+Sort helpers select the mobile dialog versus wider disclosure. Added cases exercise Add/Edit
+Amount autofocus and optional-draft preservation, added-date sorting with recorded payments, and
+mobile Sort scrolling, dismissal/focus, resize, and breakpoint teardown.
+
+Completed evidence:
+- `pnpm test`: 616 cases across 42 files pass in the fresh final unit run (21.03 seconds).
+- `pnpm check`: ESLint, repository Prettier checks, and TypeScript pass after approved formatting
+  repairs, including the post-wiki rerun.
+- Ordinary production and `VITE_ENABLE_DEVTOOLS=true` builds pass. Existing chunk-size and
+  deprecated `inlineDynamicImports` warnings remain non-failing.
+- Production PWA suite: 18 cases pass across desktop/mobile projects.
+- `node --check`: all tracked `.js`, `.mjs`, and `.cjs` files pass syntax checks.
+
+Evidence logs are `/tmp/opencode/audit-unit-final.log`, `audit-check-final-wiki.log`,
+`audit-build.log`, `audit-build-devtools.log`, and `audit-pwa.log`. Syntax checks emitted no errors.
+The full browser run in `audit-browser.log` finished with **562 passes, 12 failures, and 44
+viewport-specific skips** (618 scheduled combinations, two workers, 42.8 minutes).
+Five failures came from Sort tests using `.check()` on radios removed when selection closes the
+mobile dialog. Approved test-only repairs use `.click()` and assert the resulting URL/order.
+The other seven failures involved lost editor/modal state, destroyed navigation contexts, or
+responsive geometry. They did not recur in isolation; reload interference is suspected, not proven.
+
+The single-worker focused rerun selected every failing scenario on both projects: **22 passed in
+1.6 minutes**, including added-date/payment order, Sort scrolling/focus/dismissal/breakpoints,
+Unequal input, date/time errors, Overview/Balances layout, payment modal, dashboard avatars, and
+Link/CSV export. Evidence: `/tmp/opencode/audit-browser-focused.log`; separate artifacts:
+`/tmp/opencode/audit-browser-focused`. Original traces remain in `/tmp/split-slate-playwright`.
+This clears the selected failures, not a fresh clean full-suite run or proof of full-run stability.
+The initial phase made no application behavior repair; changed non-test JavaScript/TypeScript had equivalent
+emitted syntax after normalizing redundant parentheses, and landing HTML/CSS edits are formatting.
+Earlier historical passes below do not supersede these scope limits.
+No exhaustive file-by-file source sign-off is claimed. Standalone landing runtime/visual/offline
+checks, real-device behavior, storage pressure, and deployment/update rehearsals are not established
+by this batch; JavaScript syntax checks are not landing behavior tests.
 
 ## Scoped Description and Monetary Verification — 2026-10-11
 
@@ -235,7 +529,7 @@ declined or deferred, mark the slice unverified and continue only separately app
 - ESLint, Prettier, and TypeScript checks pass through `pnpm check`
 - any durable behavior or strategy change is reconciled with the wiki
 
-## Current Status
+## Historical Completed Baseline — 2026-10-11
 
 The completed, approved 2026-10-11 verification supersedes the earlier automated baselines:
 

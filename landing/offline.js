@@ -3,7 +3,9 @@
 
   const script = document.currentScript;
   if (
-    !script || !window.isSecureContext || !("serviceWorker" in navigator) ||
+    !script ||
+    !window.isSecureContext ||
+    !("serviceWorker" in navigator) ||
     !["http:", "https:"].includes(window.location.protocol)
   ) {
     return;

@@ -4,9 +4,20 @@ import {
   formatDisplayDate,
   formatDisplayDateTime,
   formatDisplayTime,
+  localDateTime,
 } from "@/shared/utils/date-time";
 
 describe("date and time display", () => {
+  it.each([1, 99, 999, 1000, 2026, 9999])(
+    "pads year %i for exact local form round-trips",
+    (year) => {
+      const date = new Date(2026, 0, 2, 9, 5);
+      date.setFullYear(year);
+      const value = localDateTime(date.getTime());
+      expect(value).toBe(`${String(year).padStart(4, "0")}-01-02T09:05`);
+      expect(new Date(value).getTime()).toBe(date.getTime());
+    },
+  );
   it("shows a local date with a padded day and abbreviated month", () => {
     expect(formatDisplayDate(new Date(2026, 0, 2))).toBe("02-Jan-2026");
     expect(formatDisplayDate(new Date(2026, 11, 12))).toBe("12-Dec-2026");

@@ -408,11 +408,7 @@ const ExpenseFilters = () => {
               closeLabel="Close sort"
               bodyLabel="Sort controls"
               footer={
-                <button
-                  type="button"
-                  onClick={handleCloseMobileSort}
-                  className="btn btn-primary"
-                >
+                <button type="button" onClick={handleCloseMobileSort} className="btn btn-primary">
                   Done
                 </button>
               }

@@ -39,11 +39,13 @@
     });
     balances.set(expense.payer, balances.get(expense.payer) + expense.cents);
     const previous = entryStates.at(-1);
-    entryStates.push(Object.freeze({
-      total: previous.total + expense.cents,
-      count: previous.count + 1,
-      position: balances.get(LOCAL_MEMBER_ID),
-    }));
+    entryStates.push(
+      Object.freeze({
+        total: previous.total + expense.cents,
+        count: previous.count + 1,
+        position: balances.get(LOCAL_MEMBER_ID),
+      }),
+    );
   });
 
   const creditors = MEMBERS.filter((member) => balances.get(member.id) > 0).map((member) => ({

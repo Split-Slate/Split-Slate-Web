@@ -9,7 +9,7 @@ metadata:
 
 Purpose: preserve an optional, uncommitted way to earn access to proposed Pro features.
 
-Last updated: 2026-10-04
+Last updated: 2026-10-12
 
 ## Concept
 
@@ -37,4 +37,4 @@ An optional, non-intrusive ad mechanic:
 
 ## Related
 
-- [[monetization-model]] — primary monetization strategy (subscription-first)
+- [[monetization-model]] — unimplemented research packaging proposal, not approved pricing

@@ -186,6 +186,13 @@ for (const viewport of [
       { trigger: "Add new category", title: "Add category" },
       { trigger: "Add new tag", title: "Create new tag" },
     ]) {
+      if (trigger === "Add new tag") {
+        await page
+          .locator("details")
+          .filter({ hasText: "Optional details" })
+          .locator("summary")
+          .click();
+      }
       await page.getByRole("button", { name: trigger, exact: true }).click();
       const dialog = page.getByRole("dialog", { name: title, exact: true });
       await expectFixedControls(dialog);

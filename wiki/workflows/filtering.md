@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document the implemented expense-list filters, their matching rules, and test coverage.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Overview
 
@@ -127,7 +127,8 @@ controls restore their trigger focus on dismissal. Height-only viewport changes 
 open; crossing the mobile/tablet boundary closes both controls. Their shared
 `expense-controls-dialog` class caps height at 75% of the visible dialog viewport while preserving
 the stricter top/bottom clearance. Tablet/desktop retains anchored popovers, with Sort widened to
-560px maximum. These latest Sort/dialog refinements have no fresh verification.
+560px maximum. The 2026-10-12 responsive Sort regressions pass in both projects in the focused
+rerun; a fresh clean full-browser result is not established. See [[testing-strategy]].
 Both desktop popovers update after filter-value renders and observed form/group-page size changes.
 Filtering or validation can remove insights or resize the sticky toolbar without a window event;
 re-anchoring prevents a stale fixed panel from overlapping and blocking its own trigger.
@@ -173,11 +174,13 @@ allocations, empty and single-expense results, category ranking, and missing mem
 mobile, verifies validation and clearing, confirms state survives child-route navigation, and
 deletes a selected tag while the list is unmounted. When the list remounts, selected category, tag,
 payer, and involved-member IDs that are no longer available are removed automatically.
-It includes checks for the previous sectioned single-choice sort popover, eight sort orders,
-retention through clearing, reload, and detail navigation, plus filter-aware insights. The current
-test still expects a section named Date instead of Expense date and needs follow-up for mobile
-Sort and added-date modes. These test changes and fresh execution require separate approval;
-no tests were changed or run during conflict reconciliation. See [[testing-strategy]].
+The approved 2026-10-12 audit updated those tests to use Expense date and responsive Sort controls.
+Added coverage checks added-date ordering with payments, URL retention, and mobile Sort fixed
+controls, scrolling, Done/Close/Escape, focus return, height-only resize, and breakpoint teardown.
+The complete unit suite passes. Sort actions now use `.click()` plus URL/order assertions because
+mobile selection removes the radio before `.check()` can confirm its state. All four affected Sort
+scenarios pass on desktop/mobile in the 22-case focused rerun. The original full run had 12 failures;
+this is not a fresh clean full-suite result. See [[testing-strategy]] for evidence and scope.
 New chip cases cover every selected option, independent removal, range clearing, invalid/open-ended
 values, inactive Analytics selections, stale-option pruning, reloads, long labels, single-row
 horizontal scrolling, scrollbar clearance, compact typography/padding, 24px minimum controls, and

@@ -2,7 +2,7 @@
 
 A dated synthesis of reported complaints and requested features used as product-discovery evidence.
 
-Last updated: 2026-08-20
+Last updated: 2026-10-12
 Research snapshot: May 2026; complaints are historical evidence, not guaranteed current behavior.
 Source: `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analysis for a Splitwise Alternative.pdf`
 
@@ -10,9 +10,9 @@ Source: `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analy
 
 ## Splitwise — Complaints Reported in the Source Snapshot
 
-1. Daily free-tier limit + cooldown; current official documentation lists 4 expenses/day
+1. Daily free-tier limit + cooldown; the 2026-08-20 official-documentation recheck listed 4 expenses/day
 2. Paywall on previously free features: currency conversion, charts, expense search, OCR
-3. Subscription pricing and packaging; current Splitwise documentation includes a monthly option
+3. Subscription pricing and packaging; the 2026-08-20 documentation recheck included a monthly option
 4. Anyone in group can edit/delete any expense — no group admin controls
 5. Email/phone required to add a friend — high friction
 6. OCR only captures total amount, not line items
@@ -25,14 +25,17 @@ Source: `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analy
 
 - **Tricount**: Post-bunq redesign hated — "Triccount was just perfect… Now i hate it. Slow. Errors. Lost data. No filtering. No sorting. No export function." Per-expense friction. Data loss reports.
 - **Settle Up**: Sync failures — "Only 1 time out of 50 does it actually sync." Ads on free tier.
-- **Splid**: No web version and no receipt attachments in the source comparison. The current Google
-  Play listing records an August 2025 Android update, so the prior March 2023 abandonment claim was
+- **Splid**: No web version and no receipt attachments in the source comparison. The Google
+  Play listing rechecked on 2026-08-20 recorded an August 2025 Android update, so the prior March 2023 abandonment claim was
   inaccurate.
 - **Splitkaro**: Group-delete black-screen bug; back-date bug in expense form; weaker PDF export.
 
 ---
 
 ## Most-Requested Missing Features (ranked by forum frequency)
+
+These are the source research's historical ranking and claims, not independently refreshed market
+or payment-protocol findings from this code/wiki audit.
 
 1. **True UPI integration in India** — requested since 2017, never shipped beyond Paytm. Note: UPI protocol prevents direct third-party deep-links; copy-UPI-ID is the best workaround.
 2. **Sub-groups / nested groups** — explicitly refused by Splitwise

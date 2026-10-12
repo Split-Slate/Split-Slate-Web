@@ -2,7 +2,7 @@
 
 // Bump for EVERY landing HTML, CSS, script, font, or screenshot change before uploading a release.
 // Finish the complete snapshot before activating and refreshing open landing pages once.
-const CACHE_VERSION = "2026-10-11-v3";
+const CACHE_VERSION = "2026-10-12-v5";
 const SCOPE = new URL(self.registration.scope);
 const CACHE_PREFIX = `split-slate-landing:${SCOPE.href}:`;
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
@@ -42,27 +42,41 @@ const ASSET_SET = new Set(ASSET_URLS);
 const isUsable = (response, url) => {
   const isHtml = (response.headers.get("content-type") || "").includes("text/html");
   // Reject failed/redirected requests and Netlify's HTML fallbacks masquerading as missing assets.
-  return response.ok && !response.redirected && response.type !== "opaque" &&
-    (url === PAGE_URL ? isHtml : !isHtml);
+  return (
+    response.ok &&
+    !response.redirected &&
+    response.type !== "opaque" &&
+    (url === PAGE_URL ? isHtml : !isHtml)
+  );
 };
 
 const installSnapshot = async () => {
   // Fetch everything before writing. Unopened/lazy screenshots and the phone font are included.
   // Failed installation leaves the prior active worker/cache intact rather than claiming offline
   // support with an incomplete snapshot. cache: reload bypasses stale browser HTTP-cache entries.
-  const responses = await Promise.all(ASSET_URLS.map(async (url) => {
-    const response = await fetch(new Request(url, { cache: "reload", credentials: "same-origin" }));
-    if (!isUsable(response, url)) throw new Error(`Could not cache landing asset: ${url}`);
-    return response;
-  }));
+  const responses = await Promise.all(
+    ASSET_URLS.map(async (url) => {
+      const response = await fetch(
+        new Request(url, { cache: "reload", credentials: "same-origin" }),
+      );
+      if (!isUsable(response, url)) throw new Error(`Could not cache landing asset: ${url}`);
+      return response;
+    }),
+  );
   const cache = await caches.open(CACHE_NAME);
   try {
     await Promise.all(ASSET_URLS.map((url, index) => cache.put(url, responses[index])));
     // Persist across worker suspension between install and activate. An existing active worker
     // means an upgrade; first installation must not refresh a page that is already current.
-    await cache.put(UPDATE_INFO_URL, new Response(JSON.stringify({
-      refresh: Boolean(self.registration.active),
-    }), { headers: { "Content-Type": "application/json" } }));
+    await cache.put(
+      UPDATE_INFO_URL,
+      new Response(
+        JSON.stringify({
+          refresh: Boolean(self.registration.active),
+        }),
+        { headers: { "Content-Type": "application/json" } },
+      ),
+    );
   } catch (error) {
     await caches.delete(CACHE_NAME);
     throw error;
@@ -75,33 +89,37 @@ self.addEventListener("install", (event) => {
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil((async () => {
-    const cache = await caches.open(CACHE_NAME);
-    const updateInfo = await cache.match(UPDATE_INFO_URL);
-    const refresh = updateInfo ? (await updateInfo.json()).refresh === true : false;
-    // Consume BEFORE requesting navigation, so worker restarts/new page loads cannot loop.
-    await cache.delete(UPDATE_INFO_URL);
-    const names = await caches.keys();
-    await Promise.all(names
-      .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
-      .map((name) => caches.delete(name)));
-    await self.clients.claim();
-    if (refresh) {
-      const windows = await self.clients.matchAll({ type: "window" });
-      windows.forEach((client) => {
-        const url = new URL(client.url);
-        url.search = "";
-        url.hash = "";
-        if (url.href !== PAGE_URL && url.href !== INDEX_URL) return;
-        // Worker-owned navigation also refreshes legacy pages without an update listener.
-        // Keep the client's actual query/hash, and do not await navigation: its fetch needs
-        // this activation event to finish. Each matched tab gets a single navigation request.
-        client.navigate(client.url).catch((error) => {
-          console.warn("Split Slate landing: automatic update refresh failed.", error);
+  event.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE_NAME);
+      const updateInfo = await cache.match(UPDATE_INFO_URL);
+      const refresh = updateInfo ? (await updateInfo.json()).refresh === true : false;
+      // Consume BEFORE requesting navigation, so worker restarts/new page loads cannot loop.
+      await cache.delete(UPDATE_INFO_URL);
+      const names = await caches.keys();
+      await Promise.all(
+        names
+          .filter((name) => name.startsWith(CACHE_PREFIX) && name !== CACHE_NAME)
+          .map((name) => caches.delete(name)),
+      );
+      await self.clients.claim();
+      if (refresh) {
+        const windows = await self.clients.matchAll({ type: "window" });
+        windows.forEach((client) => {
+          const url = new URL(client.url);
+          url.search = "";
+          url.hash = "";
+          if (url.href !== PAGE_URL && url.href !== INDEX_URL) return;
+          // Worker-owned navigation also refreshes legacy pages without an update listener.
+          // Keep the client's actual query/hash, and do not await navigation: its fetch needs
+          // this activation event to finish. Each matched tab gets a single navigation request.
+          client.navigate(client.url).catch((error) => {
+            console.warn("Split Slate landing: automatic update refresh failed.", error);
+          });
         });
-      });
-    }
-  })());
+      }
+    })(),
+  );
 });
 
 const cachedResponse = async (url) => {
@@ -140,8 +158,8 @@ self.addEventListener("fetch", (event) => {
   // A tracking query does not create a separate offline page/asset. Fragments never reach fetch.
   url.search = "";
   url.hash = "";
-  const isLandingPage = request.mode === "navigate" &&
-    (url.href === SCOPE.href || url.href === INDEX_URL);
+  const isLandingPage =
+    request.mode === "navigate" && (url.href === SCOPE.href || url.href === INDEX_URL);
   // Precache the directory entry, not /index.html: static hosts can redirect the latter to /.
   // Both navigation aliases share this cached response without depending on an offline redirect.
   const cacheKey = isLandingPage ? PAGE_URL : url.href;

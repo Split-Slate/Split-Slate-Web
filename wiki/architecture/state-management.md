@@ -9,7 +9,7 @@ metadata:
 
 Purpose: map store ownership, persistence order, and the exact validation and transaction boundaries.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-12
 
 ## Technology
 
@@ -119,7 +119,7 @@ interface AppStore {
 
 These are derived at read time, never stored:
 
-- Net balances per member → computed from expenses via [[balance-calculation]]
+- Net balances per member → computed from expenses and recorded payments via [[balance-calculation]]
 - "Who owes whom" list → derived from net balances
 - Members of a specific group → filtered from `members[]` by `groupId`
 - Expenses of a specific group → filtered from `expenses[]` by `groupId`
@@ -156,11 +156,17 @@ Two deliberate shape decisions:
 
 - Dexie is the authoritative persistence layer over IndexedDB.
 - Entity mutations write to Dexie before updating their corresponding Zustand state.
-- Group, person, category, and tag mutations normalize required user strings. Category/tag
-  uniqueness checks and member/person/category deletion guards read hydrated Zustand state;
-  they do not recheck those references inside a transaction. Directory-wide self-deletion protection
-  reads persisted LocalUser first. Other removal/cascade guards still depend on hydration; not all
-  UI constraints hold as database-enforced invariants.
+- Group, person, category, and tag mutations normalize required user strings. Category/tag create
+  and update validate persisted group existence and case-insensitive name uniqueness inside their
+  write transaction. Partial updates start from the persisted row, not a hydrated snapshot.
+  Category deletion checks persisted expense references and the remaining category count in the
+  same transaction, so concurrent removals cannot delete the last category of an existing group.
+- Member/person removal reads persisted LocalUser, memberships, expense creator/payer/participant
+  references, and payment payer/recipient/recorder references inside its deletion transaction.
+  Directory deletion derives member IDs and affected payer rankings from persisted records;
+  single-member removal reads the current group ranking. Cleanup and activity writes commit together,
+  with no memory update on rollback. These guards serialize with expense/payment writes through
+  shared tables; they do not implement automatic cross-tab synchronization or atomic group creation.
 - Zustand holds the hydrated in-memory view of persisted entities; it does not use `persist` middleware.
 - `init()` hydrates entities and settings from IndexedDB and seeds missing settings rows.
 - If `init()` cannot open or read the database, it sets `initError` instead of completing hydration;
@@ -173,12 +179,12 @@ Two deliberate shape decisions:
   saved group creation time if needed), and writes the group-deleted record in the same transaction.
   After commit Zustand replaces that group's events with exactly those two persisted snapshots;
   other groups' and global events remain. See [[group-deletion]] and [[dashboard]].
-- Tag deletion reads the persisted tag and its group's expenses in one transaction on tags,
-  expenses, and activity events, then deletes the tag and updates only existing records' `tagIds`.
+- Tag deletion reads the persisted tag and its group's expenses and payments in one transaction on
+  groups, tags, expenses, settlements, and activity events, then updates only existing records' `tagIds`.
   It cannot recreate
   deleted expenses or overwrite newer expense fields from stale hydrated state. After commit,
-  Zustand removes the tag and refreshes that group's expense snapshot, retaining other groups'
-  expense state. This is an action-specific refresh, not automatic full-store cross-tab sync.
+  Zustand removes the tag and refreshes both group collections, retaining other groups' state.
+  This is an action-specific refresh, not automatic full-store cross-tab sync.
   Failure leaves both persisted records and memory unchanged. See [[tag-management]].
 - Member addition checks persisted group/person links and inserts within one read-write
   transaction on `members`, `groups`, `people`, and activity events. It verifies both records before
@@ -186,18 +192,21 @@ Two deliberate shape decisions:
 - Expense creation and editing validate decimal input and calculated splits, then recheck persisted group,
   member/person, local-user, active-category, and tag references inside a Dexie transaction. The
   same transaction sums persisted and proposed group spending using BigInt and rejects totals
-  above `Number.MAX_SAFE_INTEGER` minor units. The expense and payer ranking commit together;
+   above `Number.MAX_SAFE_INTEGER` hundredths, then validates payment-aware member nets separately.
+   The expense and payer ranking commit together;
   Zustand changes only after commit. A failure leaves both persisted records and memory unchanged.
   UUID and recording timestamp are generated only on creation. Update requires an existing expense
   in the requested group, preserves its creator/creation time/attachments, and checks spending
   with the old row replaced. Editing may retain its current inactive category.
 - Expense deletion checks persisted ownership, removes owned attachment rows by `expenseId`, deletes
   the expense, and updates payer ranking in one transaction on groups, members, people, expenses,
-  attachments, and activity events. Memory updates only after commit. Later edits cannot resurrect
+   categories, settlements, attachments, and activity events. It verifies remaining payment-aware
+   balances before deletion. Memory updates only after commit. Later edits cannot resurrect
   a deleted row.
 - Group import validates the complete portable package and receipt-file agreement before opening a
   read-write transaction across LocalUser, groups, people, members, categories, tags, expenses,
-  attachments, settings, and activity events. It generates a new group ID plus new group-owned record IDs, rewrites
+   settlements, attachments, settings, and activity events. It generates a new group ID plus new
+   group-owned record IDs, rewrites
   all references, creates destination defaults when categories were omitted, and verifies persisted
   counts before commit. Any failure rolls back the complete import. The caller runs `init()` only
   after commit to rehydrate Zustand; no partially imported state is exposed. See [[import-export]].

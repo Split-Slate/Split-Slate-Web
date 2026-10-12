@@ -86,7 +86,8 @@
       // Fast wheel, keyboard, touch, reverse, and restored scroll all use the same scroll position.
       const elapsed = Math.min(Math.max(now - previousTime, 1), 64);
       const blend = 1 - Math.exp(-elapsed / 65);
-      shownProgress = shownProgress === null ? target : shownProgress + (target - shownProgress) * blend;
+      shownProgress =
+        shownProgress === null ? target : shownProgress + (target - shownProgress) * blend;
       if (Math.abs(target - shownProgress) < 0.00008) shownProgress = target;
       previousTime = now;
       timeline.render(shownProgress, compact);
@@ -147,13 +148,16 @@
   compactQuery.addEventListener("change", handleResize);
   document.addEventListener("visibilitychange", handleVisibility);
   if ("IntersectionObserver" in window) {
-    const observer = new IntersectionObserver((entries) => {
-      visible = entries[0].isIntersecting;
-      if (visible) {
-        shownProgress = null;
-        schedulePaint();
-      }
-    }, { rootMargin: "100px" });
+    const observer = new IntersectionObserver(
+      (entries) => {
+        visible = entries[0].isIntersecting;
+        if (visible) {
+          shownProgress = null;
+          schedulePaint();
+        }
+      },
+      { rootMargin: "100px" },
+    );
     observer.observe(section);
   }
   if ("ResizeObserver" in window) {

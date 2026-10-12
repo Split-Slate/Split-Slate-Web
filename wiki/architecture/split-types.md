@@ -9,7 +9,7 @@ metadata:
 
 Purpose: explain implemented split calculations, inputs, rounding, and remaining presentation work.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Overview
 
@@ -135,8 +135,10 @@ without a length error or warning; clearing, replacing, and deleting remain avai
 Existing larger prefills remain exact until their share input is changed, including name-only
 saves. Percentage and monetary input limits are unchanged. Seven-digit Shares browser cases passed
 in both projects; the historical-prefill/name-only-edit case also passed after the test cleared the
-field before testing changed input. Shares helper coverage was not separately rerun. No fresh full
-suite is implied; future execution requires approval. See [[testing-strategy]].
+field before testing changed input. That historical focused batch did not separately rerun Shares
+helpers. The 2026-10-12 full unit suite now passes all 616 cases, including split-input helpers;
+the current full-browser result remains unresolved. Future execution requires approval. See
+[[testing-strategy]].
 
 **Formula:**
 ```

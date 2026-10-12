@@ -9,7 +9,7 @@ metadata:
 
 Purpose: distinguish device recovery from selective, fresh-copy group transfers.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Scope
 
@@ -49,10 +49,14 @@ use the app's existing light/dark theme tokens, not the entry-panel gradients.
 
 The public `/restore` route is available before onboarding and from Settings. Before showing the
 destructive action, it checks the archive's version, size, declared paths, SHA-256 dataset and
-receipt digests, entity schema, cross-entity references, money/split validity, and onboarded local
+receipt digests, entity schema, cross-entity references, money/split-metadata validity, and onboarded local
 identity. The dialog identifies the backup and shows counts. Its replace action is disabled for ten
 seconds and explains that existing SplitSlate data will be permanently removed. Cancel changes
 nothing.
+
+Group validation reuses the portable-transfer validator: it checks balanced totals, metadata
+shape/ranges, string-percentage sums, and safe payment-aware nets, but does not recompute owed
+amounts from split metadata. See [[import-export]] for that validation boundary.
 
 After confirmation, a single Dexie transaction clears and replaces all eleven app tables, retains
 source IDs and relationships, and verifies collection counts before commit. A failure rolls back
@@ -61,8 +65,10 @@ Zustand. This replaces SplitSlate storage for the site, not other websites' brow
 is no merge or contact-name reconciliation during device restore.
 Previously produced version 1 backups without activity snapshots remain restorable; replacing a
 device with one of those backups leaves the activity table empty. Older backups without payment
-rows also restore with an empty payment table. New backups include payment activity and history
-even for deleted groups, whose name is retained in each event snapshot. See [[settlement-recording]].
+rows also restore with an empty payment table. New backups include current groups' payment rows
+and saved payment activity. Permanent group deletion removes both its payments and payment
+activity; only group-created/deleted snapshots remain in later backups. A backup downloaded before
+deletion can restore its earlier full history. See [[settlement-recording]] and [[group-deletion]].
 
 Expense descriptions are optional nonblank strings in the version 1 backup schema. New backups
 preserve multiline plain text; restore retains it along with the original expense IDs. Older
@@ -84,6 +90,14 @@ the focused 299-case expense/import-export unit/store batch and again within the
   group reference whether or not groups exist, but reject a non-null ID that refers to no group.
   An incomplete or inconsistent dataset is rejected rather than producing a partial recovery file.
   See [[group-deletion]] and [[onboarding-persistence]].
+- Shared bounded decompression guards actual output as well as ZIP directory declarations; duplicate
+  names and local/directory disagreement are rejected. Limits remain 256 MiB compressed, 512 MiB
+  expanded, 32 MiB backup JSON, 4 KiB manifest/README, and 10,000 entries. The earlier directory
+  filter already rejected oversized declared entries; streamed counting adds protection against
+  false size declarations rather than merely checking the result after unrestricted inflation.
+- Export applies the same 10,000-entry ceiling before reading receipt bytes, checks receipt sizes
+  before allocation, and includes JSON, manifest, and README in the 512 MiB expanded quota. It cannot
+  return an archive exceeding its own compressed/JSON/entry/expanded import limits.
 - Archive limits guard compressed and expanded sizes; an oversized dataset requires a future
   streaming format rather than a partial backup.
 - Unsupported archive versions are rejected; future format revisions require an explicit restore

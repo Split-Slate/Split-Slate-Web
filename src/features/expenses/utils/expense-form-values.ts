@@ -1,12 +1,10 @@
+import { localDateTime } from "@/shared/utils/date-time";
 import { moneyToDecimal } from "@/shared/utils/money";
 
 import type { ExpenseFormValues, PayerMember } from "@/features/expenses/types/expenses.types";
 import type { Expense } from "@/shared/types/domain.types";
 
-export const localDateTime = (timestamp: number): string => {
-  const date = new Date(timestamp);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-};
+export { localDateTime } from "@/shared/utils/date-time";
 
 // Retain the saved transaction order before appending newly added group members.
 export const expenseFormMembers = (members: PayerMember[], expense?: Expense): PayerMember[] => {

@@ -34,7 +34,7 @@ const Analytics = () => {
     : currency
       ? dashboardCategories(state, currency)
       : [];
-  const totalAmount = categories.reduce((sum, item) => sum + item.amount, 0);
+  const totalAmount = categories.reduce((sum, item) => sum + BigInt(item.amount), 0n);
   const categoryEntries = categories.map((item) => {
     const categoryIds =
       groupContext?.groupCategories

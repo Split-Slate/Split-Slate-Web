@@ -2,7 +2,7 @@
 
 Purpose: keep interface actions and navigation legible and aligned across devices without replacing user-selected identities.
 
-Last updated: 2026-10-04
+Last updated: 2026-10-12
 
 ## Decision
 
@@ -43,8 +43,8 @@ worker or use Netlify's response headers. See [[product-roadmap]] for release ch
 
 The persisted `icon` is a collection-relative path, such as `profile-pic/fox-3d.png` or
 `travel-and-places/airplane-3d.png`. The renderer resolves only known paths for the appropriate
-collection, with a PNG default for missing or unknown values. No old Unicode avatar is displayed or
-migrated: development data is disposable and will be cleared separately. User-supplied icon values
+collection, with a PNG default for missing or unknown values. Old Unicode profile avatars are not
+displayed or automatically migrated; existing records remain unchanged. User-supplied icon values
 are never interpreted as external image URLs. Group transfer and backup retain these icon strings;
 the assets ship with the app. See [[domain-models]].
 

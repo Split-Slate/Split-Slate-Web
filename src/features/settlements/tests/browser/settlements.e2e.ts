@@ -71,6 +71,48 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/groups/trip/balances");
 });
 
+test("edits an offsetting payment even when its removal would temporarily overflow", async ({
+  page,
+}) => {
+  const timestamp = new Date("2026-10-01T12:05:23.123").getTime();
+  await page.evaluate(async (when) => {
+    const modulePath = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+    await db.expenses.clear();
+    await db.settlements.bulkPut(
+      ["first", "second", "offset"].map((id) => ({
+        id,
+        groupId: "trip",
+        kind: "payment" as const,
+        fromMemberId: id === "offset" ? "b" : "a",
+        toMemberId: id === "offset" ? "a" : "b",
+        recordedBy: "a",
+        createdAt: 1,
+        when,
+        amount: Number.MAX_SAFE_INTEGER,
+        tagIds: [],
+      })),
+    );
+  }, timestamp);
+  await page.reload();
+  const row = page
+    .getByRole("list", { name: "Recorded payments" })
+    .getByRole("listitem")
+    .filter({ hasText: "Bea paid Amy" });
+  await row.getByRole("button", { name: "Edit", exact: true }).click();
+  const dialog = page.getByRole("dialog", { name: "Edit payment", exact: true });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.getByLabel("Amount (INR)")).toHaveValue("90,071,992,547,409.91");
+  await dialog.getByRole("button", { name: "Save payment", exact: true }).click();
+  await expect(dialog).toHaveCount(0);
+  const saved = await page.evaluate(async () => {
+    const modulePath = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+    return db.settlements.get("offset");
+  });
+  expect(saved).toMatchObject({ amount: Number.MAX_SAFE_INTEGER, when: timestamp });
+});
+
 test("records, displays, edits, and deletes a tagged group payment without increasing spending", async ({
   page,
 }) => {

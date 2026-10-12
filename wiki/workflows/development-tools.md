@@ -2,7 +2,7 @@
 
 Purpose: describe realistic development presets, individual creation actions, and their persistence boundaries.
 
-Last updated: 2026-09-27
+Last updated: 2026-10-12
 
 ## Presets and naming
 
@@ -23,7 +23,9 @@ calibrated for every currency.
 
 ## Individual creation
 
-The panel is rendered only when `import.meta.env.DEV` is true. Complete onboarding before using
+The panel renders when `import.meta.env.DEV` is true or the build-time
+`VITE_ENABLE_DEVTOOLS` value is exactly `"true"`; ordinary production builds omit it. This is a
+build configuration, not a stored user preference. Complete onboarding before using
 its individual creation buttons. Select the target group explicitly; it initially defaults to the
 first available group and switches to a newly created group after successful creation.
 
@@ -50,8 +52,9 @@ an expense failure after category creation leaves the category. Those later-step
 which record remains available. Underlying store transaction limits still apply; see
 [[state-management]].
 
-The **Onboard user** action replaces the database in one transaction. It keeps the local user
-(`Rahul R`), group, categories, and tags fixed, but chooses six distinct sample contacts from the
+The **Onboard user** action clears all tables and inserts sample data in one transaction; it does
+not retain prior identity or records. Its template fixes the local user's name (`Rahul R`), group,
+categories, and tags, but chooses six distinct sample contacts from the
 person presets, excluding names already chosen. Each person and group-owned record receives a fresh
 UUID. **Clear database** deletes the database. Both actions reload the app after success and remain
 distinct from individual creation.

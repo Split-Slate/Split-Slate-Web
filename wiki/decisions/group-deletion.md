@@ -9,12 +9,12 @@ metadata:
 
 Purpose: specify the irreversible group-owned data cascade without deleting shared identity.
 
-Last updated: 2026-10-05
+Last updated: 2026-10-12
 
 ## Decision
 
 Group deletion is permanent and cannot be undone. Group Settings shows an in-app confirmation that
-names the group and warns about loss of expenses, members, categories, tags, and receipts.
+names the group and warns about loss of expenses, payments, members, categories, tags, and receipts.
 Cancellation makes no changes; after success, navigation returns to the dashboard.
 
 Implementation status: available in Group Settings. See [[confirmation-dialogs]].
@@ -25,6 +25,7 @@ One Dexie transaction removes the group and its associated domain records from I
 
 - All `members` with matching `groupId`
 - All `expenses` with matching `groupId`
+- All `settlements` (recorded payments) with matching `groupId`
 - All `attachments` whose `expenseId` belongs to a deleted expense
 - All `categories` with matching `groupId`
 - All `tags` with matching `groupId`
@@ -32,7 +33,7 @@ One Dexie transaction removes the group and its associated domain records from I
 - The `group` record itself
 
 The transaction also saves a group-deleted activity event. The cross-group feed retains only the
-group-created and group-deleted entries for that group; expense, member, tag, category, and group-edit
+group-created and group-deleted entries for that group; expense, payment, member, tag, category, and group-edit
 entries are permanently removed. A group predating activity persistence gets a created entry from
 its saved `createdAt`; an older imported-group event counts as created. Both retained entries are
 non-navigable. Other groups' history and global contacts remain. See [[dashboard]].
@@ -47,7 +48,10 @@ users can create another group. An empty-group device remains eligible for [[ful
 ## Warning
 
 Before deletion is confirmed, the app must show a clear, irreversible-action warning:
-> "Deleting this group is permanent and cannot be undone. All its expenses, members, categories, tags, and receipts will be deleted."
+The confirmation warns that deletion cannot be undone, shared contacts remain, and an app backup
+should be downloaded first if needed. It explicitly lists recorded payments along with expenses,
+members, categories, tags, and receipts. The browser deletion journey checks payment copy and
+persisted payment cleanup as well as cancellation and retention of shared contacts.
 
 ## Related
 

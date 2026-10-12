@@ -190,7 +190,9 @@ const ExpenseForm = () => {
                   </button>
                 </div>
                 {!categories.length && (
-                  <p className="soft-caption mt-2">No active categories yet. Add one to continue.</p>
+                  <p className="soft-caption mt-2">
+                    No active categories yet. Add one to continue.
+                  </p>
                 )}
                 {errors.categoryId && (
                   <span role="alert" className="money-negative text-xs">
@@ -235,7 +237,10 @@ const ExpenseForm = () => {
                           {...methods.register("tagIds")}
                           className="choice-control"
                         />
-                        <span className="h-2 w-2 rounded-full" style={{ backgroundColor: tag.color }} />
+                        <span
+                          className="h-2 w-2 rounded-full"
+                          style={{ backgroundColor: tag.color }}
+                        />
                         {tag.name}
                       </label>
                     ))}

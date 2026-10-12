@@ -1,6 +1,6 @@
 # Dashboard View
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 **Purpose:** Record the current dashboard implementation and the target cross-group summary design.
 
@@ -39,9 +39,9 @@ The dashboard currently renders:
 
 The desktop right pane shows saved activity events across all groups on Dashboard, app-wide
 Analytics, and Unsettled in recording order (event `createdAt` descending). Create/update/delete
-actions for expenses, tags, categories, groups,
+actions for expenses, payments, tags, categories, groups,
 members, and contacts are recorded separately from current entities; imported groups have a group
-  creation event. Individual deleted-item entries retain their name, icon, amount (for expenses), and
+  creation event. Individual deleted-item entries retain their name, icon, amount (for expenses/payments), and
 group snapshot without a link **while that group still exists**. Permanent group deletion purges all
 of its activity except group-created and group-deleted entries. Global contact entries remain.
 Older expenses recorded before the event table, including transferred expenses, still appear as
@@ -57,8 +57,8 @@ Rendered dates use `DD-MMM-YYYY` and rendered times use padded 12-hour `hh:mm AM
 detail labels occurred date and time separately and places recording metadata between the banner
 and the Paid by/Split cards.
 Each group link opens the nested group-detail route, whose Overview shows the local user's net
-  position, total group spend, category count, up to six featured members, five recent expenses,
-  and a group-only category-spending preview beneath those expenses.
+  position, total group spend, category count, up to six featured members, five recent expenses and
+  payments ordered by occurrence time, and a group-only category-spending preview beneath them.
 
 The empty state offers both **Create your first group** and **Import an existing group**. Settings
 and mobile More keep Import group reachable once groups exist. Import validates the package, shows count-only
@@ -109,6 +109,13 @@ Two headline numbers at the top of the pane:
 
 **Multi-currency edge case:** If the user's groups span more than one currency, summing them produces a meaningless total. In this case the overall summary is hidden and replaced with a message indicating multiple currencies are in use. Per-group cards remain visible since each group has a single currency.
 
+Same-currency cross-group get/give and category totals use exact BigInt accumulation and shared
+currency formatting, including when individually valid groups combine above the safe-number limit.
+No currency conversion, cross-group payment allocation, or persisted-money schema change is implied.
+Chart percentages are bounded presentation ratios only. The focused desktop/mobile regression
+checks the dashboard, Analytics, and Unsettled pages with two maximum-size groups. See
+[[money-representation-and-rounding]] and [[testing-strategy]].
+
 **Empty state:** The banner invites creation of the first group; it does not show two numeric zero
 totals when there are no groups.
 
@@ -130,6 +137,10 @@ truncate inside the card rather than widening the main pane. See [[global-people
 [[iconography]], and [[testing-strategy]].
 
 Clicking a card navigates to that group's Overview page; the sidebar selection updates to reflect the active group.
+
+Dashboard and sidebar groups share latest-expense recording order: descending maximum expense
+`createdAt`, then descending group `createdAt`. Groups without expenses follow those with expenses.
+Payment activity and expense occurrence time do not change this order. See [[main-screen]].
 
 **Empty state:** No cards; section replaced by a create-first-group prompt.
 
@@ -217,15 +228,15 @@ and app previews use the same category-name aggregation and sum all payer contri
 #### 5. Activity — saved action feed with legacy expense fallbacks
 
 The desktop panel and dedicated Activity route show saved, timestamped snapshots for supported
-create/update/delete actions across expenses, groups, categories, tags, members, and contacts, plus
+create/update/delete actions across expenses, payments, groups, categories, tags, members, and contacts, plus
 group imports. Rows show an action label, saved group name and recording date/time, and an amount
-for expense actions. Deleted-entity rows retain their snapshot but are not links. Expenses without
+for expense/payment actions. Deleted-entity rows retain their snapshot but are not links. Expenses without
 a saved creation event appear as derived rows only while they still exist; older deleted actions
 cannot be reconstructed. Relative times (e.g. "7hrs ago") remain a target design detail.
 
 **Current placement by breakpoint:** desktop uses a dedicated right-side activity panel;
-mobile has an Activity footer destination. Tablet has neither panel nor stacked section.
-Adding a tablet section remains a target, not implemented behavior.
+mobile has an Activity footer destination. Tablet has neither panel nor stacked section, but its
+sidebar links to the app-wide or group-scoped Activity route according to context.
 
 **Empty state:** The feed shows "No activity yet" when there are no events or legacy expenses.
 
@@ -305,4 +316,4 @@ item also links to the Overview and detects the active `groupId`.
 - [[main-screen]] — in-group navigation and tabs
 - [[balance-calculation]] — how net balances are computed
 - [[import-export]] — dashboard import entry and fresh-copy behavior
-- [[main-screen]] — group Overview and group-scoped Analytics navigation
+- [[settlement-recording]] — external payments and payment-aware views

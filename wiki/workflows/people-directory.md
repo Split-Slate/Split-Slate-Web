@@ -9,7 +9,7 @@ metadata:
 
 Purpose: explain the shared people directory and its membership/deletion boundaries.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 A single device-local list of people, reused across every group. See [[global-people-directory]] for why this is global rather than per-group.
 
@@ -33,9 +33,13 @@ Persistence behavior is unchanged. See [[layout-architecture]] and [[dashboard]]
   groups resolve a member's display through the person link rather than storing their own copy.
 - **Delete:** allowed only for non-self people with **no expense or recorded payment references in any group**. On delete, their group memberships and frequent-payer references are pruned. A blocked contact has a clickable muted Delete button. Its popup offers a member-filtered expense link for expense blockers and a group Balances link for payment blockers. See [[settlement-recording]].
 
-The store checks persisted LocalUser identity before directory deletion. Self deletion is rejected
-even when hydrated `localUser` or member state is absent. Expense-involvement checks and membership
-cleanup otherwise still rely on hydrated state; the multi-record deletion remains sequential.
+The directory-deletion transaction checks persisted LocalUser identity, person existence, memberships,
+expense creator/payer/participant references, and payment payer/recipient/recorder references. Self
+deletion and referenced-person deletion are rejected even when hydration omits those records.
+The transaction deletes the person and persisted membership IDs, prunes current payer rankings,
+and writes its activity event atomically. Failure rolls back every write without changing Zustand.
+After commit, the groups snapshot is refreshed from those transaction-time records. This protects
+deletion against stale hydration; it does not add automatic cross-tab synchronization of the store.
 
 The device owner is stored in the directory as a Person sharing the LocalUser ID, so "you" can
 participate and be balanced uniformly. The Contacts screen deliberately filters out this self

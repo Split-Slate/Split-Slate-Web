@@ -6,9 +6,91 @@ Entries record historical changes, not current execution instructions. The expli
 policy in [[testing-strategy]], `AGENTS.md`, and `CLAUDE.md` supersedes older automatic-run or
 "highest-priority next task" directives. Historical results do not authorize new runs.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ---
+
+## 2026-10-12
+- UPDATED roadmap/product-roadmap.md and wiki/index.md — record the user-approved prerequisite to review image compression/per-receipt limits, archive sizes, phone memory, streaming/split restore, complete receipt preservation, and large-dataset recovery before enabling receipt photos; current limits and unimplemented uploads remain unchanged
+- UPDATED decisions/testing-strategy.md, roadmap/product-roadmap.md, and wiki/index.md — distinguish historical preparation/uncommitted snapshots from the later approval to stage all changes and make one detailed audit commit; retain existing verification as point-in-time evidence and leave push/deployment unrequested
+- UPDATED decisions/testing-strategy.md, roadmap/product-roadmap.md, and wiki/index.md — consolidate completed audit repairs, exact executed commands/results, retained failures/retries, categorized unfinished work and coverage limits, temporary-evidence retention boundaries, and 98-path documentation-only commit preparation with all seven new files; no new verification, staging, commit, push, or deployment
+- UPDATED decisions/testing-strategy.md and wiki/index.md — record final 738-file hash/static/syntax/link integrity results, unchanged application source since clean full-browser verification, retained unchanged-byte binary validation, and uncommitted state; clarify historical baseline heading
+- UPDATED roadmap/product-roadmap.md — clarify the passing staged local-update evidence without implying deployed or multi-tab coverage
+- UPDATED decisions/testing-strategy.md, roadmap/product-roadmap.md, and wiki/index.md — consolidate 36 passing console-aware landing cases, seven passing staged-copy recovery/update cases, retained custom-server failures and unproven transport cause, v5 SVG repair, and precise remaining deployment/device/storage limits; reconcile landing README verification/upload guidance
+- UPDATED decisions/testing-strategy.md, roadmap/product-roadmap.md, and wiki/index.md — record final frozen 580-pass/44-skip application run and 36 repeated landing passes; retain recovery-harness failures, add notebook-ring SVG console-error discovery/repair and pending landing-only reruns, and reconcile historical unverified claims
+- UPDATED decisions/testing-strategy.md, roadmap/product-roadmap.md, and wiki/index.md — record post-repair static/unit/build/PWA passes, first-frame landing-test synchronization follow-up, full file/asset/wiki integrity checks, sampled viewport visual review, and pending repeated browser evidence without exhaustive manual-review claims
+- UPDATED architecture/state-management.md, systems/indexeddb-schema.md, decisions/global-people-directory.md, and workflows/people-directory.md, member-management.md, category-management.md, tag-management.md — reconcile persisted transactional guards, current-field preservation, atomic activity rollback, and remaining UI synchronization/creation limits
+- UPDATED decisions/import-export.md and decisions/full-backup.md — document import-compatible export quotas and pre-read receipt checks
+- UPDATED decisions/testing-strategy.md and wiki/index.md — record clean 580-case frozen browser batch, 672 post-repair units, screenshot limitations, and pending final closure batch
+- UPDATED roadmap/product-roadmap.md and research/competitive-landscape.md — reconcile 12 passing local landing browser cases, isolated decorative overflow repair, and bumped offline snapshot version without deployment claims
+- UPDATED decisions/testing-strategy.md — record landing coverage, test-action corrections, asset-integrity inventory, and remaining full-suite/source/device limits
+- UPDATED wiki/index.md — synchronize landing browser evidence and pending stale-hydration follow-up
+- UPDATED decisions/money-representation-and-rounding.md and workflows/dashboard.md — document exact derived BigInt summaries without changing safe-integer stored money or currency boundaries
+- UPDATED decisions/settlement-recording.md — document overflow-safe edit previews, shared padded date serialization, and unchanged timestamp/final-net write guards
+- UPDATED decisions/import-export.md and decisions/full-backup.md — document pre-read quotas, streamed actual-output checks, forged-size protection, and unique receipt indexes
+- UPDATED decisions/group-deletion.md and workflows/tag-management.md — reconcile payment-aware destructive warnings and regression evidence
+- UPDATED decisions/testing-strategy.md — record approved hardening, 644-unit/45-file and eight focused-browser passes; retain pending landing/full-suite/build/PWA and review limits
+- UPDATED wiki/index.md — synchronize hardening status and monetary/import/deletion/dashboard summaries
+- UPDATED decisions/testing-strategy.md — record completed 562-pass/12-failure/44-skip full-browser run and 22 passing focused cases after Sort test-action repairs; retain exhaustive/stability limits and original traces
+- UPDATED workflows/filtering.md — document disappearing-radio action repairs and verified focused Sort/added-date/payment regressions
+- UPDATED workflows/main-screen.md — reconcile passing focused failure follow-up and replace obsolete unresolved-payment-model related-link wording
+- UPDATED wiki/index.md — synchronize final browser totals, focused follow-up, and incomplete audit scope
+- UPDATED architecture/balance-calculation.md — correct Overview, sidebar, and dashboard helper usage against current source
+- UPDATED wiki/index.md — synchronize balance-helper source mapping
+- UPDATED decisions/settlement-recording.md — reconcile payment visibility in expense-date and added-date history versus filters and other sorts
+- UPDATED wiki/index.md — synchronize payment-history sorting summary
+- UPDATED workflows/main-screen.md — correct absent-category behavior: form entry and category creation remain available, while saving requires a category
+- UPDATED wiki/index.md — synchronize recording-entry guard summary
+- UPDATED architecture/split-types.md — replace current helper-rerun ambiguity with fresh full-unit evidence, while retaining historical browser scope
+- UPDATED workflows/filtering.md — distinguish current browser execution with unresolved failures from the earlier no-execution state
+- UPDATED research/competitive-landscape.md — reconcile later landing formatting/syntax checks without implying browser verification
+- UPDATED wiki/index.md — synchronize split/helper, payment-verification, and landing-research summaries
+- UPDATED roadmap/product-roadmap.md — distinguish approved landing formatting/syntax evidence from unrun browser/offline checks and retain the cache-version bump requirement before publication
+- UPDATED wiki/index.md — synchronize current landing audit evidence and release boundaries
+- UPDATED workflows/main-screen.md — replace stale current-test assumptions with approved disclosure/date-layout repairs and autofocus/draft regressions, without claiming a clean browser pass
+- UPDATED workflows/filtering.md — record responsive Sort repairs and added-date/payment/mobile regressions, separating revised coverage from historical eight-sort passes
+- UPDATED workflows/tag-management.md — distinguish expense-only confirmation copy from actual payment reference cleanup
+- UPDATED wiki/index.md — synchronize workflow verification and tag-cleanup summaries
+- UPDATED decisions/testing-strategy.md — record fresh 616-unit, static, ordinary/Devtools build, 18-PWA and JavaScript-syntax passes; disclose unresolved browser failures and incomplete exhaustive audit
+- UPDATED wiki/index.md — add current partial audit evidence and synchronize testing summary
+- UPDATED decisions/onboarding-persistence.md — reconcile hydrated category diffs/group guards, separate progress writes, and add-only persisted-member handling
+- UPDATED wiki/index.md — synchronize onboarding persistence guarantees and failure boundaries
+- UPDATED decisions/string-input-normalization.md — qualify exact payment-date validation, raw group/setup reads and snapshot-preserving restore instead of blanket trimming claims
+- UPDATED research/monetization-model.md — distinguish a research recommendation from an unverified all-competitors currency-conversion assertion
+- UPDATED wiki/index.md — synchronize normalization/research summaries and qualify the UI-only group-category invariant
+- UPDATED decisions/import-export.md — include derived payment-balance checks, activity in the import transaction, and clarify that stored split allocations are not recomputed
+- UPDATED decisions/full-backup.md — clarify shared split/metadata validation versus algorithmic recomputation
+- UPDATED wiki/index.md — synchronize transfer and backup validation summaries
+- UPDATED systems/indexeddb-schema.md — distinguish persisted indexed payment-reference checks from hydrated deletion cleanup and preserved original recorder metadata
+- UPDATED workflows/development-tools.md — include the build-time opt-in gate and clarify that sample replacement destroys prior data
+- UPDATED workflows/category-management.md — qualify creation and removal guards as UI/hydration constraints rather than database-enforced guarantees
+- UPDATED wiki/index.md — synchronize schema, dev-tools and category summaries
+- UPDATED architecture/domain-models.md — include payment-only currency warnings, preserve payment recorder identity on edits, and separate spending versus net guards
+- UPDATED decisions/expense-edit-delete.md — include transactional deletion activity and the payment-aware balance check
+- UPDATED workflows/member-management.md — include the activity table and clarify hydrated membership/payer cleanup limitations
+- UPDATED wiki/index.md — synchronize domain, expense correction and member summaries
+- UPDATED roadmap/product-roadmap.md — correct current-time defaults, implemented mobile Analytics access and existing versioned schema upgrades
+- UPDATED wiki/index.md — synchronize roadmap summary
+- UPDATED research/competitive-landscape.md — remove superseded visible illustrated-walkthrough labels and attribute volatile competitor facts to their dated recheck
+- UPDATED research/market-opportunity.md — qualify dated competitor/acquisition hypotheses and distinguish app-format CSV from third-party Splitwise import
+- UPDATED research/user-pain-points.md — attribute volatile competitor assertions to the source snapshot and dated rechecks
+- UPDATED ideas/rewarded-ads.md — distinguish research subscription ideas from an approved monetization strategy
+- UPDATED wiki/index.md — synchronize research and monetization-idea summaries
+- UPDATED architecture/layout-architecture.md — include Balances and tablet Activity in sidebar inventories and mobile Sort in the shared modal inventory
+- UPDATED workflows/dashboard.md — reconcile recent expense/payment previews, payment activity, shared group ordering and tablet Activity access
+- UPDATED wiki/index.md — synchronize layout and dashboard summaries
+- UPDATED decisions/string-input-normalization.md — correct blank percentage suggestion semantics and include payment input validation
+- UPDATED decisions/money-representation-and-rounding.md — replace future-payment wording, explain the separate payment-aware net guard, and correct exact-amount/payer remainder allocation
+- UPDATED decisions/full-backup.md — correct the false claim that deleted-group payment history survives in later backups
+- UPDATED decisions/confirmation-dialogs.md — include payment deletion and expense/payment blocker links
+- UPDATED decisions/iconography.md — remove a stale promise to reset disposable development data
+- UPDATED wiki/index.md — synchronize money, normalization, backup, confirmation and icon summaries
+- UPDATED architecture/state-management.md — reconcile persisted payment removal checks, atomic contact/member deletion, payment-aware tag cleanup and import transaction tables
+- UPDATED decisions/global-people-directory.md — include recorded payments and self protection in both removal scopes
+- UPDATED decisions/group-deletion.md — include payment rows/activity in the irreversible cascade and document their omission from the current warning
+- UPDATED workflows/people-directory.md — replace stale sequential-deletion claim with the actual transaction and document hydrated cleanup limitations
+- UPDATED workflows/tag-management.md — include payment references and both refreshed group collections; locate expense entry controls inside Optional details
+- UPDATED wiki/index.md — synchronize corrected summaries, ten sort modes and separate payment-aware balance guards
 
 ## 2026-10-11
 - UPDATED wiki/log.md — resolve the upstream/stash conflict by retaining both app-workflow and landing-design history without dropping either side

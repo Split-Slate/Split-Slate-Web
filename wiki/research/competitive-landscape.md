@@ -2,7 +2,7 @@
 
 A dated record preserving competitor content lessons, visual references, and launch-copy constraints.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 Product research snapshot: May 2026; volatile facts were rechecked on 2026-08-20.
 Website-content review: 2026-10-10, covering eight user-selected websites.
 Source: `app-featureset-context/expense-splitting-apps-feature-tables.md.pdf` + `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analysis for a Splitwise Alternative.pdf`
@@ -20,7 +20,7 @@ separate evidence about marketing content, not a new verification of competitor 
 
 | App | Model | Strongest Region | Fatal Flaw |
 |-----|-------|-----------------|------------|
-| Splitwise | Freemium; regional subscription pricing | US, India, Europe | Paywall backlash; current official limit is 4 expenses/day on the free tier |
+| Splitwise | Freemium; regional subscription pricing | US, India, Europe | Paywall backlash; the 2026-08-20 official-documentation recheck listed 4 expenses/day on the free tier |
 | Tricount (bunq) | Free + ads | France, Europe | Post-bunq redesign hated; no UPI; CSV export removed in v8 |
 | Settle Up | Freemium; regional subscription pricing | Czech Republic, Europe | Sync failures and ads were prominent complaints in the source snapshot |
 | Splid | Free + one-time IAP | Germany, US (travelers) | No web version; Android was updated in August 2025 |
@@ -61,7 +61,7 @@ implemented them.
 
 ---
 
-## Features Still Gated or Missing Across Most Apps
+## Features Reported Gated or Missing in the Research Snapshot
 
 - Receipt OCR with item-level assignment — only SplitMyExpenses + Splitkaro do this well
 - Sub-groups — explicitly refused by Splitwise; no one else has it either
@@ -171,8 +171,13 @@ Application status: the user approved the six-file content pass on 2026-10-10. T
 uses an explicit product description, concrete use cases, practical FAQs, and present-tense sync
 copy, while retaining its editorial design and motion. The website launch promise ledger is in
 [[product-roadmap]]; it distinguishes launch copy from current implementation. This did not change
-app/PWA source, copy competitor assets/scripts, or start the technical SEO phase. The revised copy
-has not been formatted or browser-verified; earlier landing checks precede these text changes.
+app/PWA source, copy competitor assets/scripts, or start the technical SEO phase. The later
+The initial 2026-10-12 audit formatted existing landing source and checked JavaScript syntax only.
+Its approved continuation passes 12 local desktop/mobile landing cases, covering gallery navigation,
+focus/scroll restoration, reduced-motion accounting, no-JavaScript links, prior-install offline access,
+responsive overflow, and reversible story state. It repairs decorative orbit overflow at 280px and
+bumps the landing snapshot version. This is not new evidence about any competitor, deployed updates,
+or real-device behavior. See [[testing-strategy]] and [[product-roadmap]].
 
 ---
 
@@ -328,8 +333,10 @@ The supplied prompt requested React/GSAP, but the user's subsequent explicit con
 precedence: plain HTML/CSS/JavaScript, no build process, and drag-and-drop deployment. The approved
 implementation uses original SVG strokes, native scroll-linked reversible transforms, shorter
 mobile travel, and static reduced-motion/short-screen/no-JavaScript alternatives. No libraries,
-dependency downloads, videos, or reference assets were added. The phone is an explicitly labelled
-illustrated walkthrough derived from app concepts, not a live app or a screenshot.
+dependency downloads, videos, or reference assets were added. The phone is an illustrated
+walkthrough derived from app concepts, not a live app or a screenshot. Its former visible
+walkthrough note was removed in the approved copy cleanup; the illustration/live-app distinction
+still holds. See [[product-roadmap]].
 
 Current implementation and deployment/accessibility boundaries live in [[product-roadmap]].
 
@@ -338,7 +345,7 @@ requested its design with fictional story records. The native phone now uses the
 lavender canvas, purple net-position hero, rounded white Members/Suggested transfers/Recent
 transactions cards in that order, full-width card actions, category/amount-below-title transactions,
 and five-item bottom navbar. Names and amounts remain Maya/Leo/Nina's mathematically correct example.
-It is a labelled presentation replica, not an embedded live React app or a screenshot replacement.
+It is a presentation replica, not an embedded live React app or a screenshot replacement.
 
 To keep the replica faithful without rebranding the landing, the user approved one phone-only font
 exception: the existing app's Plus Jakarta Sans WOFF2 is copied into `landing/fonts/`, with its SIL

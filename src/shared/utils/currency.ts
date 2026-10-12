@@ -10,7 +10,7 @@ import type { CurrencyFormatOptions } from "@/shared/types/currency-format.types
 // Input is stored/derived integer hundredths, never a floating-point major-unit amount.
 // Options affect presentation only; future preferences should feed this shared boundary.
 export const formatCurrency = (
-  amount: number,
+  amount: number | bigint,
   currency: string,
   options: CurrencyFormatOptions = {},
 ): string => {

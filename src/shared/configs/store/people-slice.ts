@@ -102,69 +102,72 @@ export const createPeopleSlice: SliceCreator<PeopleSlice> = (set, get) => ({
   },
 
   removePerson: async (personId) => {
-    const localUser = await db.localUser.toCollection().first();
-    if (personId === localUser?.id) {
-      throw new Error("You cannot delete yourself from the people directory");
-    }
-    const memberIds = get()
-      .members.filter((m) => m.personId === personId)
-      .map((m) => m.id);
-    const inUse = get().expenses.some(
-      (e) =>
-        memberIds.includes(e.createdBy) ||
-        e.transactions.paid.some((t) => memberIds.includes(t.memberId)) ||
-        e.transactions.owes.some((t) => memberIds.includes(t.memberId)),
-    );
-    if (inUse) {
-      throw new Error("Cannot delete a person involved in expenses or payments");
-    }
-
-    const affectedGroups = get().groups.filter((g) =>
-      g.frequentPayerIds.some((id) => memberIds.includes(id)),
-    );
-    const event = await db.transaction(
+    const result = await db.transaction(
       "rw",
-      [db.people, db.members, db.groups, db.settlements, db.activityEvents],
+      [
+        db.localUser,
+        db.people,
+        db.members,
+        db.groups,
+        db.expenses,
+        db.settlements,
+        db.activityEvents,
+      ],
       async () => {
+        const localUser = await db.localUser.toCollection().first();
+        if (personId === localUser?.id) {
+          throw new Error("You cannot delete yourself from the people directory");
+        }
         const person = await db.people.get(personId);
         if (!person) throw new Error("Person not found");
         const persistedMembers = await db.members.where("personId").equals(personId).toArray();
-        const referencedIds = persistedMembers.map((item) => item.id);
+        const memberIds = persistedMembers.map((item) => item.id);
+        const referencedIds = new Set(memberIds);
+        if (
+          (await db.expenses.toArray()).some(
+            (expense) =>
+              referencedIds.has(expense.createdBy) ||
+              expense.transactions.paid.some((row) => referencedIds.has(row.memberId)) ||
+              expense.transactions.owes.some((row) => referencedIds.has(row.memberId)),
+          )
+        ) {
+          throw new Error("Cannot delete a person involved in expenses or payments");
+        }
         if (
           (await db.settlements.toArray()).some(
             (item) =>
-              referencedIds.includes(item.fromMemberId) ||
-              referencedIds.includes(item.toMemberId) ||
-              referencedIds.includes(item.recordedBy),
+              referencedIds.has(item.fromMemberId) ||
+              referencedIds.has(item.toMemberId) ||
+              referencedIds.has(item.recordedBy),
           )
         ) {
           throw new Error("Cannot delete a person involved in payments");
         }
         await db.people.delete(personId);
         await db.members.bulkDelete(memberIds);
-        for (const group of affectedGroups) {
-          const frequentPayerIds = group.frequentPayerIds.filter((id) => !memberIds.includes(id));
+        const groups = await db.groups.toArray();
+        for (const group of groups) {
+          if (!group.frequentPayerIds.some((id) => referencedIds.has(id))) continue;
+          const frequentPayerIds = group.frequentPayerIds.filter((id) => !referencedIds.has(id));
           await db.groups.update(group.id, { frequentPayerIds });
+          group.frequentPayerIds = frequentPayerIds;
         }
-        return writeActivity({
+        const event = await writeActivity({
           kind: "person",
           action: "deleted",
           label: person.name,
           icon: person.icon,
           subjectId: personId,
         });
+        return { event, groups, memberIds };
       },
     );
 
     set((s) => ({
-      activityEvents: [...s.activityEvents, event],
+      activityEvents: [...s.activityEvents, result.event],
       people: s.people.filter((p) => p.id !== personId),
-      members: s.members.filter((m) => m.personId !== personId),
-      groups: s.groups.map((g) =>
-        g.frequentPayerIds.some((id) => memberIds.includes(id))
-          ? { ...g, frequentPayerIds: g.frequentPayerIds.filter((id) => !memberIds.includes(id)) }
-          : g,
-      ),
+      members: s.members.filter((m) => m.personId !== personId && !result.memberIds.includes(m.id)),
+      groups: result.groups,
     }));
   },
 });

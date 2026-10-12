@@ -2195,6 +2195,8 @@ html.gallery-is-open body {
   position: relative;
   width: 100%;
   aspect-ratio: 0.95;
+  /* Rotated decorative orbits must not widen the page on narrow screens. */
+  overflow: clip;
 }
 
 .privacy-orbit {
@@ -3732,7 +3734,10 @@ html.is-page-hidden *::after {
   border: 1px solid #88818e;
   border-radius: 42px;
   background: linear-gradient(130deg, #746d7c, #29232e 18%, #49424e 75%, #8e8795);
-  box-shadow: 0 3px 1px #27212e, 0 22px 35px -12px rgb(48 33 64 / 26%), 0 48px 75px -24px rgb(61 45 78 / 20%);
+  box-shadow:
+    0 3px 1px #27212e,
+    0 22px 35px -12px rgb(48 33 64 / 26%),
+    0 48px 75px -24px rgb(61 45 78 / 20%);
 }
 
 .ss-phone-screen {
@@ -3953,7 +3958,9 @@ html.is-page-hidden *::after {
   border: 1px solid #e4e1ee;
   border-radius: 14px;
   background: #fff;
-  box-shadow: 0 2px 3px rgb(40 30 80 / 4%), 0 10px 22px rgb(40 30 80 / 3%);
+  box-shadow:
+    0 2px 3px rgb(40 30 80 / 4%),
+    0 10px 22px rgb(40 30 80 / 3%);
 }
 
 .ss-ui-heading {

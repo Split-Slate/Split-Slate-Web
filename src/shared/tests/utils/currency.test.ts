@@ -3,6 +3,14 @@ import { describe, expect, it } from "vitest";
 import { formatCurrency } from "@/shared/utils/currency";
 
 describe("formatCurrency", () => {
+  it("retains every cent in cross-group BigInt totals and custom grouping", () => {
+    const aggregate = BigInt(Number.MAX_SAFE_INTEGER) * 2n;
+    expect(formatCurrency(aggregate, "USD", { locale: "en-US" })).toBe("$180,143,985,094,819.82");
+    expect(formatCurrency(-aggregate, "USD", { locale: "en-US", grouping: "none" })).toBe(
+      "-$180143985094819.82",
+    );
+    expect(formatCurrency(aggregate - 1n, "USD", { locale: "en-US" })).toContain(".81");
+  });
   it.each([
     ["INR", 12345, 123.45, 2],
     ["JPY", 50000, 500, 2],

@@ -15,6 +15,12 @@ const members = [
   { id: "b", name: "Bea" },
   { id: "c", name: "Cal" },
 ];
+
+it("retains four-digit years when opening old expenses", () => {
+  const date = new Date(2026, 0, 2, 9, 5);
+  date.setFullYear(1);
+  expect(localDateTime(date.getTime())).toBe("0001-01-02T09:05");
+});
 const saved = (
   splitType: Expense["splitType"],
   owes: Transaction[],

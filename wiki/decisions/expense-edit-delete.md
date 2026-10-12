@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document expense correction, permanent deletion, and their persistence guarantees.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Implementation Status
 
@@ -65,7 +65,8 @@ expense may retain its existing inactive category; changing to a different categ
 active one.
 
 Create and update share monetary/reference validation. Updates replace the old amount when
-checking the aggregate spending ceiling. The expense and recalculated payer ranking commit in one
+checking the aggregate spending ceiling, and separately validate payment-aware member balances.
+The expense and recalculated payer ranking commit in one
 transaction; memory changes only after commit. Cancellation writes nothing; failures retain input
 and allow retry. Save handlers guard repeated submissions.
 
@@ -103,9 +104,10 @@ the expense, and warns that its receipts will be deleted permanently and balance
 Cancel or Escape closes it without writing; a failed deletion keeps it open with an error for retry.
 
 **Cascade:** one transaction deletes attachments by their `expenseId` owner index, deletes the
-expense, and recalculates the group's payer ranking from remaining expenses. Index-based cleanup
+expense, recalculates the group's payer ranking from remaining expenses, and writes deletion
+activity. The same transaction first validates remaining payment-aware member balances. Index-based cleanup
 includes owned receipts omitted from `attachmentIds` and preserves other expenses' attachments.
-Any failure rolls back all three writes. Missing/foreign expense IDs are rejected; `updateExpense`
+Any failure rolls back all writes. Missing/foreign expense IDs are rejected; `updateExpense`
 after deletion cannot recreate the expense. The UI guards repeated deletion and offers retry on failure.
 
 **Tag-cleanup interaction:** the stale-tag resurrection bug is resolved. `removeTag` now reads

@@ -9,7 +9,7 @@ metadata:
 
 Purpose: provide a current planning compass without turning exploratory ideas into commitments.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## How to Read This Page
 
@@ -90,7 +90,68 @@ external payment recording is implemented. Current detail lives in [[index]], [[
 
 ## Next Tasks
 
-### Standalone Landing Page — native scroll story, checks pending 2026-10-11
+### Audit Closure vs Release Readiness — 2026-10-12
+
+The approved audit repairs and automated verification are complete for their documented scope:
+672 unit cases, 580 application browser passes with 44 viewport-specific skips, 18 PWA cases,
+36 repeated landing cases, and seven staged recovery/update scenarios pass. Static/build/file/wiki
+checks also pass in the recorded closure batches. This is not a claim that every roadmap item is
+implemented or every release check is cleared. The consolidated repair/test/failure/commit handoff
+is in [[testing-strategy]] under **Audit Closure and Commit Preparation**.
+
+Remaining work has distinct owners and purposes:
+
+- **Advertised launch blockers:** live group synchronization and connected-device continuity
+  remain unimplemented under SYNC-01. Approve their identity, conflict, privacy/security, recovery,
+  and operating-cost design before implementation; file export/import is not synchronization.
+- **Release-verification gaps:** physical devices and other browser engines, actual deployed worker
+  updates, multi-tab/legacy-page/failed-update cases, real storage pressure and upgrade preservation,
+  and persistence-failure handling across writes still need evidence. The local staged update and
+  manually removed cache entries do not replace these checks.
+- **Local product backlog:** category activation controls, receipt ingestion/compression/lazy loading,
+  duplication, backup reminders, and settlement-specific sharing remain unfinished. Cross-tab UI
+  synchronization and atomic standard multi-step group creation are not delivered by the persisted
+  guard repairs. Horizon candidates, sync monetization details, SEO, and open-source licensing still
+  need their own approval and design where applicable.
+- **Audit coverage limits:** exhaustive manual per-file/per-line and individual-asset review is not
+  established. Sampled local captures and automated syntax/hash checks have a narrower meaning.
+- **Delivery:** after documentation-only preparation and review of unstaged functional changes, the
+  user approved staging all changed files and a single detailed audit commit. Push and deployment
+  are not requested. Raw temporary verification artifacts and the external recovery harness are
+  not part of the Git commit; the compiled results and limits are preserved in the wiki.
+
+These are tracked gaps, not authorization to run checks, start new feature work, or publish the
+landing's unfulfilled promises. Follow the execution gate in [[testing-strategy]].
+
+### Standalone Landing Page — native scroll story, local browser checks passed 2026-10-12
+
+The approved audit continuation passes **12 desktop/mobile landing cases**: eight-image filter and
+wrapped navigation, modal closure/focus/scroll restoration, all five exact demo allocations under
+reduced motion, no-JavaScript direct screenshots, the complete previously installed offline snapshot,
+runtime-error/overflow checks at 280/390/820/1440/1920px, and reversible story totals/position.
+Rotated decorative privacy orbits caused horizontal overflow at 280px; the illustration now clips
+its own decoration rather than hiding overflow on the entire page. `CACHE_VERSION` is bumped to
+`2026-10-12-v5` after the subsequent notebook-ring SVG coordinate repair. Logs:
+`/tmp/opencode/audit-landing-final.log`; scenarios:
+`landing/tests/browser/landing.e2e.ts`, with a separate local-only Playwright configuration.
+These checks are local Chromium automation, not real-device, deployed-update, or physical storage
+sign-off. The later independent harness covers seven injected recovery/local-update scenarios below.
+Historical pending-check notes describe their original passes;
+the new results supersede only the covered scenarios. No deployment occurred.
+
+Loaded viewport captures at 280/390/820/1440/1920px supplement the automated layout checks; sampled
+privacy, demo, gallery, and reduced-motion hero views have no observed clipping. Whole-page captures
+alone are inadequate for native sticky-story whitespace, offscreen lazy images, and fixed-header
+capture artifacts. The later closure run exposed a first-frame geometry race in the story test;
+font/geometry readiness is now awaited, and the renewed frozen batch passes 36 repeated landing
+cases and 580 application browser cases with 44 viewport-specific skips and zero failures.
+The independent recovery harness subsequently detects malformed notebook-ring SVG coordinates;
+those are repaired, console-error assertions are added, and all 36 repeated landing cases pass again.
+Seven independent staged-copy recovery scenarios also pass: missing scripts/image, missing-asset
+installation rejection, manually evicted-entry online repair/offline guidance, and a two-revision
+update with one refresh, preserved query/fragment, cache cleanup, and offline revision-2 reload.
+Earlier custom-server stalls are preserved without claiming a proven transport cause or worker fix.
+Current evidence and limitations are canonical in [[testing-strategy]], not implied by screenshots alone.
 
 The approved marketing entry point lives in `landing/` in this repository, but is deployed as a
 **separate manually uploaded Netlify site**. Its HTML, CSS, SVG, and local JavaScript need no build or framework.
@@ -235,7 +296,7 @@ buttons jump to Overview/Add expense/Settle up within the device filter, not a s
 The rail and counter/caption retain labelled mobile parts. The user subsequently requested removal
 of the lightbox's Open original link and explanatory footer. The rail hides on short viewports with
 primary navigation retained. No autoplay is introduced. The filter update ran no commands or
-verification; browser behavior remains unverified.
+verification at that time; later audit coverage is recorded above and in [[testing-strategy]].
 
 Native modal semantics make the background inert. Tab is constrained to dialog controls; close via
 button, Escape, or a pointer click starting and ending on the backdrop restores opener focus and
@@ -248,7 +309,8 @@ an independent local classic script; obsolete preview-tab logic was removed from
 The eight-file asset-copy batch ran in the earlier gallery pass. No commands, browser/layout checks,
 formatting, installs, image processing, or deployment ran for this compact redesign. Modal closure,
 navigation/device/part handling, focus, touch scroll restoration, load-error handling, links, and
-responsive/reduced-motion/no-JavaScript behavior remain unverified. The animation/hand, app/PWA,
+responsive/reduced-motion/no-JavaScript behavior were unverified at that time. Later scoped evidence
+is recorded above; unexercised paths are not implicitly cleared. The animation/hand, app/PWA,
 manual Netlify boundaries, and assets are unchanged. Asset mapping is in `landing/README.md`.
 
 **Approved copy cleanup and offline landing (2026-10-11):** the user requested removal of the opening
@@ -265,7 +327,7 @@ desktop/mobile styles are removed rather than adding spacing to the fixed compos
 CTA and hand/phone animation remain unchanged. This removes that overlapping text; it is not a
 verified fix for every possible narrow-screen overlap. That change bumped `CACHE_VERSION` to
 `2026-10-11-v2`; the later automatic-update policy below supersedes its waiting-worker activation.
-No commands, browser checks, or deployment ran; other mobile-layout checks remain pending.
+No commands, browser checks, or deployment ran in that pass; later scoped layout evidence is above.
 
 `landing/offline.js` now registers/checks `service-worker.js` during page startup on secure HTTP(S) only. Scope
 is the script directory, and an existing different worker at that exact scope is not overwritten.
@@ -289,13 +351,15 @@ actual query/fragment URL is retained; transient gallery/demo state may reset. T
 navigation, supporting older landing code without an update listener. Navigation promises are not
 awaited by activation because their fetches need activation to finish.
 
-The current version is `2026-10-11-v3`. A private Cache Storage metadata entry records whether an
+The current version is `2026-10-12-v5`. A private Cache Storage metadata entry records whether an
 active worker existed during installation, survives worker suspension, and is consumed before
 refresh. First installation and unchanged/restarted workers do not trigger repeated reloads.
 Offline/failed installs keep the old worker without refreshing. The old snapshot may show briefly
 while downloading; the visitor must remain on the page through installation. Rejected navigation
 is logged without retries. There is no periodic background poll or update guarantee for a departed
-visitor. Automatic-update behavior and loop guards remain unverified; no commands/checks ran.
+visitor. That implementation pass ran no checks. The later independent local update harness passes
+with a standard static server and staged revisions; actual-deployment, multi-tab, and
+legacy-page update evidence is not established.
 The earlier no-service-worker rule is superseded for this separately deployed website only, not the
 expense app/PWA origin, build, cache, routes, or storage. There is still no manifest/install prompt,
 framework, dependency, or build step.
@@ -303,16 +367,17 @@ framework, dependency, or build step.
 Offline requires a prior successful online installation, secure serving, and retained browser cache;
 `file://`, a cold offline visit, storage clearing/eviction, unsupported/private restrictions, and
 failed installs are not covered. The external app links still require that app's own availability.
-No commands, verification, server, install, or deployment ran for this pass. Removal regressions,
-complete precache/offline reloads, image/font availability, automatic-update transitions, scope isolation,
-and fetch/storage failure behavior remain pending. Details are in `landing/README.md`.
+No commands, verification, server, install, or deployment ran for that implementation pass. The later
+audit verifies complete prior-install offline reloads and all-image browsing; update/recovery evidence
+and remaining limits are tracked in [[testing-strategy]]. Details are in `landing/README.md`.
 
 **No formatting, syntax checks, tests, browser runs, server starts, installations, or deployment
 were performed for the native story or mobile-UI pass.** Only the approved font-copy/license-fetch
 asset batch ran. Actual-node docking/undocking, phone panning, scroll reversal/alignment,
 font-load/responsive fit, phone settlement visibility, keyboard/skip/CTA behavior, motion toggling,
-static fallback, and real-device performance remain unverified. Earlier restoration/font checks
-also remain unrun. Unrelated app verification does not verify this landing implementation.
+static fallback, and real-device performance were unverified then. Later scoped local tests and
+sampled viewport captures are above; physical-device and exhaustive visual evidence remain absent.
+Unrelated app verification does not verify this landing implementation.
 The stopped rebrand verification is not authorization for a new batch; approval is still required.
 
 Historical coverage: before the copy pass, the receipt design passed syntax and eleven scoped
@@ -330,6 +395,13 @@ app tests, deployment, or push ran for this work. The landing implementation and
 were committed separately in `8e39f27` (`feat(landing): add scroll story, screenshot lightbox, and
 offline updates`), containing only `landing/`. Accumulated landing wiki history is included with
 the later approved app/wiki conflict reconciliation; no landing files change in that follow-up.
+The approved 2026-10-12 audit subsequently formatted existing landing source and passed tracked
+JavaScript syntax checks plus the repository formatting check. Those checks do not verify story,
+gallery, service-worker runtime behavior, or offline/update transitions. No landing browser checks
+or deployment ran in that initial batch. The later scoped browser runs and repairs are recorded above;
+the cache is now `2026-10-12-v5`. Before publishing any further asset edits, bump it again and upload
+the complete snapshot. See [[testing-strategy]] for current audit evidence and retained limitations.
+
 Deployment instructions and pending checks are in `landing/README.md`.
 See [[layout-architecture]], [[mobile-pwa-install]], and [[testing-strategy]].
 
@@ -446,8 +518,9 @@ The following Horizon 1 work is implemented:
 
 Five-second entry is an acceptance benchmark for the common case, not permission to skip
 validation. Current defaults are the most recent recorded payer, equal split across all current
-members, today's local date with the time left blank until entered or explicitly filled, and the
-first active category. Remembered participants and other choices remain candidates; usability work
+members, today's local date and current local time captured once at opening, and the first active
+category. Clear time empties only the time; valid time remains required. Remembered participants
+and other choices remain candidates; usability work
 must establish the entry-time benchmark.
 
 ## Horizon 2 — Make the Local Product Safe to Release
@@ -462,6 +535,8 @@ Approved or required work:
   pass the 2026-10-10 full post-scaling browser suite.
 - Finish category activation/deactivation controls; active-category expense-picker behavior is implemented.
 - Implement receipt attachment ingestion, compression, and lazy loading; expense-deletion cascades are implemented.
+  Enabling photo ingestion requires the approved backup/export capacity review below; the current
+  file limits are not a permanent capacity design for receipt-heavy data.
 - Continue hardening the implemented Link/CSV/ZIP editable snapshot transfer in [[import-export]].
   Selective export, integrity validation, fresh-ID atomic import, identity mapping, and
   receipt-aware ZIP round-trips are implemented. Merge and synchronization are deliberate non-goals.
@@ -477,8 +552,9 @@ Approved or required work:
   After all app windows close, the browser may activate a waiting worker before the next launch.
   A failed shell download must leave the older worker running. Icons are independently verified
   and replaced without resetting the shell or IndexedDB. See [[iconography]].
-- Replace the active-development reset policy with versioned migrations before real user data is
-  expected to survive application upgrades. See [[indexeddb-schema]].
+- Preserve real user data through versioned upgrades. Dexie versions 2 and 3 already add activity
+  and payments without resetting records; future incompatible transformations need explicit
+  migrations and upgrade regression evidence. See [[indexeddb-schema]].
 - Add automated tests around accounting invariants, split rounding, cascades, import validation,
   migrations, and the most important user flows.
 - Database bootstrap failures now show a reload/backup-restore path rather than waiting indefinitely.
@@ -487,6 +563,34 @@ Approved or required work:
 Snapshot transfer remains the local sharing model in this horizon. It is not synchronization: no
 real-time updates, background merge, or automatic conflict resolution is promised.
 
+### Receipt Photo Ingestion — Backup/Restore Capacity Prerequisite
+
+Purpose: ensure receipt-heavy data remains fully portable and recoverable before photo ingestion
+is enabled. This prerequisite is user-approved; photo uploads and a larger-archive implementation
+are still pending, and no current size limit is changed by this decision.
+
+Before enabling receipt photos:
+
+- Decide image resizing/compression and per-receipt limits, with legibility preserved. Compressed
+  image formats can contribute close to their original byte size inside ZIPs; ZIP compression alone
+  must not be assumed to make receipt collections small.
+- Reconsider group ZIP and whole-app backup compressed/expanded limits against realistic retained
+  receipt collections, browser storage, and peak import/export memory usage on phones. Current
+  group limits are 64 MiB compressed/128 MiB expanded; backups are 256 MiB compressed/512 MiB
+  expanded. CSV is 16 MiB and cannot carry image bytes. These remain the current limits until an
+  explicitly approved implementation changes them.
+- Evaluate streaming or split/chunked archive generation and restore where required. Simply
+  increasing in-memory ZIP limits is not a sufficient memory-safety or recovery design.
+- Preserve export/import compatibility: an app-generated accepted export must not exceed its
+  matching restore limits. A complete backup must include all selected receipts; never silently
+  omit images to fit a quota. Specify the user-visible recovery path when a dataset exceeds a
+  supported format's capacity.
+- Verify representative receipt-heavy and maximum-supported backup/restore round-trips, low-memory
+  device behavior, storage pressure, and interrupted/failed operations. Existing data must survive
+  rejection or failure. Tests and device checks require separate execution approval.
+
+Related contracts: [[import-export]], [[full-backup]], [[testing-strategy]], and [[indexeddb-schema]].
+
 ## Horizon 3 — Local Insight and Convenience
 
 **Goal:** make accumulated local data more useful without introducing a required server.
@@ -494,7 +598,8 @@ real-time updates, background merge, or automatic conflict resolution is promise
 Candidates, ordered roughly by dependency and user value:
 
 - Expand the implemented dashboard summaries, saved-action Activity view, Unsettled route, and
-  category Analytics page; restore an Analytics entry point on narrow mobile screens. Current
+  category Analytics page. Mobile Analytics entry is already available through dashboard previews
+  and More. Current
   action snapshots do not reconstruct changes made before the activity table existed. See
   [[dashboard]].
 - Add group and solo-group analytics by category, time, and date range.

@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { dashboardPositions, dashboardTransfers } from "@/features/dashboard/utils/dashboard-data";
 import { useStore } from "@/shared/configs/store";
 import { formatCurrency } from "@/shared/utils/currency";
+import { moneyPercentage } from "@/shared/utils/money";
 
 import Avatar from "@/shared/ui/avatar";
 import EmptyState from "@/shared/ui/empty-state";
@@ -42,7 +43,7 @@ const Unsettled = () => {
           <div className="mt-3 flex h-2 gap-1">
             <span
               className="rounded-l-full bg-[var(--positive)]"
-              style={{ width: `${get + give ? (get / (get + give)) * 100 : 50}%` }}
+              style={{ width: `${get + give > 0n ? moneyPercentage(get, get + give) : 50}%` }}
             />
             <span className="flex-1 rounded-r-full bg-[var(--negative)]" />
           </div>

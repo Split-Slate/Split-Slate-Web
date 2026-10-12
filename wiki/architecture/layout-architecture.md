@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document the implemented responsive shell and distinguish navigation stubs from working routes.
 
-Last updated: 2026-10-11
+Last updated: 2026-10-12
 
 ## Viewport States
 
@@ -155,7 +155,7 @@ below it. Titles may use three lines and group names two. There is no activity-r
 
 Every current native modal uses the shared `.app-dialog` container and `DialogLayout` from
 `src/shared/ui/dialog-layout/index.tsx`. This applies to setup/person/category/tag editors,
-mobile Filters, destructive confirmations, blocked-removal explanations, group name/icon editing,
+mobile Filters and Sort, destructive confirmations, blocked-removal explanations, group name/icon editing,
 currency selection and confirmation, payment forms, import identity resolution, export notices,
 backup restore, restore choices, and the PWA install prompt. Remaining inline forms and
 desktop/tablet filter popovers are not modals and retain
@@ -322,7 +322,7 @@ The sidebar is present on tablet and desktop routes rendered inside the post-onb
 On dashboard routes, top to bottom:
 
 1. **App logo** — always at the top
-2. **Dashboard menu items** — Dashboard, Contacts, and Settings
+2. **Dashboard menu items** — Dashboard, Contacts, and Settings; Activity is added on tablet
 3. **Groups list** — scrollable list of group item components
 4. **Add new group link** — beside the groups-list heading
 5. **Profile link** — anchored at the bottom
@@ -332,7 +332,8 @@ Inside a group, top to bottom:
 1. **App logo** — always at the top
 2. **All groups** — returns to the dashboard groups list
 3. **Current group summary** — non-clickable group icon/name/currency plus member and expense counts
-4. **Group menu items** — Overview, Expenses, Members, Categories & Tags, Settings
+4. **Group menu items** — Overview, Expenses, Balances, Members, Categories & Tags, Settings;
+   Activity is added on tablet
 5. **Profile link** — anchored at the bottom
 
 The groups list and new-group action appear only on dashboard-context routes; inside any group the
@@ -344,8 +345,8 @@ Settings remains reachable through the group sidebar or mobile footer.
 
 | Route | Menu items |
 |-------|-----------|
-| Home (Dashboard) | Dashboard, Contacts, Settings |
-| Inside a group | Overview, Expenses, Members, Categories & Tags, Settings |
+| Home (Dashboard) | Dashboard, Contacts, Settings; tablet also includes Activity |
+| Inside a group | Overview, Expenses, Balances, Members, Categories & Tags, Settings; tablet also includes Activity |
 
 ---
 

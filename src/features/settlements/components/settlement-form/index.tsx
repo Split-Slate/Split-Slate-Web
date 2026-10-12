@@ -4,9 +4,10 @@ import { FormProvider, useForm, useWatch } from "react-hook-form";
 
 import MemberPicker from "@/features/settlements/components/member-picker";
 
+import { paymentPreviewBalances } from "@/features/settlements/utils/payment-preview";
 import type { SettlementFormValues } from "@/features/settlements/utils/settlement-schema";
 import { createSettlementSchema } from "@/features/settlements/utils/settlement-schema";
-import { calculateBalances } from "@/shared/utils/balances";
+import { localDateTime } from "@/shared/utils/date-time";
 import { moneyToDecimal, parseMoney } from "@/shared/utils/money";
 
 import type { SettlementInput } from "@/features/settlements/types/settlements.types";
@@ -27,11 +28,6 @@ interface PropsType {
   onSave: (input: SettlementInput) => Promise<void>;
   onCancel: () => void;
 }
-
-const localDateTime = (timestamp: number) => {
-  const date = new Date(timestamp);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}T${String(date.getHours()).padStart(2, "0")}:${String(date.getMinutes()).padStart(2, "0")}`;
-};
 
 const SettlementForm = ({
   group,
@@ -69,17 +65,20 @@ const SettlementForm = ({
     control: methods.control,
     name: ["fromMemberId", "toMemberId", "amount"],
   });
-  const balances = calculateBalances(
+  const balances = paymentPreviewBalances(
     expenses,
     members.map((member) => member.id),
-    settlements.filter((item) => item.id !== initial?.id),
+    settlements,
+    initial?.id,
   );
-  const maximum = Math.min(-(balances.get(fromMemberId) ?? 0), balances.get(toMemberId) ?? 0);
+  const debt = -(balances.get(fromMemberId) ?? 0n);
+  const credit = balances.get(toMemberId) ?? 0n;
+  const maximum = debt < credit ? debt : credit;
   let overpayment = false;
   try {
     overpayment =
       Boolean(fromMemberId && toMemberId && fromMemberId !== toMemberId) &&
-      parseMoney(enteredAmount, group.currency) > Math.max(0, maximum);
+      BigInt(parseMoney(enteredAmount, group.currency)) > (maximum > 0n ? maximum : 0n);
   } catch {
     // Validation displays the input error instead.
   }

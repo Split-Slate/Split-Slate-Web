@@ -28,8 +28,8 @@ export const dashboardPositions = (state: AppStore) => {
   return {
     entries,
     currency: currencies.length === 1 ? currencies[0] : null,
-    get: entries.reduce((sum, entry) => sum + Math.max(0, entry.amount), 0),
-    give: entries.reduce((sum, entry) => sum + Math.max(0, -entry.amount), 0),
+    get: entries.reduce((sum, entry) => sum + BigInt(Math.max(0, entry.amount)), 0n),
+    give: entries.reduce((sum, entry) => sum + BigInt(Math.max(0, -entry.amount)), 0n),
   };
 };
 

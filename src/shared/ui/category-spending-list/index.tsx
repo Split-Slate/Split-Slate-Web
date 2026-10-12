@@ -1,26 +1,27 @@
 import { Link } from "react-router-dom";
 
 import { formatCurrency } from "@/shared/utils/currency";
+import { moneyPercentage } from "@/shared/utils/money";
 
 import EmojiImage from "@/shared/ui/emoji-image";
 
 interface SpendingCategory {
   name: string;
   icon: string;
-  amount: number;
+  amount: number | bigint;
   to?: string;
 }
 
 interface PropsType {
   categories: SpendingCategory[];
   currency: string;
-  totalAmount: number;
+  totalAmount: number | bigint;
 }
 
 const CategorySpendingList = ({ categories, currency, totalAmount }: PropsType) => (
   <ol className="category-spending-list" aria-label="Category spending breakdown">
     {categories.map((category) => {
-      const percentage = totalAmount > 0 ? (category.amount / totalAmount) * 100 : 0;
+      const percentage = moneyPercentage(category.amount, totalAmount);
       const share = percentage > 0 && percentage < 0.1 ? "<0.1%" : `${percentage.toFixed(1)}%`;
       const content = (
         <>

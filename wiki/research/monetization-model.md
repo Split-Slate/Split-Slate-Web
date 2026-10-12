@@ -2,7 +2,7 @@
 
 An unimplemented packaging and pricing proposal derived from the May 2026 market research.
 
-Last updated: 2026-08-20
+Last updated: 2026-10-12
 Research snapshot: May 2026; no monetization, subscription, ad, or entitlement system is implemented.
 Source: `app-featureset-context/Expense-Splitting Apps_ Market Opportunity Analysis for a Splitwise Alternative.pdf`
 
@@ -63,7 +63,8 @@ observations, not verified current prices.
 ## What NOT to Do (Lessons from Splitwise)
 
 - Never add a daily expense cap or cooldown to free tier
-- Never paywall currency conversion — users expect it free (every competitor offers it free)
+- Avoid paywalling currency conversion — the source research recommended this; its blanket claim
+  that every competitor offers conversion free is not established by this code/wiki audit
 - Never offer annual-only pricing — always offer monthly + lifetime
 - Never add ads to a fintech-trust app without warning
 - Never silently change free-tier terms — communicate via in-app notice + email

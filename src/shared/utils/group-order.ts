@@ -1,6 +1,9 @@
 import type { Expense, Group } from "@/shared/types/domain.types";
 
-export const sortGroupsByRecentExpense = (groups: readonly Group[], expenses: readonly Expense[]) => {
+export const sortGroupsByRecentExpense = (
+  groups: readonly Group[],
+  expenses: readonly Expense[],
+) => {
   const latestExpenseByGroup = new Map<string, number>();
 
   for (const expense of expenses) {

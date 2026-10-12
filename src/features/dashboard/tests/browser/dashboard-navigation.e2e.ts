@@ -70,6 +70,62 @@ test.beforeEach(async ({ page }) => {
   await page.goto("/dashboard");
 });
 
+test("renders exact cross-group totals beyond the safe-number boundary", async ({ page }) => {
+  await page.evaluate(async () => {
+    const modulePath = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+    const maximum = Number.MAX_SAFE_INTEGER;
+    await db.expenses.update("dinner", {
+      splitType: "amount",
+      transactions: {
+        paid: [{ memberId: "a", amount: maximum }],
+        owes: [{ memberId: "b", amount: maximum }],
+      },
+    });
+    await db.groups.put({
+      id: "second",
+      name: "Second trip",
+      currency: "INR",
+      icon: "🏕️",
+      createdAt: 2,
+      frequentPayerIds: [],
+    });
+    await db.members.bulkPut([
+      { id: "a2", groupId: "second", personId: "self" },
+      { id: "b2", groupId: "second", personId: "friend" },
+    ]);
+    await db.categories.put({
+      id: "food2",
+      groupId: "second",
+      name: "Food",
+      icon: "🍽️",
+      isActive: true,
+    });
+    const original = (await db.expenses.get("dinner"))!;
+    await db.expenses.put({
+      ...original,
+      expenseId: "second-dinner",
+      groupId: "second",
+      categoryId: "food2",
+      createdBy: "a2",
+      transactions: {
+        paid: [{ memberId: "a2", amount: maximum }],
+        owes: [{ memberId: "b2", amount: maximum }],
+      },
+    });
+  });
+  await page.reload();
+  const expected = "₹18,01,43,98,50,94,819.82";
+  await expect(page.locator(".hero-number")).toHaveText(expected);
+  await expect(page.locator(".hero-box .money").first()).toHaveText(expected);
+  await page.goto("/analytics");
+  await expect(page.locator(".category-spending-total")).toHaveText(expected);
+  await expect(page.locator(".category-spending-amount")).toHaveText(expected);
+  await page.goto("/unsettled");
+  await expect(page.getByText(`↓ get ${expected}`, { exact: true })).toBeVisible();
+  await expect(page.locator("main .ui-row")).toHaveCount(2);
+});
+
 test("uses local-time greetings including the overnight Hello window", async ({ page }) => {
   for (const { hour, minute, greeting } of [
     { hour: 0, minute: 0, greeting: "Hello, Rahul 🌙" },

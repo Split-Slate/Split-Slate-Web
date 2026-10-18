@@ -29,10 +29,7 @@ import Surface from "@/shared/ui/surface";
 
 const AppSettings = () => {
   const { localUser, groups, people, setLocalUser } = useStore();
-  const { supported, openInstall } = usePwa();
-  const installed =
-    window.matchMedia("(display-mode: standalone)").matches ||
-    (navigator as Navigator & { standalone?: boolean }).standalone === true;
+  const { supported, installed, openInstall } = usePwa();
   const [dark, setDark] = useState(() => localStorage.getItem("split-slate-theme") === "dark");
   const [editing, setEditing] = useState(false);
   const [backingUp, setBackingUp] = useState(false);

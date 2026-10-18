@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import { readFile } from "node:fs/promises";
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 import { strToU8, zipSync } from "fflate";
 
@@ -8,6 +9,15 @@ import type * as DbModule from "@/shared/configs/db";
 import type * as StoreModule from "@/shared/configs/store";
 
 import type { OnboardingSettings } from "@/shared/types/domain.types";
+
+const copyGroupLink = async (page: Page) => {
+  await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.getByRole("button", { name: "Export group" }).click();
+  await page.getByLabel(/^Members/).check();
+  await page.getByRole("button", { name: "Copy transfer link" }).click();
+  await expect(page.getByRole("status")).toHaveText("Transfer link copied successfully.");
+  return page.evaluate(() => navigator.clipboard.readText());
+};
 
 test.beforeEach(async ({ page }) => {
   await page.goto("/onboarding");
@@ -126,6 +136,122 @@ test("imports a Link on a fresh device and maps the chosen member to local ident
   expect(result.onboarding).toMatchObject({ complete: true, groupId: result.group?.id });
 });
 
+test("reopens a saved group from the same link without importing or asking for identity", async ({
+  page,
+}) => {
+  const link = await copyGroupLink(page);
+  await page.evaluate(async () => {
+    const modulePath = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+    await db.groups.update("trip", { name: "  WEEKEND TRIP  " });
+  });
+  await page.goto(link);
+  const dialog = page.getByRole("dialog", { name: "A group with this name already exists" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Weekend Trip (2)");
+  await expect(dialog).toContainText("It won’t update or merge");
+  const openAction = dialog.getByRole("button", { name: "Go to existing group" });
+  const importAction = dialog.getByRole("button", { name: "Import as a new group" });
+  const openBox = await openAction.boundingBox();
+  const importBox = await importAction.boundingBox();
+  expect(Math.abs(openBox!.width - importBox!.width)).toBeLessThan(1);
+  if (page.viewportSize()!.width < 640) {
+    expect(importBox!.y).toBeGreaterThanOrEqual(openBox!.y + openBox!.height);
+  } else {
+    expect(Math.abs(openBox!.y - importBox!.y)).toBeLessThan(1);
+  }
+  await expect(page.getByRole("group", { name: "Which member are you?" })).toHaveCount(0);
+  const before = await page.evaluate(async () => {
+    const modulePath = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+    return {
+      groups: await db.groups.toArray(),
+      expenses: await db.expenses.toArray(),
+      members: await db.members.toArray(),
+      people: await db.people.toArray(),
+      activity: await db.activityEvents.toArray(),
+    };
+  });
+  await openAction.click();
+  await expect(page).toHaveURL(/\/groups\/trip$/u);
+  const after = await page.evaluate(async () => {
+    const modulePath = "/src/shared/configs/db.ts";
+    const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+    return {
+      groups: await db.groups.toArray(),
+      expenses: await db.expenses.toArray(),
+      members: await db.members.toArray(),
+      people: await db.people.toArray(),
+      activity: await db.activityEvents.toArray(),
+    };
+  });
+  expect(after).toEqual(before);
+});
+
+test("cancels a matching-group link without writes and removes its import fragment", async ({
+  page,
+}) => {
+  const link = await copyGroupLink(page);
+  await page.goto(link);
+  const dialog = page.getByRole("dialog", { name: "A group with this name already exists" });
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/\/import$/u);
+  await expect(page.getByRole("heading", { name: "Import a group" })).toBeVisible();
+  expect(
+    await page.evaluate(async () => {
+      const modulePath = "/src/shared/configs/db.ts";
+      const { db } = (await import(/* @vite-ignore */ modulePath)) as typeof DbModule;
+      return db.groups.count();
+    }),
+  ).toBe(1);
+});
+
+test("offers installation after import and opens the browser prompt", async ({ page }) => {
+  const link = await copyGroupLink(page);
+  await page.goto(link);
+  const dialog = page.getByRole("dialog", { name: "A group with this name already exists" });
+  await dialog.getByRole("button", { name: "Import as a new group" }).click();
+  await expect(dialog).toHaveCount(0);
+  await page.getByLabel("Amy").check();
+  await page.getByRole("button", { name: "Import group" }).click();
+  await expect(page.getByRole("heading", { name: "Weekend Trip (2)", exact: true })).toBeVisible();
+  const hint = page.getByRole("region", { name: "Your group is ready. Keep Split Slate handy." });
+  await expect(hint).toContainText("Group imported. Add Split Slate to your home screen");
+  await page.evaluate(() => {
+    window.dispatchEvent(
+      Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
+        prompt: async () => sessionStorage.setItem("post-import-install", "shown"),
+        userChoice: Promise.resolve({ outcome: "accepted" }),
+      }),
+    );
+  });
+  await hint.getByRole("button", { name: "Install app" }).click();
+  await expect
+    .poll(() => page.evaluate(() => sessionStorage.getItem("post-import-install")))
+    .toBe("shown");
+  await expect(hint).toHaveCount(0);
+});
+
+test("does not show the post-import installation hint once installation is recorded", async ({
+  page,
+}) => {
+  const link = await copyGroupLink(page);
+  await page.evaluate(() => localStorage.setItem("split-slate-install-accepted", "true"));
+  await page.goto(link);
+  await page
+    .getByRole("dialog", { name: "A group with this name already exists" })
+    .getByRole("button", { name: "Import as a new group" })
+    .click();
+  await page.getByLabel("Amy").check();
+  await page.getByRole("button", { name: "Import group" }).click();
+  await expect(page.getByRole("heading", { name: "Weekend Trip (2)", exact: true })).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Your group is ready. Keep Split Slate handy." }),
+  ).toHaveCount(0);
+});
+
 test("requires a choice for same-name contacts and cancels without writing", async ({ page }) => {
   await page.context().grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.getByRole("button", { name: "Export group" }).click();
@@ -230,6 +356,10 @@ test("imports a receipt ZIP beside an existing same-name group without overwriti
     mimeType: "application/zip",
     buffer: await readFile(path!),
   });
+  await page
+    .getByRole("dialog", { name: "A group with this name already exists" })
+    .getByRole("button", { name: "Import as a new group" })
+    .click();
   await expect(page.getByText(/new editable group named/)).toContainText("Weekend Trip (2)");
   await page.getByLabel("Amy").check();
   await page.getByRole("button", { name: "Import group" }).click();

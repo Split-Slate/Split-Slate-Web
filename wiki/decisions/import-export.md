@@ -10,7 +10,7 @@ metadata:
 Purpose: define the implemented offline group-transfer contract and distinguish it from future
 settlement sharing.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 ## Decision
 
@@ -184,6 +184,22 @@ restore screen directs group ZIP and CSV files to **Import group**; see [[full-b
 `/import` is public so a fresh device can open a Link or choose a CSV/ZIP before standard onboarding.
 The same route is reachable from the welcome carousel and the dashboard.
 
+After validation and store initialization, a matching local group name (case-insensitive, ignoring
+outer whitespace) opens **A group with this name already exists** before review or identity choice:
+
+- **Go to existing group** opens the saved group's normal route without importing or changing its
+  records. This lets recipients reuse the original shared link as a return entry point.
+- **Import as a new group** continues normal review/identity choice and fresh-ID import with the
+  numbered destination name. The modal explains that the saved group is not updated or merged.
+- Close/Escape cancels without import writes and returns to the file chooser with the URL fragment
+  removed. A different validated transfer requires its own choice. If legacy data contains multiple
+  same-name groups, the modal exposes each saved destination instead of arbitrarily opening one.
+
+This guard applies to Link, CSV, and ZIP intake. A name match is not proof of a previous import;
+wording says the recipient **may** have imported it before. It depends on retained data in the same
+browser/profile and does not identify renamed groups or data stored elsewhere. It does not add
+transfer provenance, synchronization, deduplication, or a schema migration.
+
 After complete validation, review shows the group name and included counts for categories, tags,
 members, expenses, payments, and receipts; it does not reveal item details or receipt previews. It also states
 the destination name, omitted receipt count when applicable, identity choice, and default-category
@@ -202,8 +218,19 @@ Identity behavior:
   source member and Person IDs differ between transfers. Each new group gets a distinct member ID.
 
 If no categories were transferred, the device's configured default categories are created. No tags
-or expenses/payments are created when those sections were omitted. If the destination already has the same
-group name, import uses `Name (2)`, then `Name (3)`, and so on. Existing groups are never replaced.
+or expenses/payments are created when those sections were omitted. Imported group names are trimmed.
+Name collisions ignore case and outer whitespace, matching the create/rename uniqueness rule in
+[[group-creation]]. If the destination already has the same group name, import uses `Name (2)`, then
+`Name (3)`, and so on, skipping suffixes already taken under the same comparison. Existing groups
+are never replaced or renamed. Import review and the write operation share the numbering helper;
+the write transaction rechecks persisted groups, so a concurrent save can change the final suffix
+from the earlier preview. All 17 import-store cases pass after correcting two new fixtures to seal
+normalized names before exercising accepted outer padding. The full browser batch passes all
+group-name and group-import cases on desktop/mobile, including the existing-group choice and
+post-import installation hint. See [[group-creation]] for the full verification counts, retained
+failures, and focused reruns; this is not a claim of a single clean full-suite run. Existing
+duplicate cleanup and special handling of old backups are out of scope; whole-app restore is
+unchanged.
 
 ## People Reconciliation and Atomicity
 
@@ -230,6 +257,13 @@ then commits. Any failure rolls back all import writes. Zustand is rehydrated on
 A fresh or incomplete device is marked onboarding-complete and opens the imported group. An
 already-completed device retains its existing onboarding progress record.
 
+A successful import also presents a non-blocking top-bar hint: **Your group is ready. Keep Split
+Slate handy.** It explains adding the app to the home screen and offers **Install app**, using the
+same native-prompt/browser-instruction flow as Settings. Known installation suppresses the hint;
+opening an existing group does not trigger it. Dismissing the hint shares the 24-hour automatic
+installation reminder timestamp. See [[mobile-pwa-install]]. New duplicate-choice, unchanged-record,
+cancel, separate-import, and installation-hint browser cases are written but unrun.
+
 ## Deliberate Limits
 
 - Group CSV and textual ZIP entries are limited to 16 MiB; group ZIP input to 64 MiB and total
@@ -240,8 +274,8 @@ already-completed device retains its existing onboarding progress record.
   match the directory, and actual sizes must match declarations; forged sizes cannot bypass quotas.
   Receipt index IDs and archive paths must each be unique. These bounds do not promise constant
   memory or availability on every device; permitted output still needs memory for validation/blobs.
-- Importing the same transfer twice creates two independent groups; there is no merge, replacement,
-  or add-new-expenses mode.
+- Choosing to import the same transfer again creates an independent group; a name collision now
+  offers opening the saved group first. There is no merge, replacement, or add-new-expenses mode.
 - Integrity digests detect accidental change or corruption; they are not signatures or encryption.
 - Transfer links are bounded client-side payloads, not server-hosted short links.
 - Receipt ingestion/compression in the expense form remains pending even though valid existing

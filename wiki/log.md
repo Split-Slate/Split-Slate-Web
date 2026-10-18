@@ -6,9 +6,21 @@ Entries record historical changes, not current execution instructions. The expli
 policy in [[testing-strategy]], `AGENTS.md`, and `CLAUDE.md` supersedes older automatic-run or
 "highest-priority next task" directives. Historical results do not authorize new runs.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 ---
+
+## 2026-10-17
+- UPDATED workflows/group-creation.md — record user-approved verification: 702 initial unit passes plus 17 passing affected-store cases after fixture correction; 595 browser passes/44 skips/one timeout followed by an unchanged passing case; 20 PWA passes/two failures, a failed startup-only retry, and two passing cases after repairing a read-only native mock; retain static/build passes, artifacts, warning and evidence limits
+- UPDATED decisions/import-export.md — replace the unrun name-regression status with passing import-store and desktop/mobile import evidence, linking the retained failure/retry record without claiming one clean full-suite rerun
+- UPDATED wiki/index.md — supersede the initial unverified UI/name notes with 704-unit/596-browser/22-PWA passing evidence across full batches and focused follow-up, 44 expected skips, and passing static/production-build checks
+- UPDATED decisions/import-export.md — document the approved same-name open-or-import choice before identity, cancellation without import writes, fresh numbered copies, and post-import installation hint; new browser cases unrun
+- UPDATED debugging/mobile-pwa-install.md — replace the installation modal/five-day policy with non-blocking daily top bars, known-installation suppression, shared manual installation, and user-controlled update reload/defer behavior; revised cases unrun
+- UPDATED architecture/layout-architecture.md — replace installation-modal references with the duplicate-group choice and document measured, safe-area-aware non-blocking notice clearance
+- UPDATED wiki/index.md — synchronize import/PWA/layout summaries and explicitly distinguish unverified 2026-10-17 edits from historical automated passes
+- UPDATED workflows/group-creation.md — document the approved forward-write group-name uniqueness rule, transactional creation/rename guards, field errors, related import/restore boundaries, and explicit exclusion of existing duplicate cleanup and legacy-backup handling; new regression tests remain unrun at the user's request
+- UPDATED decisions/import-export.md — document shared case-insensitive, outer-whitespace-trimmed numbering in import review and persisted import writes, including concurrent preview/suffix limits; no fresh verification
+- UPDATED wiki/index.md — synchronize group-name uniqueness and import-numbering navigation and invariants without changing historical verification evidence
 
 ## 2026-10-12
 - UPDATED roadmap/product-roadmap.md and wiki/index.md — record the user-approved prerequisite to review image compression/per-receipt limits, archive sizes, phone memory, streaming/split restore, complete receipt preservation, and large-dataset recovery before enabling receipt photos; current limits and unimplemented uploads remain unchanged

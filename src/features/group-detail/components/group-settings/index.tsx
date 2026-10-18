@@ -14,6 +14,7 @@ import Input from "@/shared/components/form-elements/input";
 import { useStore } from "@/shared/configs/store";
 import { formatCurrency } from "@/shared/utils/currency";
 import { formatDisplayDate } from "@/shared/utils/date-time";
+import { GroupNameConflictError } from "@/shared/utils/group-names";
 import { createRequiredStringSchema } from "@/shared/utils/string-validation";
 
 import { CURRENCIES } from "@/shared/constants/currencies";
@@ -116,7 +117,15 @@ const GroupSettings = () => {
       await updateGroup(group.id, values);
       setEditing(false);
     } catch (failure) {
-      setError(failure instanceof Error ? failure.message : "Could not update group");
+      if (failure instanceof GroupNameConflictError) {
+        methods.setError(
+          "name",
+          { type: "server", message: failure.message },
+          { shouldFocus: true },
+        );
+      } else {
+        setError(failure instanceof Error ? failure.message : "Could not update group");
+      }
     }
   });
   const handleOpenEdit = () => {

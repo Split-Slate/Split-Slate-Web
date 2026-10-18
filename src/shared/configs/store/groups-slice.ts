@@ -2,6 +2,7 @@ import { v4 as uuid } from "uuid";
 
 import { writeActivity } from "@/features/activity/utils/activity-events";
 import { db } from "@/shared/configs/db";
+import { GroupNameConflictError, isGroupNameTaken } from "@/shared/utils/group-names";
 import { normalizeRequiredString } from "@/shared/utils/string-validation";
 
 import type { Group, Member, OnboardingSettings } from "@/shared/types/domain.types";
@@ -39,6 +40,9 @@ export const createGroupsSlice: SliceCreator<GroupsSlice> = (set, get) => ({
     };
 
     const event = await db.transaction("rw", db.groups, db.members, db.activityEvents, async () => {
+      if (isGroupNameTaken(group.name, await db.groups.toArray())) {
+        throw new GroupNameConflictError();
+      }
       await db.groups.add(group);
       await db.members.add(creatorMember);
       return writeActivity({
@@ -71,21 +75,31 @@ export const createGroupsSlice: SliceCreator<GroupsSlice> = (set, get) => ({
         ? { currency: normalizeRequiredString(patch.currency, "Currency is required") }
         : {}),
     };
-    const existing = get().groups.find((g) => g.id === groupId);
-    if (!existing) {
-      throw new Error("group not found");
-    }
-    const updated: Group = { ...existing, ...normalizedPatch };
-    const event = await db.transaction("rw", db.groups, db.activityEvents, async () => {
-      if (!(await db.groups.update(groupId, normalizedPatch))) throw new Error("Group not found");
-      return writeActivity({
-        group: updated,
-        kind: "group",
-        action: "updated",
-        label: updated.name,
-        subjectId: groupId,
-      });
-    });
+    const { updated, event } = await db.transaction(
+      "rw",
+      db.groups,
+      db.activityEvents,
+      async () => {
+        const existing = await db.groups.get(groupId);
+        if (!existing) throw new Error("Group not found");
+        if (
+          normalizedPatch.name !== undefined &&
+          isGroupNameTaken(normalizedPatch.name, await db.groups.toArray(), groupId)
+        ) {
+          throw new GroupNameConflictError();
+        }
+        const updated: Group = { ...existing, ...normalizedPatch };
+        await db.groups.update(groupId, normalizedPatch);
+        const event = await writeActivity({
+          group: updated,
+          kind: "group",
+          action: "updated",
+          label: updated.name,
+          subjectId: groupId,
+        });
+        return { updated, event };
+      },
+    );
     set((s) => ({
       groups: s.groups.map((g) => (g.id === groupId ? updated : g)),
       activityEvents: [...s.activityEvents, event],

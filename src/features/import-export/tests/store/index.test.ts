@@ -398,6 +398,70 @@ describe("importGroupTransfer", () => {
     expect(await db.settings.get("onboarding")).toMatchObject({ groupId: "existing-group" });
   });
 
+  it.each(["weekend trip", "  WEEKEND TRIP  "])(
+    "numbers normalized collisions for the incoming name %j",
+    async (name) => {
+      await db.localUser.add({ id: "self", name: "Local User", icon: "🦊" });
+      await db.people.add({ id: "self", name: "Local User", icon: "🦊" });
+      await db.groups.bulkAdd([
+        {
+          id: "existing-group",
+          name: " Weekend Trip ",
+          icon: "🏕️",
+          currency: "INR",
+          createdAt: 1,
+          frequentPayerIds: [],
+        },
+        {
+          id: "existing-numbered-group",
+          name: "WEEKEND TRIP (2)",
+          icon: "🏕️",
+          currency: "INR",
+          createdAt: 2,
+          frequentPayerIds: [],
+        },
+      ]);
+      const fixture = createExportSource();
+      fixture.group.name = name.trim();
+      const source = await buildGroupTransfer(fixture, GROUP_ONLY_SELECTION);
+      // Seal the normalized fixture, then exercise padding accepted by transfer validation.
+      source.bundle.group.name = name;
+      const imported = await importGroupTransfer({ source, identity: { type: "new" } });
+      expect(imported.group.name).toBe(`${name.trim()} (3)`);
+      expect(await db.groups.get("existing-group")).toMatchObject({ name: " Weekend Trip " });
+      expect(await db.groups.get("existing-numbered-group")).toMatchObject({
+        name: "WEEKEND TRIP (2)",
+      });
+    },
+  );
+
+  it("trims an imported group name even when it has no collision", async () => {
+    const fixture = createExportSource();
+    fixture.group.name = "New Trip";
+    const source = await buildGroupTransfer(fixture, GROUP_ONLY_SELECTION);
+    source.bundle.group.name = "  New Trip  ";
+    const imported = await importGroupTransfer({
+      source,
+      identity: { type: "new", name: "Local User", icon: "🦊" },
+    });
+    expect(imported.group.name).toBe("New Trip");
+  });
+
+  it("serializes concurrent imports and gives each a unique destination name", async () => {
+    await db.localUser.add({ id: "self", name: "Local User", icon: "🦊" });
+    await db.people.add({ id: "self", name: "Local User", icon: "🦊" });
+    const source = await buildGroupTransfer(createExportSource(), GROUP_ONLY_SELECTION);
+    const imports = await Promise.all([
+      importGroupTransfer({ source, identity: { type: "new" } }),
+      importGroupTransfer({ source, identity: { type: "new" } }),
+    ]);
+    expect(imports.map((result) => result.group.name).sort()).toEqual([
+      "Weekend Trip",
+      "Weekend Trip (2)",
+    ]);
+    expect(await db.groups.count()).toBe(2);
+  });
+
   it("rolls every write back when an import operation fails", async () => {
     const source = await buildGroupTransfer(createExportSource(), {
       categories: true,

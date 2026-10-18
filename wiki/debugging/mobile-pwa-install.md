@@ -2,7 +2,7 @@
 
 Purpose: explain why the installed-app option may be absent and how the interface handles browser-controlled installation.
 
-Last updated: 2026-10-10
+Last updated: 2026-10-17
 
 ## Observed deployment issue
 
@@ -15,18 +15,42 @@ UI, not a confirmed root cause of Brave's behavior on a particular phone.
 
 ## Install flow
 
-The production app offers a desktop/mobile install dialog unless it is already in standalone mode,
-the visitor accepted the browser's install prompt, or the visitor dismissed the dialog in the last
-five days. Dismissal saves a timestamp in `split-slate-install-dismissed`; older saved `"true"`
-values are treated as expired, so visitors affected by the former permanent dismissal can see the
-dialog again. On a later page load after five days, the dialog is eligible to appear again. Settings
-also has an Install app action that opens the dialog immediately after a dismissal. Close, Cancel,
-and Escape cannot dismiss it during the first two seconds; overlay clicks never dismiss it. If a
-browser supplies `beforeinstallprompt`, the app captures it even while the dialog is hidden and
-calls its `prompt()` from the visitor's Install click. Browsers decide whether and when that event
-fires; application code cannot force a native prompt. When no event is available, the Install
-action displays browser-menu instructions instead. Accepted installation is tracked separately
-from temporary dismissal so it does not trigger five-day reminders.
+The production app offers a non-blocking desktop/mobile top bar, **Take Split Slate with you**,
+with Install and an immediately available Close control. There is no modal, backdrop, or two-second
+dismissal lock. Closing saves a timestamp in **localStorage**, not sessionStorage, under
+`split-slate-install-dismissed`. A later page load becomes eligible for an automatic reminder after
+**24 hours**. Legacy `"true"`, invalid, and future timestamps are treated as expired. An open page does
+not automatically reopen the offer when the interval elapses.
+
+Automatic installation offers and the post-import hint are suppressed after accepted installation,
+an `appinstalled` event, or detection of standalone display mode (including Apple mobile's
+`navigator.standalone`). All three persist `split-slate-install-accepted = "true"`; opening the
+installed app therefore also suppresses later reminders in a browser that shares its storage.
+Display-mode changes, focus, page-show, and cross-tab storage events refresh installation detection.
+Browsers cannot reliably establish whether the app is installed in another browser/profile or a
+separate storage context; clearing site data also clears this remembered state. Uninstallation is
+not inferred, so a remembered installation is not automatically invited again.
+
+Settings retains **Install app** for supported, not-known-installed browsers, independently of the
+24-hour dismissal interval. A successful group import also offers a contextual **Install app** action,
+unless installation is already known; see [[import-export]]. These actions and the automatic bar use
+the same flow: if the browser supplied `beforeinstallprompt`, its event is retained while notices are
+hidden and `prompt()` is called directly from the user's click. Without that event, the top bar shows
+browser-menu instructions, including Share → Add to Home Screen on Apple mobile. The app cannot force
+a browser to provide a native installation prompt. Instructions remain non-blocking.
+
+## Update notices and unsaved work
+
+**A new version of Split Slate is ready** uses the same top-bar presentation with **Update and reload**
+and Close. It tells users to save changes first, never steals focus or blocks form editing, and only
+activates/reloads after the explicit update action. Close defers that waiting worker for the current
+page lifetime; focus, online, and periodic checks do not immediately reopen the same offer. A new
+waiting worker or a later page load can offer an update again. Updates take priority over automatic
+installation offers; explicitly requested browser-menu installation instructions may temporarily
+take the bar until closed. See [[layout-architecture]] for layout clearance.
+
+The revised banner, 24-hour interval, installation detection, unsaved-input, Settings, and import
+regression cases have been written but **not run**. Historical PWA passes predate these changes.
 
 The production service worker does not run in the Vite development server. PWA browser tests run
 against a production build on localhost.

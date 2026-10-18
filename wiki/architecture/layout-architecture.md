@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document the implemented responsive shell and distinguish navigation stubs from working routes.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 ## Viewport States
 
@@ -22,7 +22,8 @@ Mobile renders the main route outlet and a fixed, context-aware footer. It does 
 sidebar or activity panel.
 
 There is no persistent top bar or app chrome header on mobile. The greeting belongs to dashboard
-page content. The light/dark theme toggle is in Settings. See [[dashboard]] for details.
+page content. Transient installation/update notices can reserve space above the shell; they are
+not navigation chrome. The light/dark theme toggle is in Settings. See [[dashboard]] for details.
 On mobile, dashboard-level Activity and app Settings keep their title and subtitle visible while
 the main pane scrolls. App-wide Analytics and Unsettled keep their Back button and title visible
 at every width, while the subtitle and remaining content scroll in the main pane. The desktop
@@ -157,7 +158,8 @@ Every current native modal uses the shared `.app-dialog` container and `DialogLa
 `src/shared/ui/dialog-layout/index.tsx`. This applies to setup/person/category/tag editors,
 mobile Filters and Sort, destructive confirmations, blocked-removal explanations, group name/icon editing,
 currency selection and confirmation, payment forms, import identity resolution, export notices,
-backup restore, restore choices, and the PWA install prompt. Remaining inline forms and
+backup restore, restore choices, and the existing-group import choice. Installation and update
+notices use non-modal top bars instead. Remaining inline forms and
 desktop/tablet filter popovers are not modals and retain
 their own layouts. See [[confirmation-dialogs]], [[filtering]], and [[full-backup]].
 
@@ -204,6 +206,20 @@ Group-settings cases also cover cancellation/reset, validation, saved-name reloa
 confirmation transitions, and unchanged expense amounts after a currency relabel.
 
 ## Feedback Banners
+
+App-wide installation, post-import installation hints, and waiting-update notices share
+`src/shared/ui/app-notice/index.tsx`. `PwaProvider` renders them above every route, including public
+onboarding/import screens. They have no backdrop, focus trap, automatic focus, or dismissal countdown;
+editing remains available while a notice is visible. Update reload remains an explicit user action.
+See [[mobile-pwa-install]] and [[import-export]].
+
+The notice stack is fixed at the top with safe-area-aware, wrapping actions. A ResizeObserver
+publishes its actual height as `--app-notice-height`; root padding reserves that space and
+`--app-viewport-height` reduces bounded route, sidebar, onboarding, and activity-pane heights.
+Document/root viewport locks keep their full physical height, and the mobile footer remains
+anchored at the bottom. The stack is independently scrollable above 45svh, leaving the main content
+usable even when browser installation instructions are long. This revised layout and its browser
+regressions are **unverified**; no checks have run for the 2026-10-17 changes.
 
 Import, restore, and export surfaces use the shared `StatusBanner` component and `status-banner`
 styles. Errors use a red background, border, and alert icon with `role="alert"`; warnings use a

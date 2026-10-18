@@ -14,6 +14,7 @@ import {
 import type { PersonConflict } from "@/features/import-export/utils/person-conflicts";
 import { PersonConflictsError } from "@/features/import-export/utils/person-conflicts";
 import { useStore } from "@/shared/configs/store";
+import { nextAvailableGroupName } from "@/shared/utils/group-names";
 
 import { PERSON_EMOJIS } from "@/shared/constants/emojis";
 import type {
@@ -49,13 +50,10 @@ const ImportReview = ({ source, onImported }: PropsType) => {
   const [conflicts, setConflicts] = useState<PersonConflict[] | null>(null);
   const [chosenIdentity, setChosenIdentity] = useState<ImportIdentity | null>(null);
 
-  const existingNames = new Set(groups.map((group) => group.name));
-  let destinationName = bundle.group.name;
-  let suffix = 2;
-  while (existingNames.has(destinationName)) {
-    destinationName = `${bundle.group.name} (${suffix})`;
-    suffix += 1;
-  }
+  const destinationName = nextAvailableGroupName(
+    bundle.group.name,
+    groups.map((group) => group.name),
+  );
 
   const memberName = (sourceMemberId: string) => {
     const member = bundle.members.find((item) => item.id === sourceMemberId);

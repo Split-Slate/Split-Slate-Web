@@ -9,6 +9,7 @@ import type {
 import { planPersonImport } from "@/features/import-export/utils/person-conflicts";
 import { verifyPortableGroup } from "@/features/import-export/utils/transfer-integrity";
 import { db } from "@/shared/configs/db";
+import { nextAvailableGroupName } from "@/shared/utils/group-names";
 import { normalizeRequiredString } from "@/shared/utils/string-validation";
 
 import {
@@ -94,13 +95,6 @@ export const readGroupExportSource = async (groupId: string): Promise<GroupExpor
       };
     },
   );
-
-const nextGroupName = (requestedName: string, existingNames: Set<string>): string => {
-  if (!existingNames.has(requestedName)) return requestedName;
-  let suffix = 2;
-  while (existingNames.has(`${requestedName} (${suffix})`)) suffix += 1;
-  return `${requestedName} (${suffix})`;
-};
 
 export const importGroupTransfer = async ({
   source,
@@ -198,8 +192,8 @@ export const importGroupTransfer = async ({
       if (personPlan.additions.length) await db.people.bulkAdd(personPlan.additions);
 
       const destinationGroupId = uuid();
-      const existingNames = new Set((await db.groups.toArray()).map((group) => group.name));
-      const groupName = nextGroupName(bundle.group.name, existingNames);
+      const existingNames = (await db.groups.toArray()).map((group) => group.name);
+      const groupName = nextAvailableGroupName(bundle.group.name, existingNames);
       const memberIds = new Map(bundle.members.map((member) => [member.id, uuid()]));
       const importedMembers: Member[] = bundle.members.map((member) => ({
         id: memberIds.get(member.id)!,

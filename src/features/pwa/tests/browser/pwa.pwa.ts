@@ -1,4 +1,32 @@
+import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
+
+const mockWaitingUpdate = async (page: Page) => {
+  await page.addInitScript(() => {
+    const events = new EventTarget();
+    const registration = new EventTarget();
+    const worker = {
+      postMessage(message: { type: string }) {
+        if (message.type === "SKIP_WAITING") {
+          sessionStorage.setItem("pwa-update-applied", "yes");
+          events.dispatchEvent(new Event("controllerchange"));
+        }
+      },
+    };
+    Object.assign(registration, {
+      waiting: worker,
+      active: worker,
+      update: async () => undefined,
+    });
+    Object.defineProperty(navigator, "serviceWorker", {
+      configurable: true,
+      value: Object.assign(events, {
+        controller: worker,
+        register: async () => registration,
+      }),
+    });
+  });
+};
 
 test("installs its shell, launches an onboarding deep link offline, and keeps local storage", async ({
   page,
@@ -111,33 +139,12 @@ test("downloads the selected icon library and repairs a missing file without cle
 });
 
 test("announces a waiting update and does not apply it without consent", async ({ page }) => {
-  await page.addInitScript(() => {
-    localStorage.setItem("split-slate-install-dismissed", String(Date.now()));
-    const events = new EventTarget();
-    const registration = new EventTarget();
-    const worker = {
-      postMessage(message: { type: string }) {
-        if (message.type === "SKIP_WAITING") {
-          sessionStorage.setItem("pwa-update-applied", "yes");
-          events.dispatchEvent(new Event("controllerchange"));
-        }
-      },
-    };
-    Object.assign(registration, {
-      waiting: worker,
-      active: worker,
-      update: async () => undefined,
-    });
-    Object.defineProperty(navigator, "serviceWorker", {
-      configurable: true,
-      value: Object.assign(events, {
-        controller: worker,
-        register: async () => registration,
-      }),
-    });
-  });
+  await mockWaitingUpdate(page);
   await page.goto("/onboarding/setup");
-  await expect(page.getByText("Split Slate update available")).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "A new version of Split Slate is ready" }),
+  ).toBeVisible();
+  await expect(page.getByRole("region", { name: "Take Split Slate with you" })).toHaveCount(0);
   expect(await page.evaluate(() => sessionStorage.getItem("pwa-update-applied"))).toBeNull();
   await page.getByRole("button", { name: "Update and reload" }).click();
   await expect
@@ -145,9 +152,29 @@ test("announces a waiting update and does not apply it without consent", async (
     .toBe("yes");
 });
 
+test("keeps unsaved work editable and leaves a dismissed update closed on focus", async ({
+  page,
+}) => {
+  await mockWaitingUpdate(page);
+  await page.goto("/onboarding/setup");
+  const banner = page.getByRole("region", { name: "A new version of Split Slate is ready" });
+  await expect(banner).toBeVisible();
+  await expect(page.locator("dialog[open]")).toHaveCount(0);
+  const name = page.getByLabel("Your name");
+  await name.fill("Unsaved Amy");
+  const bannerBox = await banner.boundingBox();
+  const formBox = await page.locator(".onboarding-layout").boundingBox();
+  expect(formBox!.y).toBeGreaterThanOrEqual(bannerBox!.y + bannerBox!.height - 1);
+  await banner.getByRole("button", { name: "Close update message" }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("focus")));
+  await expect(banner).toHaveCount(0);
+  await expect(name).toHaveValue("Unsaved Amy");
+  expect(await page.evaluate(() => sessionStorage.getItem("pwa-update-applied"))).toBeNull();
+});
+
 test("offers installation on desktop and mobile and opens the browser prompt", async ({ page }) => {
   await page.goto("/onboarding/setup");
-  const dialog = page.getByRole("dialog", { name: "Take Split Slate with you" });
+  const dialog = page.getByRole("region", { name: "Take Split Slate with you" });
   await expect(dialog).toBeVisible();
   await page.evaluate(() => {
     const event = Object.assign(new Event("beforeinstallprompt", { cancelable: true }), {
@@ -169,7 +196,7 @@ test("offers installation on desktop and mobile and opens the browser prompt", a
   await page.evaluate(() =>
     localStorage.setItem(
       "split-slate-install-dismissed",
-      String(Date.now() - 6 * 24 * 60 * 60 * 1000),
+      String(Date.now() - 2 * 24 * 60 * 60 * 1000),
     ),
   );
   await page.reload();
@@ -178,39 +205,33 @@ test("offers installation on desktop and mobile and opens the browser prompt", a
 
 test("shows browser instructions when no install prompt is available", async ({ page }) => {
   await page.goto("/onboarding/setup");
-  const dialog = page.getByRole("dialog", { name: "Take Split Slate with you" });
+  const dialog = page.getByRole("region", { name: "Take Split Slate with you" });
   await dialog.getByRole("button", { name: "Install", exact: true }).click();
   await expect(dialog.getByRole("status")).toContainText(/browser|menu/i);
   await expect(dialog).toBeVisible();
 });
 
-test("prevents accidental dismissal for two seconds and never closes on overlay clicks", async ({
+test("offers an immediately dismissible install bar without blocking the form", async ({
   page,
 }) => {
   await page.goto("/onboarding/setup");
-  const dialog = page.getByRole("dialog", { name: "Take Split Slate with you" });
-  const cancel = dialog.getByRole("button", { name: "Cancel" });
+  const dialog = page.getByRole("region", { name: "Take Split Slate with you" });
+  await expect(dialog).toBeVisible();
+  await expect(page.locator("dialog[open]")).toHaveCount(0);
   const close = dialog.getByRole("button", { name: "Close install message" });
-  await expect(cancel).toBeDisabled();
-  await expect(close).toBeDisabled();
-  await page.keyboard.press("Escape");
-  await expect(dialog).toBeVisible();
-  await page.mouse.click(1, 1);
-  await expect(dialog).toBeVisible();
-  await expect(cancel).toBeEnabled();
   await expect(close).toBeEnabled();
-  await page.mouse.click(1, 1);
-  await expect(dialog).toBeVisible();
+  await page.getByLabel("Your name").fill("Unsaved name");
   await close.click();
   await expect(dialog).toHaveCount(0);
+  await expect(page.getByLabel("Your name")).toHaveValue("Unsaved name");
   await page.reload();
   await expect(dialog).toHaveCount(0);
 });
 
-test("reminds again after five days, including earlier permanent dismissals", async ({ page }) => {
+test("reminds again after 24 hours, including earlier permanent dismissals", async ({ page }) => {
   await page.goto("/onboarding/setup");
-  const dialog = page.getByRole("dialog", { name: "Take Split Slate with you" });
-  await dialog.getByRole("button", { name: "Cancel" }).click();
+  const dialog = page.getByRole("region", { name: "Take Split Slate with you" });
+  await dialog.getByRole("button", { name: "Close install message" }).click();
   expect(
     Number(await page.evaluate(() => localStorage.getItem("split-slate-install-dismissed"))),
   ).toBeGreaterThan(0);
@@ -220,33 +241,27 @@ test("reminds again after five days, including earlier permanent dismissals", as
   await page.evaluate(() => localStorage.setItem("split-slate-install-dismissed", "true"));
   await page.reload();
   await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Cancel" }).click();
+  await dialog.getByRole("button", { name: "Close install message" }).click();
 
   await page.evaluate(() =>
-    localStorage.setItem(
-      "split-slate-install-dismissed",
-      String(Date.now() - 4 * 24 * 60 * 60 * 1000),
-    ),
+    localStorage.setItem("split-slate-install-dismissed", String(Date.now() - 23 * 60 * 60 * 1000)),
   );
   await page.reload();
   await expect(dialog).toHaveCount(0);
 
   await page.evaluate(() =>
-    localStorage.setItem(
-      "split-slate-install-dismissed",
-      String(Date.now() - 5 * 24 * 60 * 60 * 1000),
-    ),
+    localStorage.setItem("split-slate-install-dismissed", String(Date.now() - 24 * 60 * 60 * 1000)),
   );
   await page.reload();
   await expect(dialog).toBeVisible();
 });
 
-test("reopens installation from Settings after dismissal and captures a later browser prompt", async ({
+test("installs directly from Settings after dismissal and captures a later browser prompt", async ({
   page,
 }) => {
   await page.goto("/onboarding/setup");
-  const dialog = page.getByRole("dialog", { name: "Take Split Slate with you" });
-  await dialog.getByRole("button", { name: "Cancel" }).click();
+  const dialog = page.getByRole("region", { name: "Take Split Slate with you" });
+  await dialog.getByRole("button", { name: "Close install message" }).click();
   await page.evaluate(async () => {
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
       const opening = indexedDB.open("split-slate");
@@ -278,8 +293,6 @@ test("reopens installation from Settings after dismissal and captures a later br
     if (!event.defaultPrevented) throw new Error("Install event was not captured while hidden");
   });
   await page.getByRole("button", { name: "Install app" }).click();
-  await expect(dialog).toBeVisible();
-  await dialog.getByRole("button", { name: "Install", exact: true }).click();
   await expect
     .poll(() => page.evaluate(() => sessionStorage.getItem("manual-install-prompt")))
     .toBe("shown");
@@ -289,13 +302,36 @@ test("reopens installation from Settings after dismissal and captures a later br
 });
 
 test("does not invite someone already using the installed app", async ({ page }) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.addInitScript(() => {
     const original = window.matchMedia.bind(window);
-    window.matchMedia = (query) =>
-      query === "(display-mode: standalone)"
-        ? Object.assign(original(query), { matches: true })
-        : original(query);
+    window.matchMedia = (query) => {
+      const media = original(query);
+      if (query === "(display-mode: standalone)") {
+        Object.defineProperty(media, "matches", { value: true });
+      }
+      return media;
+    };
   });
   await page.goto("/onboarding/setup");
-  await expect(page.getByRole("dialog", { name: "Take Split Slate with you" })).toHaveCount(0);
+  await expect(page.getByLabel("Your name")).toBeVisible();
+  await expect
+    .poll(() => page.evaluate(() => localStorage.getItem("split-slate-install-accepted")))
+    .toBe("true");
+  await expect(page.getByRole("region", { name: "Take Split Slate with you" })).toHaveCount(0);
+  expect(pageErrors).toEqual([]);
+});
+
+test("remembers installation through the browser menu and suppresses future reminders", async ({
+  page,
+}) => {
+  await page.goto("/onboarding/setup");
+  const banner = page.getByRole("region", { name: "Take Split Slate with you" });
+  await expect(banner).toBeVisible();
+  await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
+  await expect(banner).toHaveCount(0);
+  await page.evaluate(() => localStorage.removeItem("split-slate-install-dismissed"));
+  await page.reload();
+  await expect(banner).toHaveCount(0);
 });

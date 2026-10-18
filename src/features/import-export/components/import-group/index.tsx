@@ -2,27 +2,37 @@ import { ArrowLeft, ArrowRight, FolderOpen, LockKeyhole, PackageOpen, Upload } f
 import { useEffect, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 
+import ExistingGroupDialog from "@/features/import-export/components/existing-group-dialog";
 import ImportReview from "@/features/import-export/components/import-review";
 
 import { decodeTransferPayload } from "@/features/import-export/utils/export-link";
 import { AppBackupFileError } from "@/features/import-export/utils/export-zip";
 import { parseGroupTransferFile } from "@/features/import-export/utils/import-file";
 import { useStore } from "@/shared/configs/store";
+import { isGroupNameTaken, nextAvailableGroupName } from "@/shared/utils/group-names";
 
 import type { GroupTransferSource } from "@/features/import-export/types/import-export.types";
 import type { Group } from "@/shared/types/domain.types";
 
+import { usePwa } from "@/app/providers/pwa-provider";
 import Icon from "@/shared/ui/icon";
 import StatusBanner from "@/shared/ui/status-banner";
 
 const ImportGroup = () => {
   const initialized = useStore((state) => state.initialized);
+  const groups = useStore((state) => state.groups);
+  const { showPostImportHint } = usePwa();
   const { hash } = useLocation();
   const navigate = useNavigate();
   const [source, setSource] = useState<GroupTransferSource | null>(null);
   const [loading, setLoading] = useState(Boolean(hash));
   const [error, setError] = useState("");
   const [appBackupFile, setAppBackupFile] = useState(false);
+  const [allowedSource, setAllowedSource] = useState<GroupTransferSource | null>(null);
+  const matchingGroups = source
+    ? groups.filter((group) => isGroupNameTaken(source.bundle.group.name, [group]))
+    : [];
+  const needsGroupChoice = source !== allowedSource && matchingGroups.length > 0;
 
   useEffect(() => {
     if (!hash) return undefined;
@@ -56,6 +66,7 @@ const ImportGroup = () => {
     const file = input.files?.[0];
     if (!file) return;
     setLoading(true);
+    setSource(null);
     setError("");
     setAppBackupFile(false);
     try {
@@ -76,7 +87,17 @@ const ImportGroup = () => {
   };
 
   const handleImported = (group: Group) => {
+    showPostImportHint();
     navigate(`/groups/${group.id}`, { replace: true });
+  };
+  const handleOpenGroup = (groupId: string) => {
+    navigate(`/groups/${groupId}`, { replace: true });
+  };
+  const handleImportNew = () => setAllowedSource(source);
+  const handleCancelChoice = () => {
+    setSource(null);
+    setAllowedSource(null);
+    navigate("/import", { replace: true });
   };
 
   return (
@@ -99,7 +120,11 @@ const ImportGroup = () => {
         </p>
       </aside>
 
-      <section className="import-main" aria-label="Import a group">
+      <section
+        className="import-main"
+        aria-label="Import a group"
+        onSubmitCapture={handleImportNew}
+      >
         <div className="import-content">
           {!initialized || loading ? (
             <div role="status" className="import-loading surface surface-pad">
@@ -112,7 +137,16 @@ const ImportGroup = () => {
               </p>
             </div>
           ) : source ? (
-            <ImportReview source={source} onImported={handleImported} />
+            needsGroupChoice ? (
+              <div className="surface surface-pad">
+                <h1 className="section-title">Your group may already be here</h1>
+                <p className="soft-caption mt-2">
+                  Open your saved group or choose to import a separate copy. Nothing has been added.
+                </p>
+              </div>
+            ) : (
+              <ImportReview source={source} onImported={handleImported} />
+            )
           ) : (
             <div className="flex flex-col gap-6">
               <Link to="/" className="page-back-link">
@@ -172,6 +206,19 @@ const ImportGroup = () => {
           )}
         </div>
       </section>
+      {initialized && !loading && source && needsGroupChoice && (
+        <ExistingGroupDialog
+          sourceName={source.bundle.group.name}
+          destinationName={nextAvailableGroupName(
+            source.bundle.group.name,
+            groups.map((group) => group.name),
+          )}
+          groups={matchingGroups}
+          onOpenGroup={handleOpenGroup}
+          onImportNew={handleImportNew}
+          onCancel={handleCancelChoice}
+        />
+      )}
     </main>
   );
 };

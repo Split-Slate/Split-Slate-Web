@@ -5,7 +5,7 @@ This wiki is the sole persistent compiled knowledge layer. The implementation in
 authoritative; `app-featureset-context/spec-sheet.md` is a historical baseline where later source
 and approved decisions have superseded it. Changes: [log.md](log.md)
 
-Last updated: 2026-10-12
+Last updated: 2026-10-17
 
 ---
 
@@ -18,6 +18,17 @@ Last updated: 2026-10-12
 > verification approval. See [[testing-strategy]]; `AGENTS.md` and `CLAUDE.md` state the same gate.
 
 ---
+
+> **2026-10-17 automated verification:** group-name creation/rename guards, normalized import
+> numbering, same-name open-or-import choices, post-import installation hints, and non-blocking
+> daily installation/update bars now have fresh local automated evidence. Across full batches and
+> focused follow-up, all 704 unit cases, 596 non-skipped browser cases, and 22 PWA cases have passing
+> results; 44 viewport-specific browser cases are skipped. Repository lint/formatting/TypeScript
+> and ordinary/Devtools production builds pass. Initial unit-fixture failures, a broken native PWA
+> mock (including a failed startup-only retry), and one expense-ratio browser timeout are retained;
+> the expense case passes unchanged on retry without an established original cause. A single clean
+> full-suite rerun is not claimed. See [[group-creation]] for the verification record and limits,
+> plus [[import-export]], [[mobile-pwa-install]], and [[layout-architecture]] for behavior.
 
 > **Current audit evidence (2026-10-12; scoped automated verification):** 672 unit cases across
 > 45 files, repository lint/formatting/TypeScript, ordinary and Devtools-enabled builds, and 18
@@ -116,14 +127,14 @@ Last updated: 2026-10-12
 - [Balance Calculation](architecture/balance-calculation.md) — safe payment-aware balances, reconciled Overview/sidebar/dashboard callers, expense-only spending, and deterministic transfers
 - [State Management](architecture/state-management.md) — persisted transactional deletion/name guards, atomic activity cleanup, and cross-tab UI-sync limits
 - [Split Types](architecture/split-types.md) — 5 exact methods, preserved historical ratios, scoped Shares browser evidence, and fresh full-unit split-input coverage (2026-10-12)
-- [Layout Architecture](architecture/layout-architecture.md) — responsive shell, Balances/tablet Activity navigation, shared mobile Filter/Sort dialogs, and editor teardown
+- [Layout Architecture](architecture/layout-architecture.md) — responsive shell, non-blocking top-notice clearance, shared dialogs, and editor teardown; revised notice layout unverified
 
 ### Decisions
 - [Global People Directory](decisions/global-people-directory.md) — shared device-local identity, expense/payment removal guards, and group-owned category labels
 - [Expense Model Design](decisions/expense-model-design.md) — fixed-hundredths paid/owed allocations and exact decimal ratio metadata, with numeric legacy read compatibility
 - [Solo Group Support](decisions/solo-group-support.md) — single-member groups work; onboarding story names the solo path, while the shared member-step helper remains generic
 - [Onboarding Persistence](decisions/onboarding-persistence.md) — resumable but sequential standard setup, hydrated group/category guards, and atomic import-specific completion
-- [Import / Export Design](decisions/import-export.md) — version 2 snapshots, bounded streamed intake, payment-aware safe nets, validation limits, and atomic fresh-ID import
+- [Import / Export Design](decisions/import-export.md) — bounded snapshots, atomic fresh-ID import, same-name open-or-import choice, and post-import installation hint; new browser cases unrun
 - [Whole-App Backup and Restore](decisions/full-backup.md) — replace-only recovery with streamed actual-size quotas and shared validation; no deleted-group payment history in later snapshots
 - [Expense Edit and Delete](decisions/expense-edit-delete.md) — reference-only quick changes, preserved metadata, atomic deletion/activity/receipt cleanup, and payment-aware balance validation
 - [Group Deletion](decisions/group-deletion.md) — atomic expense/payment/receipt cascade with payment-aware warnings; only group-created/deleted activity and contacts survive
@@ -139,12 +150,12 @@ Last updated: 2026-10-12
 - [IndexedDB Schema](systems/indexeddb-schema.md) — version 3 payments, additive descriptions, persisted transaction-time cleanup, and preserved payment recorder metadata
 
 ### Debugging
-- [Browser App Installation](debugging/mobile-pwa-install.md) — Netlify manifest response type, five-day install reminders, and Settings retry
+- [Browser App Installation](debugging/mobile-pwa-install.md) — daily non-blocking install reminders, known-installation suppression, Settings retry, and user-controlled update top bars; revised cases unrun
 
 ### Workflows
 - [Development Tools](workflows/development-tools.md) — development/build-time opt-in panel, realistic presets, atomic sample replacement, and sequential creation boundaries
 - [Onboarding](workflows/onboarding.md) — stable intro rows, themed restore chooser, modal category/person drafts, and a fixed mobile currency heading above scrolling choices
-- [Group Creation](workflows/group-creation.md) — standalone 4-step flow, cross-group category suggestions, and sequential save after final submission
+- [Group Creation](workflows/group-creation.md) — transactional case-insensitive name uniqueness, unchanged legacy/restore scope, and 704-unit/596-browser/22-PWA passing evidence across batches and focused retries
 - [Main Screen](workflows/main-screen.md) — recording/form entry guards, recent-expense order and optional details, repaired browser assumptions, and passing focused follow-up
 - [Paid-By](workflows/paid-by.md) — shared capped/grouped contributions and suggestions, preserved remainder behavior; scoped payer browser follow-up passes after visible-label test fixes
 - [People Directory](workflows/people-directory.md) — mobile More entry, all-width editors, persisted expense/payment deletion guards, and atomic membership/ranking cleanup
@@ -239,9 +250,11 @@ opening the export questionnaire. Settlement Link/PDF/Excel
 sharing remains separate and pending.
 See [[import-export]] and [[testing-strategy]].
 
-The production build now has install metadata, a five-day install reminder with a Settings retry, an offline app
-shell, background verified icon downloads with incremental repair, and a user-controlled update prompt. Desktop/mobile-emulated PWA
-browser checks cover offline launch and cache repair. A real two-deployment update rehearsal,
+The source now has install metadata, a 24-hour install reminder with a Settings retry, known-installation
+suppression, an offline app shell, background verified icon downloads with incremental repair, and
+non-blocking installation/update top bars. These latest notice changes and the post-import hint are
+not yet verified. Historical desktop/mobile-emulated PWA browser checks cover offline launch and
+cache repair. A real two-deployment update rehearsal,
 storage pressure behavior, and versioned IndexedDB upgrades remain release checks; caches cannot guarantee
 permanent storage. See [[mobile-pwa-install]], [[iconography]] and [[product-roadmap]].
 
@@ -263,3 +276,4 @@ permanent storage. See [[mobile-pwa-install]], [[iconography]] and [[product-roa
 12. Expense creation and editing reject group spending above `Number.MAX_SAFE_INTEGER` hundredths, with updates replacing the old amount; a separate payment-aware balance check protects each derived member net during expense/payment writes and deletions
 13. Shares and percentage metadata are written as validated decimal strings and calculated with scaled BigInt weights; monetary adjustments remain integer hundredths. Legacy numeric ratios remain readable without automatic precision recovery
 14. Export rejects inconsistent persisted receipt ownership before counting omissions; import never overwrites or merges a source group, creates fresh group-owned IDs in one transaction, and rehydrates Zustand only after commit
+15. Group creation/renaming rejects case-insensitive, outer-whitespace-trimmed name collisions across the device; imports number collisions using the same comparison. Existing duplicates and whole-app restore are unchanged; all eight new desktop/mobile group-name browser cases pass. See [[group-creation]] and [[import-export]]

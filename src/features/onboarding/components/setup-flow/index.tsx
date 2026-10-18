@@ -11,6 +11,7 @@ import StepIdentity from "@/features/onboarding/components/setup-flow/step-ident
 
 import { useFinishOnboarding } from "@/features/onboarding/hooks/use-finish-onboarding";
 import { useStore } from "@/shared/configs/store";
+import { GroupNameConflictError } from "@/shared/utils/group-names";
 import { prevStep, SETUP_STEPS } from "@/shared/utils/setup-steps";
 import {
   type SetupFormValues,
@@ -180,11 +181,13 @@ const SetupFlow = () => {
   };
 
   const handleSaveAndProceed = async () => {
+    if (saving) return;
     if (onboardingStep === "members" && memberEditorOpen) return;
     const valid = await methods.trigger(STEP_FIELDS[onboardingStep]);
     if (!valid) return;
 
     const formValues = methods.getValues();
+    methods.clearErrors("root");
     setSaving(true);
     try {
       switch (onboardingStep) {
@@ -220,6 +223,18 @@ const SetupFlow = () => {
           await persistMembers(formValues.members);
           await finishOnboarding();
           break;
+      }
+    } catch (failure) {
+      if (failure instanceof GroupNameConflictError) {
+        methods.setError(
+          "group.name",
+          { type: "server", message: failure.message },
+          { shouldFocus: true },
+        );
+      } else {
+        methods.setError("root.server", {
+          message: failure instanceof Error ? failure.message : "Could not save setup",
+        });
       }
     } finally {
       setSaving(false);
@@ -311,6 +326,11 @@ const SetupFlow = () => {
                   <StepMembers showHeading={false} onEditorOpenChange={setMemberEditorOpen} />
                 )}
               </div>
+              {methods.formState.errors.root?.server && (
+                <p role="alert" className="note money-negative mt-4">
+                  {methods.formState.errors.root.server.message}
+                </p>
+              )}
             </div>
 
             <div className="onboarding-actions">

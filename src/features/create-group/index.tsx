@@ -9,7 +9,9 @@ import StepCurrency from "@/features/create-group/components/step-currency";
 import StepGroup from "@/features/create-group/components/step-group";
 import StepMembers from "@/features/create-group/components/step-members";
 
+import { db } from "@/shared/configs/db";
 import { useStore } from "@/shared/configs/store";
+import { GroupNameConflictError, isGroupNameTaken } from "@/shared/utils/group-names";
 import {
   CREATE_GROUP_STEP_FIELDS,
   CREATE_GROUP_STEPS,
@@ -85,29 +87,50 @@ const CreateGroupFlow = () => {
 
   const handleCreate = async () => {
     const values = getValues();
-    setSaving(true);
-    try {
-      const { group } = await createGroup(values.group.name, values.group.icon, values.currency);
-      for (const category of values.categories) {
-        await addCategory(group.id, category.name, category.icon);
-      }
-      for (const member of values.members) {
-        const personId = member.personId ?? (await addPerson(member.name, member.icon)).id;
-        await addMember(group.id, personId);
-      }
-      navigate("/dashboard");
-    } finally {
-      setSaving(false);
+    const { group } = await createGroup(values.group.name, values.group.icon, values.currency);
+    for (const category of values.categories) {
+      await addCategory(group.id, category.name, category.icon);
     }
+    for (const member of values.members) {
+      const personId = member.personId ?? (await addPerson(member.name, member.icon)).id;
+      await addMember(group.id, personId);
+    }
+    navigate("/dashboard");
   };
 
   const handleNext = async () => {
+    if (saving) return;
     const valid = await trigger(CREATE_GROUP_STEP_FIELDS[currentStep]);
     if (!valid) return;
-    if (isLast) {
-      await handleCreate();
-    } else {
-      setStepIndex((index) => index + 1);
+    methods.clearErrors("root");
+    setSaving(true);
+    try {
+      if (
+        currentStep === "group" &&
+        isGroupNameTaken(getValues("group.name"), await db.groups.toArray())
+      ) {
+        throw new GroupNameConflictError();
+      }
+      if (isLast) {
+        await handleCreate();
+      } else {
+        setStepIndex((index) => index + 1);
+      }
+    } catch (failure) {
+      if (failure instanceof GroupNameConflictError) {
+        setStepIndex(0);
+        methods.setError(
+          "group.name",
+          { type: "server", message: failure.message },
+          { shouldFocus: true },
+        );
+      } else {
+        methods.setError("root.server", {
+          message: failure instanceof Error ? failure.message : "Could not create group",
+        });
+      }
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -142,6 +165,11 @@ const CreateGroupFlow = () => {
           {currentStep === "currency" && <StepCurrency />}
           {currentStep === "categories" && <StepCategories />}
           {currentStep === "members" && <StepMembers />}
+          {methods.formState.errors.root?.server && (
+            <p role="alert" className="note money-negative mt-4">
+              {methods.formState.errors.root.server.message}
+            </p>
+          )}
         </div>
 
         <div className="form-toolbar">

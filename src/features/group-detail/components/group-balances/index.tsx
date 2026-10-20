@@ -2,6 +2,7 @@ import { ArrowLeft, ArrowRight, CircleCheck, Plus } from "lucide-react";
 import { useState } from "react";
 import { useLocation, useNavigate, useOutletContext } from "react-router-dom";
 
+import PdfDownloadButton from "@/features/reports/components/pdf-download-button";
 import SettlementEntry from "@/features/settlements/components/settlement-entry";
 import SettlementForm from "@/features/settlements/components/settlement-form";
 
@@ -22,8 +23,8 @@ import Surface from "@/shared/ui/surface";
 const GroupBalances = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { group, groupMembers, groupExpenses, groupSettlements, groupTags } =
-    useOutletContext<GroupDetailContext>();
+  const context = useOutletContext<GroupDetailContext>();
+  const { group, groupMembers, groupExpenses, groupSettlements, groupTags } = context;
   const { addSettlement, updateSettlement, removeSettlement } = useStore();
   const [editing, setEditing] = useState<Settlement | null>(null);
   const [suggested, setSuggested] = useState<{
@@ -94,15 +95,18 @@ const GroupBalances = () => {
       <button type="button" className="page-back-link" onClick={handleBack}>
         <Icon icon={ArrowLeft} size={18} /> Back
       </button>
-      <div className="flex items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <p className="soft-caption">
           Payments are recorded here for this group only; Split Slate does not move money.
         </p>
-        {groupMembers.length > 1 && (
-          <button type="button" className="btn btn-primary shrink-0" onClick={handleRecord}>
-            <Icon icon={Plus} size={18} /> Add payment
-          </button>
-        )}
+        <div className="flex flex-wrap justify-end gap-2">
+          <PdfDownloadButton request={{ ...context, kind: "balances" }} />
+          {groupMembers.length > 1 && (
+            <button type="button" className="btn btn-primary shrink-0" onClick={handleRecord}>
+              <Icon icon={Plus} size={18} /> Add payment
+            </button>
+          )}
+        </div>
       </div>
       {showForm && (
         <SettlementForm

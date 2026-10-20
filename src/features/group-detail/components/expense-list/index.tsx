@@ -6,6 +6,7 @@ import { Link, useLocation, useOutletContext } from "react-router-dom";
 import ExpenseFilters from "@/features/expenses/components/expense-filters";
 import ExpenseInsights from "@/features/group-detail/components/expense-insights";
 import ExpenseTags from "@/features/group-detail/components/expense-tags";
+import PdfDownloadButton from "@/features/reports/components/pdf-download-button";
 import SettlementEntry from "@/features/settlements/components/settlement-entry";
 
 import {
@@ -14,6 +15,7 @@ import {
   filterExpenses,
   sortExpenses,
 } from "@/features/expenses/utils/expense-filters";
+import { PDF_REPORT_MESSAGES } from "@/features/reports/utils/report-data";
 import { useViewport } from "@/shared/hooks/use-viewport";
 import { formatCurrency } from "@/shared/utils/currency";
 import { formatDisplayDateTime } from "@/shared/utils/date-time";
@@ -31,8 +33,9 @@ const ExpenseList = () => {
   const ledgerRef = useRef<HTMLElement>(null);
   const titleRef = useRef<HTMLElement>(null);
   const { search } = useLocation();
+  const context = useOutletContext<GroupDetailContext>();
   const { group, groupExpenses, groupSettlements, groupMembers, groupCategories, groupTags } =
-    useOutletContext<GroupDetailContext>();
+    context;
   const { control } = useFormContext<ExpenseFilterValues>();
   const values = useWatch({ control });
   const parsed = createExpenseFilterSchema(group.currency).safeParse(values);
@@ -45,6 +48,13 @@ const ExpenseList = () => {
         groupTags,
       )
     : [];
+  const pdfDisabledReason = !parsed.success
+    ? PDF_REPORT_MESSAGES.INVALID_FILTERS
+    : sorted.length
+      ? ""
+      : groupExpenses.length
+        ? PDF_REPORT_MESSAGES.NO_MATCHES
+        : PDF_REPORT_MESSAGES.NO_EXPENSES;
   const showPayments =
     parsed.success &&
     !hasFilters &&
@@ -108,6 +118,12 @@ const ExpenseList = () => {
           </p>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
+          <PdfDownloadButton
+            disabledReason={pdfDisabledReason}
+            request={
+              parsed.success ? { ...context, kind: "expenses", filters: parsed.data } : undefined
+            }
+          />
           {groupMembers.length > 1 && (
             <Link to={`/groups/${group.id}/balances?record=1`} className="btn btn-secondary">
               <Icon icon={Plus} size={18} /> Add payment

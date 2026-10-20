@@ -9,7 +9,7 @@ metadata:
 
 Purpose: provide a current planning compass without turning exploratory ideas into commitments.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-21
 
 ## How to Read This Page
 
@@ -607,8 +607,8 @@ Candidates, ordered roughly by dependency and user value:
   creation.
 - Add restrained local reminders for recurring items, unsettled balances, and backups.
 - Offline repayment recording is implemented per group; cross-group allocation and netting remain deferred.
-- Design settlement-specific human sharing (Link/PDF/Excel) separately from reconstructable group
-  transfer after the settlement data model is approved.
+- Design settlement-specific Link/Excel sharing separately from reconstructable group transfer.
+  Direct expense and full-group balance PDF reports are already implemented; see [[import-export]].
 - Consider cross-group balances between the same global Person only after per-group balances are
   trustworthy.
 
@@ -620,9 +620,18 @@ category, and can be edited or deleted. Group transfer includes them when Expens
 whole-app backups preserve them. Cross-group allocation, netting, conversion, and sync remain
 deferred. See [[settlement-recording]] and [[main-screen]].
 
-Any future Link/PDF/Excel settlement output is a human-readable balance or repayment summary. It
-must not be conflated with [[import-export]], whose purpose is reconstructing an editable group on a
-different device.
+### Direct PDF Reports — Implemented
+
+Expenses downloads matching filtered expenses with numbered field selections controlling column
+order; Balances downloads a fixed-order full-group report with recorded repayments and suggested
+payments. Both support direct offline PDF generation, omit all-empty columns while retaining zero,
+and block empty reports. These human-readable reports are separate from editable group transfer.
+See [[import-export]], [[filtering]], and [[balance-calculation]] for scope and behavior, and
+[[testing-strategy]] for verification and remaining device/browser limits.
+
+Settlement-specific Link/Excel sharing remains future work. Like the implemented PDFs, any such
+output would be a human-readable balance or repayment summary, not an editable group-transfer
+package. The transfer and report contracts are distinguished in [[import-export]].
 
 ## Horizon 4 — Optional Online Convenience
 

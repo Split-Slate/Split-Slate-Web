@@ -5,7 +5,7 @@ This wiki is the sole persistent compiled knowledge layer. The implementation in
 authoritative; `app-featureset-context/spec-sheet.md` is a historical baseline where later source
 and approved decisions have superseded it. Changes: [log.md](log.md)
 
-Last updated: 2026-10-17
+Last updated: 2026-10-21
 
 ---
 
@@ -18,6 +18,39 @@ Last updated: 2026-10-17
 > verification approval. See [[testing-strategy]]; `AGENTS.md` and `CLAUDE.md` state the same gate.
 
 ---
+
+> **2026-10-21 PDF reports — automated follow-ups pass; original/intermediate failures retained:** only Expenses opens a field-selection modal;
+> numbered checkboxes determine field order, remembered in localStorage only after successful generation.
+> Removing renumbers; reselecting appends. Member shares moves as a block in group order.
+> Sl. No. is automatic, never an option. Balances downloads directly with fixed Date/Expense name/
+> Amount/Paid by/Category/Tags/member-share columns, followed by member balances, repayments, and
+> suggested payments. Both PDFs omit all-empty columns, including individual member columns, without
+> changing saved choices or surviving order; zeros remain values. Empty groups/no matching expenses
+> disable downloads, and all-empty selected fields disable Generate rather than creating serial-only
+> PDFs. Eligibility is rechecked during generation. Saved shares retain blank-versus-zero applicability. Expense filters/preferences
+> do not change the balance statement. Reviewing the user's generated eight-expense/12-member PDF
+> exposed repeated ledgers, crowded small text, oversized empty columns, and poor page use. The approved
+> initial split-table repair passed 12 PDF units and TypeScript. The user then approved a different
+> approach: one table containing all selected fields/member shares, true bundled-font column widths,
+> no stretching, and Description alone capped/wrapped at 240 pt. The page widens instead of splitting
+> members and paginates vertically only; Balances keeps its fixed columns. Body text remains 10.5 pt.
+> The initial batch passes TypeScript, both production builds, 22 PWA cases, 12 landing cases, and
+> whitespace checks. Units record 757 passes/one fixture failure across 758 cases/50 files; lint and
+> formatting fail. The completed full browser run records 617 passes, 44 skips, and seven failures
+> across 668 combinations in 26.6 minutes; all 28 report-browser cases pass. Six failures are ambiguous
+> filter-status assertions; the desktop activity-panel 30-second timeout's cause is unproven.
+> Approved handler/fixture/locator repairs and formatting are applied. Post-repair lint, formatting,
+> TypeScript, both builds, and an isolated 758-case full-unit run pass. A concurrent ZIP timeout passes
+> unchanged in isolation. The first focused browser batch has 31 passes/four failures; its unchanged
+> single-worker recheck passes all 35 cases, including all reports and original failures. Post-repair
+> PWA checks pass all 22 cases; first-use offline expense/balance smoke passes on both layouts.
+> Whitespace and wiki-index/link checks also pass. This is not a clean
+> full-suite pass. Real PDFs/modal screenshots have sampled visual
+> review, and first-ever expense/balance downloads succeed offline after renderer/font precaching
+> on desktop/mobile Chromium emulation. Physical devices, installed-app/OS handling, Safari/Firefox,
+> and general script/emoji support are not established. Earlier 12-case/TypeScript passes cover the
+> superseded split layout only. No commit, push, or deployment occurred. See [[testing-strategy]],
+> [[import-export]], [[filtering]], and [[balance-calculation]]. The roadmap now distinguishes implemented PDFs from pending Link/Excel sharing.
 
 > **2026-10-17 automated verification:** group-name creation/rename guards, normalized import
 > numbering, same-name open-or-import choices, post-import installation hints, and non-blocking
@@ -120,11 +153,11 @@ Last updated: 2026-10-17
 ## Navigation
 
 ### Roadmap
-- [Product Direction and Roadmap](roadmap/product-roadmap.md) — audit/release readiness, receipt-photo backup-capacity prerequisite, local backlog, landing evidence, and pending promises
+- [Product Direction and Roadmap](roadmap/product-roadmap.md) — audit/release readiness, implemented direct PDFs versus pending Link/Excel sharing, receipt-photo backup prerequisite, local backlog, and launch promises
 
 ### Architecture
 - [Domain Models](architecture/domain-models.md) — expense/payment shapes, preserved recorder identity, fixed hundredths, payment-aware net guards, and current-time defaults
-- [Balance Calculation](architecture/balance-calculation.md) — safe payment-aware balances, reconciled Overview/sidebar/dashboard callers, expense-only spending, and deterministic transfers
+- [Balance Calculation](architecture/balance-calculation.md) — safe payment-aware balances/transfers, fixed-order wide PDFs, and passing focused/PWA/offline checks with retained verification limits
 - [State Management](architecture/state-management.md) — persisted transactional deletion/name guards, atomic activity cleanup, and cross-tab UI-sync limits
 - [Split Types](architecture/split-types.md) — 5 exact methods, preserved historical ratios, scoped Shares browser evidence, and fresh full-unit split-input coverage (2026-10-12)
 - [Layout Architecture](architecture/layout-architecture.md) — responsive shell, non-blocking top-notice clearance, shared dialogs, and editor teardown; revised notice layout unverified
@@ -134,17 +167,17 @@ Last updated: 2026-10-17
 - [Expense Model Design](decisions/expense-model-design.md) — fixed-hundredths paid/owed allocations and exact decimal ratio metadata, with numeric legacy read compatibility
 - [Solo Group Support](decisions/solo-group-support.md) — single-member groups work; onboarding story names the solo path, while the shared member-step helper remains generic
 - [Onboarding Persistence](decisions/onboarding-persistence.md) — resumable but sequential standard setup, hydrated group/category guards, and atomic import-specific completion
-- [Import / Export Design](decisions/import-export.md) — bounded snapshots, atomic fresh-ID import, same-name open-or-import choice, and post-import installation hint; new browser cases unrun
+- [Import / Export Design](decisions/import-export.md) — bounded snapshots, ordered wide PDFs, blank/zero and empty-data guards, passing units/static/build/focused-browser/PWA/offline checks, and retained failures
 - [Whole-App Backup and Restore](decisions/full-backup.md) — replace-only recovery with streamed actual-size quotas and shared validation; no deleted-group payment history in later snapshots
 - [Expense Edit and Delete](decisions/expense-edit-delete.md) — reference-only quick changes, preserved metadata, atomic deletion/activity/receipt cleanup, and payment-aware balance validation
 - [Group Deletion](decisions/group-deletion.md) — atomic expense/payment/receipt cascade with payment-aware warnings; only group-created/deleted activity and contacts survive
 - [Money Representation and Rounding](decisions/money-representation-and-rounding.md) — fixed-hundredths storage, exact large BigInt summaries, deterministic splits, and payment-aware net guards
 - [Iconography](decisions/iconography.md) — PNG picker, offline caching/repair, unknown-icon fallback without record resets, and Lucide controls
 - [Confirmation Dialogs](decisions/confirmation-dialogs.md) — shared destructive confirmation including payments, with expense/payment blocker links
-- [Selection Controls](decisions/selection-controls.md) — native checkboxes/radios with selected and visibly locked states across forms, filters, and transfer
+- [Selection Controls](decisions/selection-controls.md) — native checkboxes/radios, locked states, and numbered PDF-field checkboxes with selection-order semantics
 - [Offline Payment Recording](decisions/settlement-recording.md) — MoneyInput payments, exact local dates and Clear time, expense-date/added-date history; latest evidence is in Testing Strategy
 - [String Input Normalization](decisions/string-input-normalization.md) — create/edit normalization versus exact payment dates/restored snapshots; explicit blank suggestion semantics
-- [Testing Strategy](decisions/testing-strategy.md) — consolidated audit/commit handoff, executed checks and retry history, 580 browser/672 unit/36 landing/seven recovery passes, and pending work
+- [Testing Strategy](decisions/testing-strategy.md) — 758-unit/static/build/35-focused-browser/22-PWA passes, retained initial/intermediate failures, PDF/offline evidence, and historical audit handoff
 
 ### Systems
 - [IndexedDB Schema](systems/indexeddb-schema.md) — version 3 payments, additive descriptions, persisted transaction-time cleanup, and preserved payment recorder metadata
@@ -162,7 +195,7 @@ Last updated: 2026-10-17
 - [Member Management](workflows/member-management.md) — all-width editors, persisted linking/removal/self guards, and cross-tab UI-sync limits
 - [Category Management](workflows/category-management.md) — persisted uniqueness/reference/last-category guards, sequential creation limits, and pending deactivation controls
 - [Tag Management](workflows/tag-management.md) — Optional details entry, transactional expense/payment cleanup, and payment-aware confirmation counts
-- [Filtering](workflows/filtering.md) — ten sorts/payment merging and mobile Sort, repaired disappearing-radio test actions, and passing focused regressions
+- [Filtering](workflows/filtering.md) — eight filters/ten sorts, ordered/empty-guarded PDFs, and passing 35-case reports/original-failure browser recheck
 - [Dashboard](workflows/dashboard.md) — mobile More, recent-expense group order, payment-aware activity, and exact BigInt cross-group balance/spending summaries
 
 ### Ideas (captured, not committed)
@@ -209,7 +242,8 @@ Last updated: 2026-10-17
 | Group transfer (Link / CSV / ZIP)  | DONE        |
 | Group duplication                 | PENDING     |
 | Whole-app ZIP backup and restore  | DONE        |
-| Settlement sharing                | PENDING     |
+| Expense / balance PDF reports      | AUTOMATED FOLLOW-UPS PASS — FULL-RUN/DEVICE LIMITS RETAINED |
+| Settlement Link / Excel sharing    | PENDING     |
 | Installable/offline PWA support    | IN PROGRESS |
 | Automated tests                    | IN PROGRESS |
 
@@ -226,6 +260,21 @@ destinations have routes, although some remain lightweight; see [[layout-archite
 Balances include recorded payments made outside the app; the suggestions themselves are read-only.
 Payments do not rewrite expenses or spending analytics. See [[settlement-recording]] and
 [[balance-calculation]].
+
+Direct PDF reports are separate from editable group transfer: Expenses opens an optional-field modal
+for the exact filter/sort scope, saves choices only after generation, and prints selected expense
+fields and all member shares in one content-sized table; Balances uses a fixed
+full-group expense/member-share table followed by payment-aware balances, repayment history, and
+suggestions. Sl. No. is automatic in both flows. Actual bundled-font measurements determine column
+widths; only Description has a 240-point cap, with wrapping. Custom page width replaces horizontal
+member splitting. Current-layout generation and sampled visual review include a one-page
+1776.17 × 595.28-point eight-expense/12-member expense fixture and vertically paginated wrapped
+descriptions. Synthetic balance-layout review is not independent financial reconciliation.
+All 28 original report-browser cases and separate production first-use offline smoke checks pass;
+the broader initial batch retains unit/static/browser failures. Post-repair units/static/both builds,
+35 focused browser cases, and 22 PWA cases pass; no clean all-668 browser rerun is claimed.
+The earlier split-layout's 12 PDF-unit/TypeScript passes remain historical. See [[import-export]],
+[[filtering]], and [[testing-strategy]] for scope and platform/font limits.
 
 Both reviewed defects are fixed for current writes: persisted tag cleanup cannot recreate deleted
 expenses or overwrite newer edits, and saved ratio text preserves accepted shares through
@@ -246,8 +295,12 @@ bounded to 32,000 characters without receipts; CSV carries typed data without bl
 carries verified receipts. Fresh group-owned IDs, count/reference/integrity validation, recipient
 identity mapping, default categories, same-name numbering, and the complete IndexedDB transaction
 have passing desktop/mobile browser journeys in the 2026-10-10 post-scaling full suite, including
-opening the export questionnaire. Settlement Link/PDF/Excel
-sharing remains separate and pending.
+opening the export questionnaire. Human-readable ordered/custom-wide PDFs now have passing original
+report-browser cases, sampled real-PDF review, and production first-use offline evidence on both
+Chromium emulations. Initial/intermediate failures are retained; post-repair unit/static/build/focused
+browser/PWA and offline smoke checks pass, without a clean full-browser rerun;
+physical-device/installed-app handling is not established. Settlement Link/Excel sharing remains
+separate and pending.
 See [[import-export]] and [[testing-strategy]].
 
 The source now has install metadata, a 24-hour install reminder with a Settings retry, known-installation

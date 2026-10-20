@@ -10,7 +10,7 @@ metadata:
 Purpose: keep accounting tests fast, make every implemented area verifiable, and reserve real
 browser coverage for behavior that depends on browser storage, navigation, or offline capability.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-21
 
 ## Execution Permission — Highest Project Priority
 
@@ -36,6 +36,105 @@ This policy overrides conflicting project instructions and historical notes in `
 `CLAUDE.md`, and the wiki. Every command below is conditional on this gate. A denied or deferred
 check stays explicitly unverified; do not claim it passed or block unrelated approved work merely
 because it is pending. This preserves the user's control over time and the shared workspace.
+
+## Ordered Custom-Wide PDF Verification — 2026-10-21
+
+The approved initial batch exercises numbered/ordered expense-field choices, actual-font/custom-wide
+layout, blank-column omission retaining zero, and empty-download guards. These are point-in-time
+results, not a clean overall pass or a post-repair full-suite result.
+
+| Check | Initial result |
+|-------|----------------|
+| Full units | 757 passed, 1 failed: 758 cases across 50 files |
+| TypeScript | Passed |
+| ESLint | Failed: `react-hooks/refs` flags the ref-bearing callback passed to `methods.handleSubmit` during render in `pdf-options-dialog/index.tsx` |
+| Repository formatting | Failed: nine files |
+| Ordinary production build | Passed |
+| Devtools production build | Passed with `VITE_ENABLE_DEVTOOLS=true pnpm build --outDir /tmp/opencode/verification-devtools-build`; ordinary output kept separate |
+| Production PWA | 22 passed |
+| Landing | 12 passed |
+| `git diff --check` | Passed |
+| Full application browser batch | 617 passed, 44 viewport-specific skips, 7 failed: 668 combinations in 26.6 minutes; all 28 report-browser cases passed |
+
+Logs are `/tmp/opencode/verification-{unit,types,lint,format,build,build-devtools,pwa,landing,browser}.log`.
+The failed `report-data.test.ts` fixture expects nets of ±1067, but its saved allocations/payments
+yield Amy −2833, Bea +2833, Cal 0 and a suggested Amy → Bea transfer of 2833, in integer hundredths.
+The seven browser failures comprise one desktop activity-panel whole-test 30-second timeout and
+three ambiguous filter-status assertion cases on both desktop and mobile. No report-browser case
+failed. The activity timeout's cause is unproven; do not infer an application repair or a passing
+retry from a locator correction elsewhere.
+
+Approved corrections now invoke the submit handler at event time, correct the fixture to
+`[-2833, 2833, 0]` and Amy → Bea 2833, and narrow the three filter-status locators. Scoped Prettier
+writes covered the nine initially flagged files plus the approved filter test. These edits are not
+passing verification evidence by themselves. Post-repair lint, repository formatting, TypeScript,
+ordinary build, and separate-output Devtools build pass. The concurrent full-unit follow-up records
+757 passes and one unrelated ZIP-export quota-test five-second timeout. An explicitly approved
+isolated run of that ZIP case passes unchanged (one passed/eight deselected), followed by a clean
+full-unit run: **758 passed across 50 files in 10.67 seconds**, without competing builds/browsers.
+These results do not establish the precise cause of the earlier timeout.
+
+The two-worker focused browser batch records **31 passed and four failed** out of 35 cases: all
+28 report combinations, the six original failed filter combinations, and only the failed desktop
+activity case. Its four failures are desktop activity/filter setup timeouts and desktop numbered/
+empty-field report interactions; no clean post-repair browser pass is claimed. The user approved
+one unchanged single-worker rerun without overlapping builds/units, with default timeouts retained.
+That rerun passes **all 35 cases in 1.9 minutes**, including all 28 report combinations and all
+seven original browser failures. The desktop activity case passes in 15.2 seconds without source
+changes or a timeout increase. The precise causes of the earlier runtime/navigation failures remain
+unproven. Post-repair PWA checks also pass **all 22 cases in 52.0 seconds**, including their fresh
+production build. This focused browser pass is not a clean rerun of all 668 combinations. Retain
+all initial and intermediate failures.
+
+Follow-up logs: `/tmp/opencode/verification-followup-{unit,lint,format,types,build,build-devtools}.log`,
+`verification-isolated-zip.log`, `verification-isolated-unit.log`, `verification-focused-browser.log`,
+`verification-isolated-browser.log`, and `verification-followup-pwa.log`.
+The initial draft overstated report/focused counts as 32/39; the actual logs establish **28/35**.
+
+| Completed post-repair check | Result |
+|----------------------------|--------|
+| Full units without competing jobs | 758 passed across 50 files; isolated ZIP case also passes |
+| Lint / repository formatting / TypeScript | Passed |
+| Ordinary / Devtools production builds | Passed; Devtools output remains separate |
+| Single-worker focused browser batch | 35 passed, no skips/failures; reports plus all seven original failures |
+| Post-repair production PWA batch | 22 passed, no failures |
+
+The unchanged landing suite passed all 12 cases in the original batch. Large-chunk and service-worker
+`inlineDynamicImports` deprecation warnings remain non-failing. No additional automatic retry or
+full-browser rerun is claimed or authorized by these results.
+
+Read-only closure checks also pass: `git diff --check`, index coverage for all 43 wiki pages, and
+resolved wiki links/current dates in the seven approved result pages. Evidence:
+`/tmp/opencode/verification-final-whitespace.log` and `verification-final-wiki-integrity.json`.
+The subsequent evidence-recording prose adds no source or link-target changes.
+
+Real expense, balance, and long-description PDFs were generated on desktop/mobile-emulated Chromium
+for eight expenses and 12 members, without page errors. Modal screenshots and sampled PDF pages
+rendered with `pdftoppm` were visually reviewed. The original-size expense fixture occupies one
+1776.17 × 595.28-point page and omits blank Tags/Description columns; long-description cases exercise
+wrapped paragraphs/tokens and two-page vertical pagination. The synthetic balance layout sample
+does not independently reconcile financial totals.
+Evidence: `/tmp/opencode/verification-pdf-review/results.json`.
+
+Separate production offline smoke checks pass on both emulated layouts: the worker precaches the
+renderer/font chunks before any PDF generation, then first-ever expense and balance downloads
+succeed offline. Checks assert checkbox ordinals 1–5 with the checkmark hidden, retain an explicit
+zero share, omit wholly uninvolved Cal's share column in extracted PDF text, and preserve
+expense-only preferences. No page errors were observed.
+Evidence: `/tmp/opencode/verification-offline-pdf/results.json`.
+
+The same production first-use offline smoke was repeated after the handler/formatting repairs and
+passes on desktop/mobile emulation: four named expense/balance PDF downloads, ordinal/checkmark
+checks, cached renderer/font chunks before first generation, preference isolation, and no page errors.
+Extracted text from all four PDFs retains ₹0.00/₹100.01, omits empty Tags/Description and Cal's share,
+and the balance samples contain ₹80.01 to receive/to pay and the ₹20.00 repayment.
+Evidence: `/tmp/opencode/verification-followup-offline-pdf/{results,pdf-text-checks}.json`.
+
+Coverage is local desktop/mobile Chromium emulation, not physical-device, installed-app/OS download
+handling, Safari/Firefox, exhaustive visual review, or general script/emoji support. The earlier
+12-case split-layout/TypeScript passes remain historical, not verification of this revision.
+No commit, push, or deployment occurred. See [[import-export]], [[selection-controls]], [[filtering]],
+and [[balance-calculation]].
 
 ## 2026-10-12 Audit Evidence — Not an Exhaustive Sign-Off
 

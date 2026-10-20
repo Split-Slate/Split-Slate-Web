@@ -7,10 +7,10 @@ metadata:
 
 # Decision: Import / Export Design
 
-Purpose: define the implemented offline group-transfer contract and distinguish it from future
-settlement sharing.
+Purpose: define offline group transfer and distinguish it from human-readable PDF reports and
+future settlement links/spreadsheets.
 
-Last updated: 2026-10-17
+Last updated: 2026-10-21
 
 ## Decision
 
@@ -18,9 +18,179 @@ Import/export is a **durable group-transfer mechanism**. A recipient validates t
 creates a new editable local group; there is no temporary read-only share mode. Transfer is a
 snapshot, not synchronization: later changes on either device do not propagate or merge.
 
-Future settlement sharing is a separate concern. Human-readable Link/PDF/Excel settlement summaries
-must not reuse this group-transfer workflow or be described as group import. See
-[[product-roadmap]].
+Human-readable reporting is separate from group transfer. Direct PDF reports are implemented in
+`src/features/reports/`; settlement-specific Link/Excel sharing remains pending. Reports are not
+importable group snapshots and cannot restore an editable group. See [[filtering]] and
+[[balance-calculation]]. The roadmap's older future-PDF wording awaits a separately proposed correction.
+
+## Direct PDF Reports
+
+The user approved direct file downloads rather than browser printing, specifically for installed
+PWA use. `pdfmake` is the selected renderer: the reports are table-heavy, need repeated headings
+and multipage tables, and retain configurable fonts, colours, spacing, borders, and page furniture.
+The browser PDF engine and its Roboto virtual font files are dynamically imported bundled JavaScript;
+generation does not fetch a remote font, upload group data, open a window, or invoke printing.
+The production build passes, and desktop/mobile-emulated Chromium smoke checks confirm the worker
+precaches the renderer/font chunks before any PDF generation: first-ever expense and balance
+downloads then succeed offline. This does not establish installed-app or OS download handling.
+
+- **Expenses → Download PDF → Choose PDF fields → Generate PDF:** only this action opens an options
+  modal. The checkboxes are Expense name, Amount, Paid by, Expense date, Added date, Category, Tags,
+  Description, Split method, and Member shares. Sl. No. is always included and is never a checkbox;
+  at least one selectable field is required even though serial numbers are automatic. Defaults are
+  expense name, amount, paid by, expense date, and member shares. Selected fields with values are
+  printed in **one expense table**. There is no separate share matrix,
+  horizontal member band, member-total summary, or stacked Paid/Owes cell. A share-only selection
+  prints Sl. No. and the member-share columns without exposing unselected expense names or metadata.
+  Selected checkboxes display their 1-based selection position inside the box instead of a checkmark.
+  Selecting appends a field; removing it renumbers the remainder, and reselecting appends it at the
+  end. Sl. No. always stays first. Member shares expands as a block at its selected position, with
+  members in group order. Blank-column omission does not reorder the surviving fields or members.
+  Total spending appears in the heading only when Amount is selected. Report context still includes
+  group currency, generation time, filters, sort, and counts.
+- On Generate, Expenses revalidates the current filters and reuses the list's exact filtering/sorting
+  helpers. Every matching expense is included. Recorded repayments are excluded even when the
+  unfiltered timeline displays them. Invalid filters, groups with no expenses, and valid filters with
+  no matches disable downloading and explain why. Availability is rechecked at generation; the data
+  compiler and renderer also reject empty report rows. Repayments alone never enable a download.
+  Member/payer filters select whole expenses, never
+  just the filtered person's share.
+- Expense field choices are stored only after successful PDF generation/download initiation in
+  localStorage under `split-slate-expense-pdf-options`, as `{ version: 1, fields: [...] }`. Every
+  successful generation saves the latest selection **and order**. Validation/loading deduplicate
+  without restoring a predefined order; loading removes unknown fields while preserving known order.
+  Each new modal open reloads these preferences;
+  Cancel, Close, Escape, empty selections, blocked generation, and failures do not save drafts. This is one
+  device/browser-wide expense preference, not a per-group or balance preference. Missing, corrupt,
+  blocked, empty, unsupported-version, or wholly obsolete preferences fall back to defaults; known
+  saved fields survive removal of unknown fields. Failed storage writes do not block the download
+  and show a message that the choices could not be remembered.
+- **Balances → Download PDF:** remains a direct download, with no modal, preferences, or configurable
+  fields. Its fixed candidate column order is **Sl. No. | Date | Expense name | Amount | Paid by | Category |
+  Tags | each member's share**. It includes all group expenses and then member balances, recorded
+  repayments, and suggested payments. Expense-list filters and expense-PDF preferences never narrow
+  or alter it. Empty columns are omitted without changing this relative order. Groups without expenses
+  cannot download it, even if they have repayments. Suggestions are labelled as suggestions, not actual
+  payments or original bilateral debts.
+- Dates in expense-table columns are the local expense date and, when selected, local added date.
+  Paid by comes from actual paid allocations, not the recorder: a single payer shows their name;
+  multiple payers show each contributor's name and exact contribution. Member share columns show
+  only the saved monetary owed allocation, not signed debit/credit pairs or ratio weights. A missing
+  allocation is blank, and an explicitly saved zero remains `0.00`. Ratios never recompute owed amounts.
+- Both PDFs omit columns whose values are blank throughout every report row, including selected
+  fields, individual member-share columns, and optional columns in the balance/payment tables.
+  Null/undefined/whitespace-only strings are empty; actual zero amounts/shares are values. Sl. No.
+  remains first. A field populated in even one row remains, with its other blank cells intact.
+  Omission happens before column sizing and never changes saved selections/order. The modal disables
+  Generate if every selected field is empty, with an explanatory message; data preparation and the
+  renderer recheck this rather than producing a Sl. No.-only PDF. Nothing is saved on a blocked attempt.
+- The page uses custom dimensions: at least A4-landscape width, widened to contain the widest table
+  plus margins when needed, with a fixed 595.28-point page height. There is no A3 width ceiling,
+  horizontal member splitting, or repeated expense data. Expenses paginate only vertically, repeating
+  column headers. Balances retains its agreed combined fixed columns and separate balance/payment
+  sections; those tables use the same content-sizing rules. The supplied external Splid PDF is
+  context, not a design to replicate. A PDF table has no HTML-style scrollbar: viewer fit-to-page
+  modes may initially shrink the view, and users zoom/pan horizontally at a readable scale.
+- Both reports use 10.5-point body text, a smaller title/metadata block, and compact table spacing.
+  Each column's content width is the largest bold-header or regular-body line measured using the
+  actual bundled PDF font at that size, plus 0.5 point of rounding tolerance and four points of cell
+  padding on each side. No guessed character widths, fixed field minima, proportional shrinking,
+  or spare-space stretching determine the widths. All-empty columns are omitted, not header-only.
+  Existing line breaks remain lines rather than widening to the full multiline string.
+- **Description alone** has a 240-point content-width maximum. Ordinary paragraphs use native word
+  wrapping; overlong single tokens receive invisible break opportunities without truncation. Other
+  fields and member columns have no content-width cap. A measurement-only PDFKit stream uses public
+  `font`/`fontSize`/`widthOfString` APIs and the same Roboto files as rendering, then is discarded.
+  `createPdfDefinition` is now asynchronous; no extra font package or remote font request is added.
+- Widths above the supported 14,400-point PDF page limit are rejected with a plain-language error;
+  populated columns are never silently dropped, split, or shrunk to bypass it. A failed generation does not
+  overwrite the saved expense-field preferences. This geometry bound is not an expense/member count cap.
+- Report data is compiled synchronously from the Generate/direct-download click's in-memory view before asynchronous
+  renderer loading. This is not a fresh persisted Dexie transaction or a multi-device snapshot.
+  Monetary totals use exact integer hundredths, with BigInt for cumulative repayment totals.
+- Download uses a named PDF Blob and a temporary anchor, retaining its object URL for 60 seconds
+  before cleanup. Browser/OS handling of downloads still applies; installing a PWA does not give
+  arbitrary filesystem access. No report or new financial record is persisted.
+- The bundled Roboto font is not a guarantee of every script or emoji glyph. Receipt image
+  embedding is not included in this implementation.
+
+Styling and layout live in `src/features/reports/utils/download-pdf.ts`; data preparation and
+scope are separate in `report-data.ts`. Unit cases cover data/layout and real PDF byte generation;
+desktop/mobile browser cases cover filter-to-renderer handoff, numbered selection order, removal/
+reselection and keyboard interaction, preference saving/cancellation/reload, blocked storage,
+actual downloads, fixed full-group balance scope, empty-group/no-match/no-field-value guards,
+live removal while the modal is open, and retryable errors. Unit cases cover column/block ordering,
+empty-column pruning, zeros, and non-mutating omission. The approved initial full batch records
+**757 unit passes and one fixture failure across 758 cases/50 files**, passing TypeScript, both
+production builds, **22 PWA cases**, and **12 landing cases**. ESLint fails on the render-time
+ref-bearing submit callback; formatting flags nine files. The full browser batch finishes with
+**617 passes, 44 skips, and seven failures across 668 combinations** in 26.6 minutes, including
+**all 28 report-browser cases passing**. Failures are six ambiguous filter-status assertions and
+one desktop activity-panel 30-second timeout whose cause is unproven. The unit fixture's saved
+arithmetic yields Amy −2833, Bea +2833, Cal 0 and Amy → Bea 2833, not its expected ±1067 nets.
+
+The approved handler/fixture/locator corrections and scoped formatting are applied. Post-repair
+lint, formatting, TypeScript, both builds, and an isolated **758-case full-unit run** pass. A preceding
+concurrent unit run retains an unrelated ZIP timeout; that case passes unchanged in isolation.
+The first 35-case focused browser batch records **31 passes/four failures**. Its approved unchanged
+single-worker rerun passes **all 35 cases**, including every report case and all seven original
+browser failures, with default timeouts retained. Post-repair production PWA checks pass **all 22
+cases**. Separate post-repair production first-use offline expense/balance smoke also passes on both
+layouts, including extracted zero/omission/payment amounts. This is not a clean full browser rerun.
+See [[testing-strategy]] for the
+canonical initial results, retained failures, evidence paths, and follow-up boundaries. Earlier
+**12 PDF-unit/TypeScript passes** cover the superseded split-table layout only. No commit, push,
+or deployment occurred.
+
+### Supplied Generated-PDF Review — 2026-10-21
+
+The user supplied `weekend-trip-expenses.pdf`: eight matching expenses out of 33, total ₹14,120.00,
+12 members, and three pages. Reading its pages showed repeated expense details for three groups of
+four member columns, tiny text, oversized empty Tags/Description allocations, an awkwardly broken
+Accommodation label, and substantial unused page height. Its MediaBox is already A3 landscape
+(`1190.55 × 841.89` points), so changing orientation was not the cause or remedy.
+
+An initial approved repair separated expense details from a Sl. No.-linked share matrix and passed
+the earlier focused batch below, including one landscape page for the supplied-size fixture in
+memory. The user subsequently chose a single extra-wide table with actual-font content widths and
+only Description capped/wrapped. That later decision supersedes the split-table design and its
+current-applicability claim, not the historical test result. The updated fixture expects all selected
+populated fields and all 12 involved members in one table, omits blank Tags/Description, preserves
+exact amounts, and expects a custom-wide
+one-page PDF for this dataset; additional cases cover proportional font metrics, no width stretching,
+description wrapping, all 25 members without bands, and explicit page-width rejection. These revised
+cases have now been exercised in the initial full-unit batch, which retains the separate report-data
+fixture failure described above. Real expense, balance, and long-description PDFs were generated
+on desktop/mobile Chromium emulation without page errors. Modal screenshots and sampled PDF pages
+rendered with `pdftoppm` were visually reviewed. The original-size expense fixture is one
+1776.17 × 595.28-point page with blank Tags/Description omitted; long-description output exercises
+paragraph/token wrapping and two-page vertical pagination. The synthetic balance layout sample
+is not independent financial reconciliation. Evidence is
+`/tmp/opencode/verification-pdf-review/results.json`; production first-use offline evidence is
+`/tmp/opencode/verification-offline-pdf/results.json`. Extracted offline PDFs retain an explicit
+zero share and omit wholly uninvolved Cal's share column; expense preferences remain isolated
+from Balances. These sampled checks do not establish exhaustive visual, installed-app/OS,
+physical-device, Safari/Firefox, or general script/emoji support. The supplied file remains
+evidence of the earlier layout failure; no supplied PDF binary is added to the repository.
+
+### Earlier Focused PDF Verification — 2026-10-21, Superseded Split-Table Layout
+
+The user explicitly approved these two commands for the earlier split-table implementation; both
+passed on their first run. This table records that historical scope, not the later full batch:
+
+| Command | Result |
+|---------|--------|
+| `pnpm exec vitest run src/features/reports/tests/utils/download-pdf.test.ts` | 12 passed in one file; includes separate expense/share tables, the eight-expense/12-member regression, compact empty columns, preserved amounts/serials, larger groups, optional fields, unchanged fixed balance columns, actual PDF bytes, and simulated anchor/URL cleanup |
+| `pnpm exec tsc -b` | Passed |
+
+That revision's supplied-size byte regression confirmed one landscape page and embedded fonts;
+its multi-page regression also passed. The download unit used a simulated DOM, so those results do not
+establish a real browser/OS download, modal behavior, localStorage persistence, or installed-PWA
+operation. At that earlier checkpoint, separate report-options/report-data units, browser/PWA
+cases, lint/formatting, production builds, real devices, and repaired-PDF visual inspection were
+pending. The later approved current-layout batch and sampled reviews are recorded above and in
+[[testing-strategy]]; physical-device and installed-app handling remain unverified. The historical
+result-documentation step itself ran no additional commands and changed no source.
 
 ## Export Questionnaire
 

@@ -256,9 +256,11 @@ test("summarizes matching expenses without changing full-group balances", async 
   await expect(insights.getByText("₹350.01")).toBeVisible();
 
   await page.goto("/groups/trip/expenses?dateFrom=2026-09-21&dateTo=2026-09-20");
-  await expect(page.getByRole("status")).toHaveText(
-    "Correct the highlighted filters to see results.",
-  );
+  await expect(
+    page.getByRole("status").filter({
+      hasText: /^Correct the highlighted filters to see results\.$/u,
+    }),
+  ).toHaveText("Correct the highlighted filters to see results.");
   await expect(insights).toHaveCount(0);
 });
 
@@ -414,9 +416,11 @@ test("filters expenses through every field, validates ranges, and clears all con
       .toBe(true);
   }
   await closeFilters(page);
-  await expect(page.getByRole("status")).toHaveText(
-    "Correct the highlighted filters to see results.",
-  );
+  await expect(
+    page.getByRole("status").filter({
+      hasText: /^Correct the highlighted filters to see results\.$/u,
+    }),
+  ).toHaveText("Correct the highlighted filters to see results.");
 
   await page.getByRole("button", { name: "Clear all filters", exact: true }).click();
   await expect(page).toHaveURL(/\/groups\/trip\/expenses$/u);
@@ -544,9 +548,11 @@ test("shows open-ended and invalid range chips that can be cleared without the p
     const chips = page.getByRole("list", { name: "Selected expense filters" });
     await expect(chips.getByRole("button")).toHaveCount(1);
     if (value === "invalid" || value === "2026-02-30") {
-      await expect(page.getByRole("status")).toHaveText(
-        "Correct the highlighted filters to see results.",
-      );
+      await expect(
+        page.getByRole("status").filter({
+          hasText: /^Correct the highlighted filters to see results\.$/u,
+        }),
+      ).toHaveText("Correct the highlighted filters to see results.");
     }
     await chips.getByRole("button", { name: `Remove ${label} filter`, exact: true }).click();
     await expect(page).toHaveURL(/\/groups\/trip\/expenses\?sort=highest$/u);

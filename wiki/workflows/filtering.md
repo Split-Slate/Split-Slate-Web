@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document the implemented expense-list filters, their matching rules, and test coverage.
 
-Last updated: 2026-10-12
+Last updated: 2026-10-21
 
 ## Overview
 
@@ -159,6 +159,89 @@ desktop/mobile after correcting that timeline merge, not the two new added-date 
 current mobile Sort dialog. Unfiltered desktop status
 includes the payment count, including zero; filtered results remain expense-only. See
 [[settlement-recording]] and [[testing-strategy]].
+
+## Filtered PDF Download
+
+**Download PDF** on Expenses opens **Choose PDF fields**. The form uses react-hook-form/Zod and
+the existing native dialog layout and checkbox styling. Options are Expense name, Amount, Paid by,
+Expense date, Added date, Category, Tags, Description, Split method, and Member shares. Sl. No. is
+automatic, not an option. At least one selectable field is required; clearing every checkbox shows
+an error and disables Generate PDF. Chosen expense fields and member shares appear together in one
+table. There is no separate share matrix, repeated member band, member-total summary, or stacked
+Paid/Owes cell. A share-only selection prints serial numbers and member columns without exposing
+unselected expense names or metadata. Selected checkboxes contain their selection-position number;
+new selections append, removals renumber, and reselected fields move to the end. Columns follow this
+order after Sl. No.; Member shares expands at its chosen position, with members kept in group order.
+
+**Generate PDF** revalidates the current filters and selected sort with the same
+`filterExpenses`/`sortExpenses` helpers as the list. It reports every matching expense, not a
+viewport capture or arbitrary row limit. The document retains readable filter labels and counts;
+total spending is shown only when Amount is selected. Repayments are excluded. The separate
+Balances download remains direct and fixed-template, without this modal or field preferences.
+
+Selections are reloaded on every modal open from localStorage key
+`split-slate-expense-pdf-options`. Only successful generation/download initiation saves the latest
+selection and order. Loading/validation deduplicate and remove unknown saved fields without
+canonical reordering. Draft checkbox edits, Cancel/Close/Escape, blocked attempts, and failures leave saved preferences
+unchanged. Defaults apply when stored options are missing or unusable; blocked writes do not stop
+the PDF and show a preference-saving notice. See [[import-export]] for versioning/recovery details.
+
+Member/payer filters select whole expenses. If Member shares is selected, every group member with
+an owed allocation in at least one matching expense gets a column, even if another person selected
+the expense through a filter. Non-applicable allocations are blank; saved zero shares remain visible.
+Paid by uses actual payer names and, for multi-payer expenses, exact contributions. Ratios never
+recalculate stored owed amounts. Each column takes the larger of its actual-font bold-header and
+regular-body line widths plus padding/tolerance, without character-count estimates or stretching.
+Columns blank across all matching rows are omitted, including individual member columns; zero is
+a value, while null/undefined/whitespace-only strings are empty. Omission leaves saved selections
+and the relative order of remaining columns unchanged. Description alone is capped at 240 points
+and word-wrapped; long tokens receive invisible break opportunities without truncation. All other
+columns remain uncapped. Body text stays 10.5 points with a compact header. The page widens to fit
+all columns; it does not split people or duplicate rows horizontally. Pagination is vertical only,
+with repeated column headings. PDF viewers provide horizontal zoom/pan, not an embedded table
+scrollbar. See [[import-export]] for the supported page-width limit and explicit rejection behavior.
+
+Invalid filters, no group expenses, and no matching expenses disable the action with a reason.
+Availability is checked again on Generate and empty data is rejected before loading PDF fonts.
+If every selected field would be omitted, Generate is disabled with an explanation; no Sl. No.-only
+PDF or preference save occurs. A group with repayments but no expenses cannot export either PDF.
+The action has an in-progress state,
+duplicate-click guard, and retryable error display. It uses a local PDF engine and bundled fonts,
+not a print dialog, remote service, or group-transfer package. See [[import-export]] for the PDF
+contract and limitations, and [[balance-calculation]] for the separately scoped Balances PDF.
+
+The user-supplied PDF exposed layout failures for eight expenses and 12 members. An initial
+split-table repair passed 12 focused PDF cases and `pnpm exec tsc -b`, including a one-page
+landscape fixture in memory. The user then approved the current single-wide-table/font-measured
+design, superseding that repair. Revised cases cover the same eight-expense/12-member fixture,
+all 25 populated member columns, true font widths, empty-column omission, numbered selection/order
+persistence, zero values, blocked empty downloads, capped descriptions, geometry limits, and vertical
+PDF generation. The approved initial batch now records **757 unit passes and one report-data
+fixture failure across 758 cases/50 files**, passing TypeScript, both production builds, **22 PWA
+cases**, and **12 landing cases**; lint and repository formatting fail. The completed full browser
+batch records **617 passes, 44 skips, and seven failures across 668 combinations** in 26.6 minutes.
+**All 28 report-browser cases pass.** Six failures are three ambiguous filter-status assertions
+on both projects; the remaining desktop activity-panel 30-second timeout has no proven cause.
+
+Approved handler/fixture/filter-locator repairs and scoped formatting are applied. Post-repair
+lint, formatting, TypeScript, both builds, and an isolated 758-case full-unit run pass. A preceding
+concurrent unit run retains one ZIP timeout that passes unchanged in isolation. The 35-case focused
+browser batch records 31 passes/four failures; its unchanged single-worker recheck passes all 35
+selected cases with default timeouts, including all six original filter combinations. Post-repair
+PWA checks pass all 22 cases; separate production first-use offline expense/balance smoke and
+extracted PDF zero/omission/amount checks pass on both layouts. Focused follow-ups are not a clean
+full-browser rerun. Preserve all initial/intermediate failures; see [[testing-strategy]] for evidence.
+
+Real eight-expense/12-member expense, balance, and long-description PDFs were generated without
+page errors on desktop/mobile Chromium emulation. Modal screenshots and sampled rendered PDF
+pages were reviewed: the original-size expense fixture occupies one 1776.17 × 595.28-point page
+with blank Tags/Description omitted, and long descriptions wrap/paginate vertically to two pages.
+The synthetic balance layout sample does not independently reconcile financial totals. Separate
+production smoke checks confirm first-ever expense and balance downloads offline after renderer/font
+precache, numbered boxes without checkmarks, retained zero shares, omitted uninvolved-member columns,
+and expense-only preferences. This is not physical-device, installed-app/OS, Safari/Firefox,
+exhaustive visual, or general script/emoji verification. No commit, push, or deployment occurred.
+See [[import-export]]; historical filter evidence below retains its original scope.
 
 ## Tests
 

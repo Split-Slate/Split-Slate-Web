@@ -9,7 +9,7 @@ metadata:
 
 Purpose: document the implemented expense-list filters, their matching rules, and test coverage.
 
-Last updated: 2026-10-21
+Last updated: 2026-11-09
 
 ## Overview
 
@@ -24,6 +24,13 @@ repeated parameters (for example `?memberIds=a&memberIds=b`). Opening or reloadi
 the filters; navigation to an expense detail or edit screen and back carries the query along. Other
 group routes do not retain hidden filter state. Filter edits replace the current URL entry rather
 than adding a history entry per keystroke.
+
+Category options pair their native checkboxes with the saved category image through `EmojiImage`;
+tag options show a dot in the saved tag color. These decorative markers do not change accessible
+checkbox names or matching behavior. They are distinct from active-filter chips, whose fixed
+filter-type hues remain independent of a tag's saved color. The desktop/mobile marker cases and
+the complete 2026-11-09 application browser batch pass; see [[testing-strategy]]. Expense selection
+and its All control are separate from filter checkboxes; see [[expense-edit-delete]].
 
 ---
 

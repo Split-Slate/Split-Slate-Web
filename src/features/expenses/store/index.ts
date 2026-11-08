@@ -25,7 +25,7 @@ const recordExpense = async (expense: Expense, action: ActivityEvent["action"]) 
   });
 };
 
-export const createExpensesSlice: SliceCreator<ExpensesSlice> = (set) => ({
+export const createExpensesSlice: SliceCreator<ExpensesSlice> = (set, get) => ({
   addExpense: async (input) => {
     const result = await db.transaction(
       "rw",
@@ -133,6 +133,13 @@ export const createExpensesSlice: SliceCreator<ExpensesSlice> = (set) => ({
     return result.updated;
   },
   removeExpense: async (expenseId, groupId) => {
+    await get().removeExpenses([expenseId], groupId);
+  },
+  removeExpenses: async (expenseIds, groupId) => {
+    const ids = [...expenseIds];
+    const removedIds = new Set(ids);
+    if (!ids.length) throw new Error("Select at least one expense");
+    if (removedIds.size !== ids.length) throw new Error("Duplicate expense selection");
     const result = await db.transaction(
       "rw",
       [
@@ -146,11 +153,12 @@ export const createExpensesSlice: SliceCreator<ExpensesSlice> = (set) => ({
         db.activityEvents,
       ],
       async () => {
-        const expense = await requireExpense(expenseId, groupId);
+        const expenses: Expense[] = [];
+        for (const id of ids) expenses.push(await requireExpense(id, groupId));
         if (!(await db.groups.get(groupId))) throw new Error("Group not found");
-        const ranking = await remainingPayerRanking(groupId, expenseId);
+        const ranking = await remainingPayerRanking(groupId, ids);
         const remaining = (await db.expenses.where("groupId").equals(groupId).toArray()).filter(
-          (item) => item.expenseId !== expenseId,
+          (item) => !removedIds.has(item.expenseId),
         );
         const payments = await db.settlements.where("groupId").equals(groupId).toArray();
         const members = await db.members.where("groupId").equals(groupId).toArray();
@@ -159,16 +167,20 @@ export const createExpensesSlice: SliceCreator<ExpensesSlice> = (set) => ({
           members.map((member) => member.id),
           payments,
         );
-        // The attachment owner index also catches records omitted from attachmentIds.
-        await db.attachments.where("expenseId").equals(expenseId).delete();
-        await db.expenses.delete(expenseId);
+        const events: ActivityEvent[] = [];
+        for (const expense of expenses) {
+          // The owner index also catches receipts omitted from attachmentIds.
+          await db.attachments.where("expenseId").equals(expense.expenseId).delete();
+          await db.expenses.delete(expense.expenseId);
+          events.push(await recordExpense(expense, "deleted"));
+        }
         await db.groups.update(groupId, { frequentPayerIds: ranking });
-        return { frequentPayerIds: ranking, event: await recordExpense(expense, "deleted") };
+        return { frequentPayerIds: ranking, events };
       },
     );
     set((state) => ({
-      expenses: state.expenses.filter((expense) => expense.expenseId !== expenseId),
-      activityEvents: [...state.activityEvents, result.event],
+      expenses: state.expenses.filter((expense) => !removedIds.has(expense.expenseId)),
+      activityEvents: [...state.activityEvents, ...result.events],
       groups: state.groups.map((group) =>
         group.id === groupId ? { ...group, frequentPayerIds: result.frequentPayerIds } : group,
       ),

@@ -98,8 +98,9 @@ export const requireExpense = async (expenseId: string, groupId: string): Promis
 
 export const remainingPayerRanking = async (
   groupId: string,
-  expenseId: string,
+  expenseIds: readonly string[],
 ): Promise<string[]> => {
+  const removedIds = new Set(expenseIds);
   const members = await db.members.where("groupId").equals(groupId).toArray();
   const people = await db.people.toArray();
   const expenses = await db.expenses.where("groupId").equals(groupId).toArray();
@@ -108,6 +109,6 @@ export const remainingPayerRanking = async (
       id: member.id,
       name: people.find((person) => person.id === member.personId)?.name ?? "",
     })),
-    expenses.filter((expense) => expense.expenseId !== expenseId),
+    expenses.filter((expense) => !removedIds.has(expense.expenseId)),
   );
 };

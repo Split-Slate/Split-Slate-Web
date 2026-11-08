@@ -77,8 +77,13 @@ const ExpenseFilters = () => {
   const categoryOptions = groupCategories.map((category) => ({
     value: category.id,
     label: `${category.name}${category.isActive ? "" : " (inactive)"}`,
+    icon: category.icon,
   }));
-  const tagOptions = groupTags.map((tag) => ({ value: tag.id, label: tag.name }));
+  const tagOptions = groupTags.map((tag) => ({
+    value: tag.id,
+    label: tag.name,
+    color: tag.color,
+  }));
   const categoryIds = groupCategories.map((category) => category.id);
   const tagIds = groupTags.map((tag) => tag.id);
   const memberIds = groupMembers.map((member) => member.id);

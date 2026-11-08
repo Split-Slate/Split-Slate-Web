@@ -31,6 +31,7 @@ export interface ExpensesSlice {
     patch: { categoryId?: string; tagIds?: string[] },
   ) => Promise<Expense>;
   removeExpense: (expenseId: string, groupId: string) => Promise<void>;
+  removeExpenses: (expenseIds: readonly string[], groupId: string) => Promise<void>;
 }
 
 export interface PayerMember {

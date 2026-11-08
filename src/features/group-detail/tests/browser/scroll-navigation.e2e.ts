@@ -172,9 +172,17 @@ test("tablet expenses use outer-only scrolling for long and short filtered lists
   await expect
     .poll(() => ledger.evaluate((element) => element.scrollHeight <= element.clientHeight + 1))
     .toBe(true);
-  expect((await ledger.boundingBox())!.height).toBeLessThanOrEqual(
-    (await rows.first().boundingBox())!.height + 4,
-  );
+  const containerInsets = await ledger.evaluate((element) => {
+    const style = getComputedStyle(element);
+    return [
+      style.paddingTop,
+      style.paddingBottom,
+      style.borderTopWidth,
+      style.borderBottomWidth,
+    ].reduce((sum, value) => sum + parseFloat(value), 0);
+  });
+  const expectedHeight = (await rows.first().boundingBox())!.height + containerInsets;
+  expect(Math.abs((await ledger.boundingBox())!.height - expectedHeight)).toBeLessThanOrEqual(1);
 });
 
 for (const width of [320, 820, 1440]) {

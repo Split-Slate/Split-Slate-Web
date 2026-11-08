@@ -5,10 +5,12 @@ import type {
   ExpenseFilterValues,
 } from "@/features/expenses/types/expense-filters.types";
 
+import EmojiImage from "@/shared/ui/emoji-image";
+
 interface PropsType {
   name: ExpenseFilterOptionField;
   label: string;
-  options: readonly { value: string; label: string }[];
+  options: readonly { value: string; label: string; icon?: string; color?: string }[];
 }
 
 const ExpenseFilterOptions = ({ name, label, options }: PropsType) => {
@@ -25,6 +27,18 @@ const ExpenseFilterOptions = ({ name, label, options }: PropsType) => {
               {...register(name)}
               className="choice-control"
             />
+            {name === "categoryIds" && (
+              <span aria-hidden="true" className="inline-flex shrink-0">
+                <EmojiImage icon={option.icon} />
+              </span>
+            )}
+            {name === "tagIds" && option.color && (
+              <span
+                aria-hidden="true"
+                className="h-3 w-3 shrink-0 rounded-full border border-[var(--line)]"
+                style={{ backgroundColor: option.color }}
+              />
+            )}
             {option.label}
           </label>
         ))}

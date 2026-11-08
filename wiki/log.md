@@ -6,9 +6,20 @@ Entries record historical changes, not current execution instructions. The expli
 policy in [[testing-strategy]], `AGENTS.md`, and `CLAUDE.md` supersedes older automatic-run or
 "highest-priority next task" directives. Historical results do not authorize new runs.
 
-Last updated: 2026-10-21
+Last updated: 2026-11-09
 
 ---
+
+## 2026-11-09
+- UPDATED decisions/expense-edit-delete.md — reconcile the All checkbox/icon-only toolbar, automatic empty-selection exit, stable row geometry, equal container padding, and queued-scroll/native compatibility-focus guards; link completed verification and platform limits
+- UPDATED decisions/testing-strategy.md — record 773 unit/static/both-build, 38 focused-action, two marker, 22 PWA, 12 landing, and 664 full-browser passes with 46 expected skips; retain initial lint/format/menu/native-touch failures and the first full run's stale layout assertion before the clean complete rerun
+- UPDATED architecture/state-management.md — add the bulk deletion API, final-state balance validation, transactional cleanup/activity/ranking, and single-delete delegation
+- UPDATED workflows/filtering.md — distinguish saved category/tag option markers from filter-type chip hues and preserve accessible names/matching semantics
+- UPDATED wiki/index.md — synchronize every changed page's navigation and verified implementation status without claiming physical-device, Safari/Firefox, remote-deployment, or complete-roadmap coverage
+
+## 2026-11-08
+- UPDATED decisions/expense-edit-delete.md — document approved floating row actions, touch cancellation/click suppression, ephemeral matching-only selection, unchanged bottom navigation, shared confirmation, and atomic final-state-validated single/bulk deletion; new store/browser coverage is written but unrun
+- UPDATED wiki/index.md — synchronize expense-action navigation and explicitly unverified implementation status; no fresh tests, type checks, lint, formatting, builds, servers, or browser automation ran for this change
 
 ## 2026-10-21
 - UPDATED roadmap/product-roadmap.md — distinguish implemented direct expense/balance PDFs from future settlement-specific Link/Excel sharing and editable group transfer; link canonical reporting and verification scope without expanding product commitments

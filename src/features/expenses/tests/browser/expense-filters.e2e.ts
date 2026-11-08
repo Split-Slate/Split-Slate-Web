@@ -270,6 +270,38 @@ test("balances opened directly return to the group's expenses", async ({ page })
   await expect(page).toHaveURL(/\/groups\/trip\/expenses$/u);
 });
 
+test("shows category images and saved tag colors without changing checkbox names or filtering", async ({
+  page,
+}) => {
+  await getFiltersTrigger(page).click();
+  const panel =
+    (page.viewportSize()?.width ?? 0) < 768
+      ? page.getByRole("dialog", { name: "Filters", exact: true })
+      : page.locator(".expense-filter-popover:visible");
+  const food = panel.getByRole("checkbox", { name: "Food", exact: true });
+  const holiday = panel.getByRole("checkbox", { name: "Holiday", exact: true });
+  await expect(food.locator("..").locator("img")).toHaveAttribute("src", /^\/emoji-icons\//u);
+  await expect(food.locator("..").locator("img")).toHaveAttribute("alt", "");
+  await expect(holiday.locator("..").locator('span[aria-hidden="true"]')).toHaveCSS(
+    "background-color",
+    "rgb(18, 52, 86)",
+  );
+  await expect(
+    panel
+      .getByRole("checkbox", { name: "Work", exact: true })
+      .locator("..")
+      .locator('span[aria-hidden="true"]'),
+  ).toHaveCSS("background-color", "rgb(101, 67, 33)");
+  await food.click();
+  await holiday.click();
+  await closeFilters(page);
+  const ledger = page.getByRole("list", { name: "Expenses", exact: true });
+  await expect(ledger.locator(":scope > li")).toHaveCount(1);
+  await expect(ledger).toContainText("Dinner");
+  await expect(page).toHaveURL(/categoryIds=food/u);
+  await expect(page).toHaveURL(/tagIds=holiday/u);
+});
+
 test("silently limits both date-filter years to four digits and allows reentry", async ({
   page,
 }) => {

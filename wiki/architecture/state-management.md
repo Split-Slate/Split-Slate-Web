@@ -9,7 +9,7 @@ metadata:
 
 Purpose: map store ownership, persistence order, and the exact validation and transaction boundaries.
 
-Last updated: 2026-10-12
+Last updated: 2026-11-09
 
 ## Technology
 
@@ -64,6 +64,7 @@ interface AppStore {
   updateExpense: (expenseId: UUID, input: CreateExpenseInput) => Promise<Expense>
   updateExpenseDetails: (expenseId: UUID, groupId: UUID, patch: { categoryId?: UUID; tagIds?: UUID[] }) => Promise<Expense>
   removeExpense: (expenseId: UUID, groupId: UUID) => Promise<void>
+  removeExpenses: (expenseIds: readonly UUID[], groupId: UUID) => Promise<void>
 
   // Actions — Payments
   addSettlement: (input: SettlementInput) => Promise<Settlement>
@@ -156,6 +157,10 @@ Two deliberate shape decisions:
 
 - Dexie is the authoritative persistence layer over IndexedDB.
 - Entity mutations write to Dexie before updating their corresponding Zustand state.
+- `removeExpenses` validates every selected persisted expense and the final payment-aware balances
+  inside one transaction, removes owned receipts, writes per-expense activity, and updates payer
+  ranking once. All writes roll back together on failure. `removeExpense` delegates with a single
+  ID; matching-only UI selection is ephemeral and never stored in IndexedDB. See [[expense-edit-delete]].
 - Group, person, category, and tag mutations normalize required user strings. Category/tag create
   and update validate persisted group existence and case-insensitive name uniqueness inside their
   write transaction. Partial updates start from the persisted row, not a hydrated snapshot.

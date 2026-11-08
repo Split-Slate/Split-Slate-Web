@@ -10,7 +10,7 @@ metadata:
 Purpose: keep accounting tests fast, make every implemented area verifiable, and reserve real
 browser coverage for behavior that depends on browser storage, navigation, or offline capability.
 
-Last updated: 2026-10-21
+Last updated: 2026-11-09
 
 ## Execution Permission — Highest Project Priority
 
@@ -36,6 +36,76 @@ This policy overrides conflicting project instructions and historical notes in `
 `CLAUDE.md`, and the wiki. Every command below is conditional on this gate. A denied or deferred
 check stays explicitly unverified; do not claim it passed or block unrelated approved work merely
 because it is pending. This preserves the user's control over time and the shared workspace.
+
+## Expense Actions and Filter Markers — 2026-11-09
+
+The approved closure verifies floating expense menus, native long-press handling, matching-only
+bulk selection/deletion, the compact All checkbox/icon toolbar, stable row geometry, and saved
+category/tag markers. The user had reviewed the preview interaction before requesting automated
+closure. The following results cover the final application source; only a stale browser-test
+layout assertion changed between the production builds and the final full browser batch.
+
+| Check | Result |
+|-------|--------|
+| `pnpm test` | 773 passed across 50 files; final isolated run 10.56 seconds |
+| `pnpm exec tsc -b` | Passed, including browser/store test fixtures |
+| `pnpm lint` / `pnpm format:check` | Passed after scoped repairs and formatting |
+| `pnpm build` | Passed |
+| `VITE_ENABLE_DEVTOOLS=true pnpm build --outDir /tmp/opencode/expense-actions-closure-devtools-build` | Passed; ordinary build output kept separate |
+| Focused expense actions, single worker | 38 passed, two project-specific skips, zero failures in 1.6 minutes |
+| Focused category/tag marker cases | Both desktop/mobile cases passed |
+| `pnpm test:pwa --output=/tmp/opencode/expense-actions-closure-pwa` | All 22 production-build cases passed in 46.1 seconds |
+| Landing Playwright suite | All 12 cases passed in 51.5 seconds |
+| Final full application Playwright run | 664 passed, 46 expected project/viewport skips, zero failures across 710 combinations in 27.8 minutes |
+| Source `git diff --check` | Passed |
+
+The 46 browser skips are 44 existing inapplicable project/viewport combinations plus desktop
+exclusion of native mobile touch and mobile exclusion of desktop right-click. Each new gesture
+has a passing case in its applicable project. No test timeout was increased to obtain the clean
+result. The shell process budget was increased after the initial focused batch was stopped before
+completion by its two-minute command limit.
+
+### Retained failures and repairs
+
+- The earlier Netlify build reported four newly added Settlement fixtures missing required
+  `kind: "payment"`. All four were corrected before this verification batch; TypeScript passes.
+- Initial static checks passed TypeScript but failed five lint rules and formatting in three
+  files. Repairs remove an unnecessary keyboard-menu assignment, sort store imports, and replace
+  effect-driven selection resets/pruning with guarded local-state reconciliation and selection
+  mode derived from live IDs. Scoped formatting was applied; global static checks then pass.
+- The first focused browser batch was incomplete and had menu-disappearance failures. A native
+  right-click diagnosis observed a main-pane scroll event created before menu opening but delivered
+  afterward. The menu now ignores older scroll/resize/focus events while still dismissing on new
+  scrolls. The three targeted desktop cases then passed.
+- The next focused run recorded 35 passes, two skips, and one native mobile touch failure. The
+  menu opened while holding but dismissed on release because a compatibility mouse-down focused
+  the original anchor. The gesture hook now suppresses that focus and the following row click,
+  clears suppression on fresh pointer/keyboard intent, and supports extended holds. Four targeted
+  mobile cases pass; the completed focused run then passes all 38 applicable cases.
+- The first complete 710-combination browser run recorded 663 passes, 46 skips, and one tablet
+  scroll-layout assertion failure. The test assumed no vertical container padding despite the
+  approved equal four-side padding. It now measures padding and borders and asserts that the short
+  ledger is exactly one row plus those insets, retaining no-inner-scroll checks. That focused case
+  passes, followed by a clean complete rerun: 664 passes, 46 skips, zero failures.
+
+New bulk store cases include foreign/missing/duplicate/empty selections, missing groups, receipt
+and activity rollback, retry, final rather than intermediate payment-aware balance validation,
+stale persisted metadata, overlapping deletions, update races, and caller-array mutation. Filter
+marker cases preserve native checkbox names and verify saved PNG category images/tag colors while
+retaining the current filter predicate. See [[expense-edit-delete]], [[state-management]], and
+[[filtering]] for behavior rather than test procedure.
+
+Artifacts are under `/tmp/opencode/expense-actions-closure-{focused-final,browser-full,browser-final,pwa,landing}`,
+with separate filter-marker and scroll-repair directories. The initial interrupted batch and native
+diagnoses are retained separately. The final full run uses the standard two-worker configuration
+without concurrent builds/units; application source stays unchanged throughout it. Sampled 320px
+and 440px mobile captures with a long title/tag were examined. The native-input case uses Chromium
+CDP and is not a physical-device test.
+
+Large-chunk and service-worker `inlineDynamicImports` deprecation warnings remain non-fatal.
+Safari/Firefox, exhaustive physical-device/installed-OS behavior, storage-pressure recovery, and
+successful remote deployment are not established by this closure. Passing this batch is not a
+claim that every product roadmap item or every possible execution path is complete.
 
 ## Ordered Custom-Wide PDF Verification — 2026-10-21
 

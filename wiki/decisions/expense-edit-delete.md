@@ -9,11 +9,12 @@ metadata:
 
 Purpose: document expense correction, permanent deletion, and their persistence guarantees.
 
-Last updated: 2026-10-12
+Last updated: 2026-11-09
 
 ## Implementation Status
 
-Expense detail, editing, and confirmed hard deletion are implemented. The shared form supports
+Expense detail, editing, list actions/selection, and confirmed single/bulk hard deletion are
+implemented. The shared form supports
 all five split types, payer/participant changes, optional plain-text description, date/time,
 category, and tags. Attachment ingestion
 and receipt editing remain pending; updates preserve existing attachment IDs and deletion cleans
@@ -98,6 +99,69 @@ input must be re-entered if that precision matters. Rejected edits leave persist
 ## Delete Behaviour
 
 **Hard delete** — the expense record is permanently removed from IndexedDB.
+
+### Expense-list actions and selection
+
+The Expenses ledger offers a floating Edit / Select / Delete menu through touch/pen long-press,
+desktop right-click, or an explicit per-row action button. Long-press waits 500 ms and cancels
+after movement beyond 10 pixels, scrolling, pointer cancellation/release, or window blur.
+The menu is positioned beside the press and constrained to the visible viewport; it does not
+replace mobile bottom navigation. Outside presses, scrolling/resizing, Escape, and Tab dismiss
+it. Arrow keys and Home/End navigate its actions. A completed long-press suppresses its following
+row click, and releasing the initiating gesture cannot activate a menu item beneath the finger.
+
+Select enters component-local selection mode with native checkboxes and row highlighting.
+Tapping an expense row toggles selection instead of following its detail link. A checkbox replaces
+the row's action button in the same reserved slot; titles, tags, dates, and row dimensions do not
+shift with selection. The highlight is paint-only rather than conditional margins or padding.
+The expense container retains equal padding on all four sides and rows retain their compact
+spacing in every state, including when nothing is selected.
+
+The sticky toolbar keeps checkbox + **All** on the left and icon-only Edit/Delete controls on the
+right, with the selected count on a second line. All is indeterminate for partial selection and
+checked when every matching expense is selected. Clicking the indeterminate control selects all
+matching expenses; unchecking the checked control clears selection and exits selection mode.
+Manually unchecking the last expense, or losing the last selected row from the hydrated collection,
+also exits immediately. There is no Cancel button; Escape remains available. Edit is disabled
+unless exactly one expense is selected. Accessible labels remain on the icon buttons.
+
+All includes only the currently matching expenses, never filtered-out rows or recorded payments.
+Selection mode is derived from the nonempty live selection. Filter/sort URL changes and source
+deletions reconcile local state before the next commit rather than cascading state updates inside
+effects. Navigation/remount, Escape, or successful deletion also clears selection. This does not
+add automatic cross-tab synchronization. Recorded payments retain their separate controls and
+are not selectable as expenses. See [[filtering]] and [[state-management]].
+
+Two gesture ordering guards are required: scrolling a row into view can queue an event before
+the menu mounts, so older scroll events must not dismiss the new menu. Releasing a native touch
+or pen hold can generate a compatibility mouse-down that focuses the original expense link and
+dismisses the menu before a fresh action tap. The gesture hook prevents that compatibility focus
+and the following row click, while a genuine new pointer-down or keyboard action clears the
+suppression. Suppression is not limited to a short timeout: an extended hold is covered too.
+
+Single-row deletion and selection deletion both use the shared confirmation dialog. It shows
+the name or selection count, an exact fixed-hundredths total, the permanent receipt-deletion and
+balance-recalculation warnings, and explicitly preserves recorded payments. Cancellation retains
+selection; errors keep the confirmation open with retry and leave the selection intact. Pending
+confirmation disables repeated submission through the shared dialog.
+
+`removeExpenses` validates a nonempty, duplicate-free ID list and every persisted expense's group
+inside one read-write transaction. It validates payment-aware balances for the final remaining
+expense set, not intermediate single deletions, then removes owned receipts and expenses, writes
+one deletion activity per expense, and updates payer ranking once. Any failure rolls back the
+entire selection, including receipts, events, and ranking; Zustand changes only after commit.
+`removeExpense` delegates to this same operation with one ID, retaining detail-screen behavior.
+
+The 2026-11-09 closure passes 773 unit/store cases across 50 files and a complete 710-combination
+application browser run: 664 passes, 46 expected project/viewport skips, zero failures. All 38
+applicable expense-action cases pass, including native mobile CDP touch hold/release and subsequent
+real taps, plus two category-image/tag-color marker cases. Layout checks cover long titles, tags,
+equal container padding, and stable row geometry at 320px/440px; sampled captures were reviewed.
+TypeScript, lint, formatting, both production build variants, 22 production PWA cases, and 12 landing
+cases also pass. Initial lint/format failures, premature menu dismissal, a native release failure,
+and the older scroll test's stale padding assumption are retained in [[testing-strategy]].
+This is Chromium desktop/mobile-emulation evidence, not exhaustive physical-device, Safari/Firefox,
+storage-pressure, installed-OS, or successful remote-deployment verification.
 
 **Confirmation:** the detail screen opens the shared in-app [[confirmation-dialogs]] modal, names
 the expense, and warns that its receipts will be deleted permanently and balances recalculated.

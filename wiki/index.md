@@ -5,9 +5,21 @@ This wiki is the sole persistent compiled knowledge layer. The implementation in
 authoritative; `app-featureset-context/spec-sheet.md` is a historical baseline where later source
 and approved decisions have superseded it. Changes: [log.md](log.md)
 
-Last updated: 2026-10-21
+Last updated: 2026-11-09
 
 ---
+
+> **2026-11-09 expense actions — automated closure passes:** floating Edit / Select / Delete
+> menus support native touch/pen holds, right-click, and row buttons. The compact toolbar uses an
+> indeterminate/checked All checkbox, icon-only actions, and a second-line selected count; clearing
+> the last selection exits automatically. Stable row slots/paint-only highlights preserve geometry,
+> and bottom navigation is unchanged. Bulk deletion is one final-balance-validated transaction.
+> Category options show saved images and tags show saved color dots. Verification passes 773 units
+> across 50 files, TypeScript/lint/formatting, both builds, 22 production PWA cases, 12 landing cases,
+> and a complete application browser run: **664 passes, 46 expected skips, zero failures across 710
+> combinations**. Queued-scroll and native compatibility-focus defects are repaired; initial failures
+> and a stale padding assertion are retained. Physical-device/Safari/Firefox/remote-deployment limits
+> remain. See [[expense-edit-delete]], [[filtering]], and [[testing-strategy]].
 
 > **HIGHEST PROJECT PRIORITY — ASK BEFORE RUNNING:** Tests, builds, lint, type checks,
 > formatting/auto-fixes, Playwright/E2E/PWA, browser automation, watch tasks, servers, tool
@@ -158,7 +170,7 @@ Last updated: 2026-10-21
 ### Architecture
 - [Domain Models](architecture/domain-models.md) — expense/payment shapes, preserved recorder identity, fixed hundredths, payment-aware net guards, and current-time defaults
 - [Balance Calculation](architecture/balance-calculation.md) — safe payment-aware balances/transfers, fixed-order wide PDFs, and passing focused/PWA/offline checks with retained verification limits
-- [State Management](architecture/state-management.md) — persisted transactional deletion/name guards, atomic activity cleanup, and cross-tab UI-sync limits
+- [State Management](architecture/state-management.md) — atomic single/bulk expense deletion, persisted name/reference guards, activity cleanup, and cross-tab UI-sync limits
 - [Split Types](architecture/split-types.md) — 5 exact methods, preserved historical ratios, scoped Shares browser evidence, and fresh full-unit split-input coverage (2026-10-12)
 - [Layout Architecture](architecture/layout-architecture.md) — responsive shell, non-blocking top-notice clearance, shared dialogs, and editor teardown; revised notice layout unverified
 
@@ -169,7 +181,7 @@ Last updated: 2026-10-21
 - [Onboarding Persistence](decisions/onboarding-persistence.md) — resumable but sequential standard setup, hydrated group/category guards, and atomic import-specific completion
 - [Import / Export Design](decisions/import-export.md) — bounded snapshots, ordered wide PDFs, blank/zero and empty-data guards, passing units/static/build/focused-browser/PWA/offline checks, and retained failures
 - [Whole-App Backup and Restore](decisions/full-backup.md) — replace-only recovery with streamed actual-size quotas and shared validation; no deleted-group payment history in later snapshots
-- [Expense Edit and Delete](decisions/expense-edit-delete.md) — reference-only quick changes, preserved metadata, atomic deletion/activity/receipt cleanup, and payment-aware balance validation
+- [Expense Edit and Delete](decisions/expense-edit-delete.md) — verified floating/native-touch actions, stable All/icon selection UI, automatic empty-selection exit, and atomic single/bulk deletion
 - [Group Deletion](decisions/group-deletion.md) — atomic expense/payment/receipt cascade with payment-aware warnings; only group-created/deleted activity and contacts survive
 - [Money Representation and Rounding](decisions/money-representation-and-rounding.md) — fixed-hundredths storage, exact large BigInt summaries, deterministic splits, and payment-aware net guards
 - [Iconography](decisions/iconography.md) — PNG picker, offline caching/repair, unknown-icon fallback without record resets, and Lucide controls
@@ -177,7 +189,7 @@ Last updated: 2026-10-21
 - [Selection Controls](decisions/selection-controls.md) — native checkboxes/radios, locked states, and numbered PDF-field checkboxes with selection-order semantics
 - [Offline Payment Recording](decisions/settlement-recording.md) — MoneyInput payments, exact local dates and Clear time, expense-date/added-date history; latest evidence is in Testing Strategy
 - [String Input Normalization](decisions/string-input-normalization.md) — create/edit normalization versus exact payment dates/restored snapshots; explicit blank suggestion semantics
-- [Testing Strategy](decisions/testing-strategy.md) — 758-unit/static/build/35-focused-browser/22-PWA passes, retained initial/intermediate failures, PDF/offline evidence, and historical audit handoff
+- [Testing Strategy](decisions/testing-strategy.md) — 773-unit/static/both-build/664-full-browser/22-PWA/12-landing passes, retained initial failures, native-touch repairs, and platform limits
 
 ### Systems
 - [IndexedDB Schema](systems/indexeddb-schema.md) — version 3 payments, additive descriptions, persisted transaction-time cleanup, and preserved payment recorder metadata
@@ -195,7 +207,7 @@ Last updated: 2026-10-21
 - [Member Management](workflows/member-management.md) — all-width editors, persisted linking/removal/self guards, and cross-tab UI-sync limits
 - [Category Management](workflows/category-management.md) — persisted uniqueness/reference/last-category guards, sequential creation limits, and pending deactivation controls
 - [Tag Management](workflows/tag-management.md) — Optional details entry, transactional expense/payment cleanup, and payment-aware confirmation counts
-- [Filtering](workflows/filtering.md) — eight filters/ten sorts, ordered/empty-guarded PDFs, and passing 35-case reports/original-failure browser recheck
+- [Filtering](workflows/filtering.md) — saved category images/tag-color markers, eight filters/ten sorts, ordered PDFs, and passing current full-browser coverage
 - [Dashboard](workflows/dashboard.md) — mobile More, recent-expense group order, payment-aware activity, and exact BigInt cross-group balance/spending summaries
 
 ### Ideas (captured, not committed)
@@ -234,6 +246,7 @@ Last updated: 2026-10-21
 | Split types (5 types)              | DONE        |
 | Paid-by (frequent payers UI)       | DONE        |
 | Expense list + filtering           | DONE        |
+| Expense context menu / bulk selection | AUTOMATED VERIFIED |
 | Mobile expense-form scroll/actions | AUTOMATED VERIFIED |
 | Balances / who-owes-whom view      | DONE        |
 | Offline repayment recording        | DONE        |

@@ -618,3 +618,235 @@ describe("removeExpense", () => {
     expect(useStore.getState().expenses).toEqual([]);
   });
 });
+
+describe("removeExpenses", () => {
+  it("deletes selected expenses and owned receipts together, retaining payments and other expenses", async () => {
+    const first = await useStore.getState().addExpense(input());
+    const secondInput = input();
+    secondInput.values.payerId = "b";
+    const second = await useStore.getState().addExpense(secondInput);
+    const retained = await useStore.getState().addExpense(secondInput);
+    await addReceipts(first.expenseId);
+    await db.attachments.add({
+      id: "second-receipt",
+      expenseId: second.expenseId,
+      blob: new Blob(["second"]),
+      mimeType: "image/png",
+      createdAt: 1,
+    });
+    await db.settlements.add({
+      id: "payment",
+      kind: "payment",
+      groupId: "g",
+      fromMemberId: "b",
+      toMemberId: "a",
+      amount: 100,
+      when: 1,
+      createdAt: 1,
+      recordedBy: "a",
+      tagIds: [],
+    });
+    await useStore.getState().init();
+    const payments = useStore.getState().settlements;
+    await useStore.getState().removeExpenses([first.expenseId, second.expenseId], "g");
+    expect(await db.expenses.toArray()).toEqual([retained]);
+    expect(useStore.getState().expenses).toEqual([retained]);
+    expect((await db.attachments.toArray()).map((receipt) => receipt.id)).toEqual(["unrelated"]);
+    expect(await db.settlements.toArray()).toEqual(payments);
+    expect(useStore.getState().settlements).toEqual(payments);
+    expect((await db.groups.get("g"))?.frequentPayerIds).toEqual(["b", "a"]);
+    const deleted = (await db.activityEvents.toArray()).filter(
+      (event) => event.action === "deleted",
+    );
+    expect(deleted.map((event) => event.subjectId).sort()).toEqual(
+      [first.expenseId, second.expenseId].sort(),
+    );
+    expect(
+      useStore.getState().activityEvents.filter((event) => event.action === "deleted"),
+    ).toHaveLength(2);
+    await useStore.getState().init();
+    expect(useStore.getState().expenses).toEqual([retained]);
+  });
+
+  it.each(["missing", "foreign", "duplicate", "empty"])(
+    "rejects a %s selection without deleting anything",
+    async (invalid) => {
+      const first = await useStore.getState().addExpense(input());
+      const foreign = { ...first, expenseId: "foreign", groupId: "other" };
+      await db.expenses.add(foreign);
+      await useStore.getState().init();
+      const previous = useStore.getState();
+      const ids =
+        invalid === "empty"
+          ? []
+          : [first.expenseId, invalid === "duplicate" ? first.expenseId : invalid];
+      await expect(useStore.getState().removeExpenses(ids, "g")).rejects.toThrow();
+      expect(await db.expenses.toArray()).toEqual(previous.expenses);
+      expect(useStore.getState().expenses).toEqual(previous.expenses);
+      expect(await db.activityEvents.toArray()).toEqual(previous.activityEvents);
+      expect(useStore.getState().groups).toEqual(previous.groups);
+    },
+  );
+
+  it.each(["second expense", "ranking", "activity"])(
+    "rolls back the entire selection when the %s write fails and allows retry",
+    async (failure) => {
+      const first = await useStore.getState().addExpense(input());
+      const second = await useStore.getState().addExpense(input());
+      await addReceipts(first.expenseId);
+      const previous = useStore.getState();
+      if (failure === "second expense") {
+        const originalDelete = db.expenses.delete.bind(db.expenses);
+        vi.spyOn(db.expenses, "delete")
+          .mockImplementationOnce(originalDelete)
+          .mockRejectedValueOnce(new Error("Disk error"));
+      } else if (failure === "ranking") {
+        vi.spyOn(db.groups, "update").mockRejectedValueOnce(new Error("Disk error"));
+      } else {
+        vi.spyOn(db.activityEvents, "add").mockRejectedValueOnce(new Error("Disk error"));
+      }
+      const ids = [first.expenseId, second.expenseId];
+      await expect(useStore.getState().removeExpenses(ids, "g")).rejects.toThrow("Disk error");
+      expect(await db.expenses.toArray()).toEqual(previous.expenses);
+      expect(await db.attachments.count()).toBe(3);
+      expect(await db.activityEvents.toArray()).toEqual(previous.activityEvents);
+      expect(await db.groups.toArray()).toEqual(previous.groups);
+      expect(useStore.getState().expenses).toEqual(previous.expenses);
+      expect(useStore.getState().groups).toEqual(previous.groups);
+      expect(useStore.getState().activityEvents).toEqual(previous.activityEvents);
+      await useStore.getState().removeExpenses(ids, "g");
+      expect(await db.expenses.count()).toBe(0);
+      expect(useStore.getState().expenses).toEqual([]);
+    },
+  );
+
+  it("validates final balances once rather than rejecting an unsafe intermediate deletion", async () => {
+    const firstInput = input();
+    firstInput.values.amount = "1.00";
+    firstInput.values.participants[0].selected = false;
+    const first = await useStore.getState().addExpense(firstInput);
+    const secondInput = input();
+    secondInput.values.amount = "1.00";
+    secondInput.values.payerId = "b";
+    secondInput.values.participants[1].selected = false;
+    const second = await useStore.getState().addExpense(secondInput);
+    await db.settlements.add({
+      id: "large-payment",
+      kind: "payment",
+      groupId: "g",
+      fromMemberId: "a",
+      toMemberId: "b",
+      amount: Number.MAX_SAFE_INTEGER,
+      when: 1,
+      createdAt: 1,
+      recordedBy: "a",
+      tagIds: [],
+    });
+    await expect(useStore.getState().removeExpense(second.expenseId, "g")).rejects.toThrow(
+      "supported range",
+    );
+    await useStore.getState().removeExpenses([second.expenseId, first.expenseId], "g");
+    expect(await db.expenses.count()).toBe(0);
+    expect(await db.settlements.count()).toBe(1);
+  });
+
+  it("rejects unsafe final payment-aware balances without deleting the selection", async () => {
+    const data = input();
+    data.values.amount = "90071992547409.90";
+    data.values.participants[0].selected = false;
+    const first = await useStore.getState().addExpense(data);
+    data.values.amount = "0.01";
+    const second = await useStore.getState().addExpense(data);
+    for (const [index, amount] of [Number.MAX_SAFE_INTEGER, 1].entries()) {
+      await db.settlements.add({
+        id: `payment-${index}`,
+        kind: "payment",
+        groupId: "g",
+        fromMemberId: "b",
+        toMemberId: "a",
+        amount,
+        when: 1,
+        createdAt: 1,
+        recordedBy: "a",
+        tagIds: [],
+      });
+    }
+    await useStore.getState().init();
+    const previous = await db.expenses.toArray();
+    await expect(
+      useStore.getState().removeExpenses([first.expenseId, second.expenseId], "g"),
+    ).rejects.toThrow("supported range");
+    expect(await db.expenses.toArray()).toEqual(previous);
+    expect(useStore.getState().expenses).toEqual(previous);
+    expect(await db.settlements.count()).toBe(2);
+  });
+
+  it("rejects a group deleted after hydration without removing expenses or receipts", async () => {
+    const expense = await useStore.getState().addExpense(input());
+    await addReceipts(expense.expenseId);
+    const previous = useStore.getState();
+    await db.groups.delete("g");
+    await expect(useStore.getState().removeExpenses([expense.expenseId], "g")).rejects.toThrow(
+      "Group not found",
+    );
+    expect(await db.expenses.toArray()).toEqual(previous.expenses);
+    expect(await db.attachments.count()).toBe(3);
+    expect(useStore.getState().expenses).toEqual(previous.expenses);
+    expect(useStore.getState().activityEvents).toEqual(previous.activityEvents);
+  });
+
+  it("uses persisted expense details for deletion activity despite stale hydrated data", async () => {
+    const first = await useStore.getState().addExpense(input());
+    const retained = await useStore.getState().addExpense(input());
+    await db.expenses.update(first.expenseId, { expenseName: "Newer saved name" });
+    await useStore.getState().removeExpenses([first.expenseId], "g");
+    const deleted = (await db.activityEvents.toArray()).filter(
+      (event) => event.action === "deleted",
+    );
+    expect(deleted).toHaveLength(1);
+    expect(deleted[0].label).toBe("Newer saved name");
+    expect(await db.expenses.toArray()).toEqual([retained]);
+    expect(useStore.getState().expenses).toEqual([retained]);
+  });
+
+  it("serializes overlapping bulk deletions without duplicate events or partial writes", async () => {
+    const first = await useStore.getState().addExpense(input());
+    const second = await useStore.getState().addExpense(input());
+    const ids = [first.expenseId, second.expenseId];
+    const results = await Promise.allSettled([
+      useStore.getState().removeExpenses(ids, "g"),
+      useStore.getState().removeExpenses(ids, "g"),
+    ]);
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.filter((result) => result.status === "rejected")).toHaveLength(1);
+    expect(await db.expenses.count()).toBe(0);
+    expect(useStore.getState().expenses).toEqual([]);
+    expect(
+      (await db.activityEvents.toArray()).filter((event) => event.action === "deleted"),
+    ).toHaveLength(2);
+    expect(useStore.getState().groups).toEqual(await db.groups.toArray());
+  });
+
+  it("cannot resurrect a bulk-deleted expense when an update races the deletion", async () => {
+    const first = await useStore.getState().addExpense(input());
+    const second = await useStore.getState().addExpense(input());
+    const results = await Promise.allSettled([
+      useStore.getState().removeExpenses([first.expenseId, second.expenseId], "g"),
+      useStore.getState().updateExpense(second.expenseId, input()),
+    ]);
+    expect(results[0].status).toBe("fulfilled");
+    expect(await db.expenses.count()).toBe(0);
+    expect(useStore.getState().expenses).toEqual([]);
+  });
+
+  it("captures the requested IDs before the caller can mutate its array", async () => {
+    const first = await useStore.getState().addExpense(input());
+    const second = await useStore.getState().addExpense(input());
+    const ids = [first.expenseId, second.expenseId];
+    const pending = useStore.getState().removeExpenses(ids, "g");
+    ids.length = 0;
+    await pending;
+    expect(await db.expenses.count()).toBe(0);
+    expect(useStore.getState().expenses).toEqual([]);
+  });
+});
